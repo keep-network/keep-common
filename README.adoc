@@ -1,0 +1,47 @@
+= `keep-common`
+
+Common libraries and tools used across Keep repositories.
+
+== Directory structure
+
+The directory structure used in the `keep-common` repository is the same as
+used on other Keep repositories, and very similar to that used in other Go
+projects:
+
+```
+keep-common/
+  Makefile <1>
+  docs/
+  contracts/ <2>
+    docs/
+    solidity/
+  tools/ <3>
+    generators/ <4>
+  pkg/ <5>
+    net/
+      net.go, *.go <5>
+      libp2p/
+    chain/
+      chain.go, *.go <5>
+      ethereum/
+        gen/
+          gen.go <6>
+    relay/
+      relay.go, *.go
+```
+<1> The Makefile should be minimal, mirroring the Dockerfile when possible.
+<2> While Keep only uses Solidity at the moment, the directory structure allows
+    for other contract languages.
+<3> Keep tools have categorized directories here, which are typically Go
+    commands that can be used from other repositories.
+<4> Code generators in particular live in this subtree.
+<5> All additional Go packages live in `pkg/`.
+<6> The high-level interfaces for a package `mypackage` live in `mypackage.go`.
+    `net` and `chain` are interface packages that expose a common interface
+    to network and blockchain layers, for example. Their subpackages provide
+    particular implementations of these common interfaces, if these are
+    considered shared implementations..
+<7> When a package requires generated code, it should have a subpackage named
+    `gen/`. This subpackage should contain a single file, `gen.go`, with a
+    `// go:generate` annotation to trigger appropriate code generation. All code
+    generation is done with a single invocation of `go generate` at build time.

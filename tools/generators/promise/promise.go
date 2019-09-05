@@ -16,9 +16,6 @@ import (
 // Promises code generator.
 // Execute `go generate` command in current directory to generate Promises code.
 
-// Name of the promise template file.
-const promiseTemplateFile string = "async_promise.go.tmpl"
-
 // Directory to which generated code will be exported.
 const outDir string = "./async"
 
@@ -76,8 +73,10 @@ func main() {
 
 // Generates promises based on a given `promiseConfig`
 func generatePromisesCode(promisesConfig []promiseConfig) error {
-	// Read a promise's template.
-	promiseTemplate, err := template.New(promiseTemplateFile).ParseFiles(promiseTemplateFile)
+	promiseTemplate, err :=
+		template.
+			New("promise").
+			Parse(promiseTemplateContent)
 	if err != nil {
 		return fmt.Errorf("template creation failed [%v]", err)
 	}

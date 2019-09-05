@@ -5,10 +5,10 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"log"
 	"os"
 	"path"
+	"text/template"
 
 	"golang.org/x/tools/imports"
 )

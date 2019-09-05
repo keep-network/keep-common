@@ -1,4 +1,4 @@
-//go:generate sh -c "rm -f ./async/*_promise.go; go run async.go"
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template promise.go.tmpl promise_template_content.go
 // Code generation execution command requires the package to be set to `main`.
 package main
 

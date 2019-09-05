@@ -8,6 +8,10 @@ package async
 import (
 	"fmt"
 	"sync"
+
+	{{- if gt (len .CustomPackage) 0 }}
+	"{{ .CustomPackage }}"
+	{{- end }}
 )
 
 // Promise represents an eventual completion of an ansynchronous operation

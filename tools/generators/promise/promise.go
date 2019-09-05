@@ -4,74 +4,95 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
-	"log"
+	"os"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/keep-network/keep-common/pkg/generate"
 )
 
-// Promises code generator.
-// Execute `go generate` command in current directory to generate Promises code.
+// Directory to which generated code will be exported by default.
+const defaultOutDir string = "./async"
 
-// Directory to which generated code will be exported.
-const outDir string = "./async"
-
-// Configuration for the generator
+// promiseConfig is a configuration for the promise generator. It specifies the
+// type that the promise will provide asynchronously and the corresponding prefix
+// for the promise class.
 type promiseConfig struct {
-	// Type which promise will handle.
-	Type string
-	// Prefix for naming the promises.
-	Prefix string
-	// Name of the generated file.
-	outputFile string
+	Type          string // Type which promise will handle.
+	CustomPackage string // Custom package for type, if needed.
+	Prefix        string // Prefix for promise struct (struct is <Prefix>Promise).
+	Filename      string // Filename for promise.
 }
 
+// generatorConfig has one container, promises, for a set of promiseConfigs.
+type generatorConfig struct {
+	Promises []promiseConfig
+}
+
+var doHelp = flag.Bool(
+	"h",
+	false,
+	"Display command help.",
+)
+
+var generationDir = flag.String(
+	"d",
+	defaultOutDir,
+	"The `directory` to emit generated files to.",
+)
+
 func main() {
-	configs := []promiseConfig{
-		// Promise for `*big.Int` type.
-		// There is a test for this promise named `big_int_promise_test.go`.
-		// We need a test to validate correctness of generated promises.
-		{
-			Type:       "*big.Int",
-			Prefix:     "BigInt",
-			outputFile: "big_int_promise.go",
-		},
-		{
-			Type:       "*event.Entry",
-			Prefix:     "RelayEntry",
-			outputFile: "relay_entry_promise.go",
-		},
-		{
-			Type:       "*event.GroupTicketSubmission",
-			Prefix:     "GroupTicket",
-			outputFile: "group_ticket_submission_promise.go",
-		},
-		{
-			Type:       "*event.GroupRegistration",
-			Prefix:     "GroupRegistration",
-			outputFile: "group_registration_promise.go",
-		},
-		{
-			Type:       "*event.Request",
-			Prefix:     "RelayRequest",
-			outputFile: "relay_entry_requested_promise.go",
-		},
-		{
-			Type:       "*event.DKGResultSubmission",
-			Prefix:     "DKGResultSubmission",
-			outputFile: "dkg_result_submission_promise.go",
-		},
+	flag.Parse()
+
+	if *doHelp {
+		fmt.Printf(helpText(path.Base(os.Args[0])))
+		os.Exit(0)
 	}
 
-	if err := generatePromisesCode(configs); err != nil {
-		log.Fatalf("promises generation failed [%v]", err)
+	if flag.NArg() < 1 {
+		errorAndExit("Please specify at least one Go type.")
 	}
+
+	parsedConfigs := parseTypesToConfig(flag.Args())
+	if err := generatePromisesCode(*generationDir, parsedConfigs); err != nil {
+		errorAndExit(fmt.Sprintf("promises generation failed [%v]\n", err))
+	}
+}
+
+func errorAndExit(err string) {
+	fmt.Fprintf(os.Stderr, err+"\n\n")
+	fmt.Println(helpText(path.Base(os.Args[0])))
+
+	os.Exit(1)
+}
+
+func helpText(programName string) string {
+	builder := strings.Builder{}
+	builder.WriteString(programName + " [-d <directory>] <go-type>+\n\n")
+
+	defaultOut := flag.CommandLine.Output()
+	flag.CommandLine.SetOutput(&builder)
+	flag.CommandLine.PrintDefaults()
+	flag.CommandLine.SetOutput(defaultOut)
+
+	builder.WriteString(
+		"  <go-type>\n" +
+			"    \tOne or more Go types, possibly including fully-qualified\n" +
+			"    \tpackage info. When package info is not included, it is\n" +
+			"    \tauto-resolved by the Go compiler. This type is the type\n" +
+			"    \tmanaged by the promise, so include the pointer * if desired.\n" +
+			"\n" +
+			"    \tExamples: *big.Int *github.com/my/org/pkg/util.MyType string\n",
+	)
+
+	return builder.String()
 }
 
 // Generates promises based on a given `promiseConfig`
-func generatePromisesCode(promisesConfig []promiseConfig) error {
+func generatePromisesCode(generationDir string, promisesConfig []promiseConfig) error {
 	promiseTemplate, err :=
 		template.
 			New("promise").
@@ -81,7 +102,8 @@ func generatePromisesCode(promisesConfig []promiseConfig) error {
 	}
 
 	for _, promiseConfig := range promisesConfig {
-		outputFilePath := path.Join(outDir, promiseConfig.outputFile)
+		outputFile := promiseConfig.Filename
+		outputFilePath := path.Join(generationDir, outputFile)
 
 		// Generate promise code.
 		buffer, err := generateCode(promiseTemplate, &promiseConfig, outputFilePath)

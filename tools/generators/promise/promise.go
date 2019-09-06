@@ -107,7 +107,7 @@ func generateCode(codeTemplate *template.Template, config *promiseConfig, output
 	}
 
 	if err := generate.OrganizeImports(&buffer, outputFilePath); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v; input:\n%s", err, buffer.String())
 	}
 
 	return &buffer, nil

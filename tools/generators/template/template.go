@@ -11,6 +11,13 @@ import (
 	"github.com/keep-network/keep-common/pkg/generate"
 )
 
+const (
+	expectedArgs = 3
+	templateFileArgIndex = 1
+	goFileArgIndex = 2
+	goExtension = ".go"
+)
+
 // The template generator takes a file and lifts its contents into a Go string
 // variable in a named Go file in package main.
 //
@@ -18,8 +25,8 @@ import (
 //
 // The assumption is made that the string is already UTF-8.
 func main() {
-	if len(os.Args) != 3 {
-		errorAndExit("Need exactly two arguments.")
+	if len(os.Args) != expectedArgs {
+		errorAndExit(fmt.Sprintf("Need exactly %d arguments.", expectedArgs)))
 	}
 
 	templateFile := os.Args[1]
@@ -28,8 +35,8 @@ func main() {
 		errorAndExit(fmt.Sprintf("Failed to open template file: [%v].", err))
 	}
 
-	goFilePath := os.Args[2]
-	if goFilePath[len(goFilePath)-3:] != ".go" {
+	goFilePath := os.Args[goFileArgIndex]
+	if goFilePath[len(goFilePath)-len(goExtension):] != goExtension {
 		errorAndExit("Go file should end in .go.")
 	}
 	goVariable := pathToVariable(goFilePath)
@@ -81,12 +88,12 @@ func helpText(programName string) string {
 
 func pathToVariable(filePath string) string {
 	base := filepath.Base(filePath)
-	withoutExtension := base[0 : len(base)-3]
+	withoutExtension := base[0 : len(base)-len(goExtension)]
 	splitAtUnderscores := strings.Split(withoutExtension, "_")
 
 	// Uppercase all but the first underscored chunk.
-	for index, chunk := range splitAtUnderscores[1:] {
-		splitAtUnderscores[index+1] = strings.ToUpper(string(chunk[0])) + chunk[1:]
+	for i, chunk := range splitAtUnderscores[1:] {
+		splitAtUnderscores[i+1] = strings.ToUpper(string(chunk[0])) + chunk[1:]
 	}
 
 	// Join everything into one camel-cased variable name.

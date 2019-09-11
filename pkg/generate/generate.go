@@ -20,7 +20,7 @@ func OrganizeImports(codeBuffer *bytes.Buffer, filePath string) error {
 	// Resolve imports
 	code, err := imports.Process(filePath, codeBuffer.Bytes(), nil)
 	if err != nil {
-		return fmt.Errorf("failed to find/resove imports [%v]", err)
+		return fmt.Errorf("failed to find/resolve imports [%v]", err)
 	}
 
 	// Write organized code to the buffer.

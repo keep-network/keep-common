@@ -1,23 +1,19 @@
-//go:generate sh -c "rm -f ./async/*_promise.go; go run async.go"
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template promise.go.tmpl promise_template_content.go
 // Code generation execution command requires the package to be set to `main`.
 package main
 
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"log"
-	"os"
 	"path"
+	"text/template"
 
-	"golang.org/x/tools/imports"
+	"github.com/keep-network/keep-common/pkg/generate"
 )
 
 // Promises code generator.
 // Execute `go generate` command in current directory to generate Promises code.
-
-// Name of the promise template file.
-const promiseTemplateFile string = "async_promise.go.tmpl"
 
 // Directory to which generated code will be exported.
 const outDir string = "./async"
@@ -76,21 +72,25 @@ func main() {
 
 // Generates promises based on a given `promiseConfig`
 func generatePromisesCode(promisesConfig []promiseConfig) error {
-	// Read a promise's template.
-	promiseTemplate, err := template.New(promiseTemplateFile).ParseFiles(promiseTemplateFile)
+	promiseTemplate, err :=
+		template.
+			New("promise").
+			Parse(promiseTemplateContent)
 	if err != nil {
 		return fmt.Errorf("template creation failed [%v]", err)
 	}
 
 	for _, promiseConfig := range promisesConfig {
-		// Generate a promise code.
-		buf, err := generateCode(promiseTemplate, &promiseConfig)
+		outputFilePath := path.Join(outDir, promiseConfig.outputFile)
+
+		// Generate promise code.
+		buffer, err := generateCode(promiseTemplate, &promiseConfig, outputFilePath)
 		if err != nil {
-			return fmt.Errorf("generation failed [%v]", err)
+			return fmt.Errorf("promise generation failed [%v]", err)
 		}
 
 		// Save the promise code to a file.
-		if err := saveBufferToFile(buf, path.Join(outDir, promiseConfig.outputFile)); err != nil {
+		if err := generate.SaveBufferToFile(buffer, outputFilePath); err != nil {
 			return fmt.Errorf("saving promise code to file failed [%v]", err)
 		}
 	}
@@ -99,48 +99,16 @@ func generatePromisesCode(promisesConfig []promiseConfig) error {
 
 // Generates a code from template and configuration.
 // Returns a buffered code.
-func generateCode(tmpl *template.Template, config *promiseConfig) (*bytes.Buffer, error) {
-	var buf bytes.Buffer
+func generateCode(codeTemplate *template.Template, config *promiseConfig, outputFilePath string) (*bytes.Buffer, error) {
+	var buffer bytes.Buffer
 
-	if err := tmpl.Execute(&buf, config); err != nil {
+	if err := codeTemplate.Execute(&buffer, config); err != nil {
 		return nil, fmt.Errorf("generating code for type %s failed [%v]", config.Type, err)
 	}
 
-	if err := organizeImports(&buf); err != nil {
-		return nil, err
+	if err := generate.OrganizeImports(&buffer, outputFilePath); err != nil {
+		return nil, fmt.Errorf("%v; input:\n%s", err, buffer.String())
 	}
 
-	return &buf, nil
-}
-
-// Resolves imports in a code stored in a Buffer.
-func organizeImports(buf *bytes.Buffer) error {
-	// Resolve imports
-	code, err := imports.Process(outDir, buf.Bytes(), nil)
-	if err != nil {
-		return fmt.Errorf("failed to find/resove imports [%v]", err)
-	}
-
-	// Write organized code to the buffer.
-	buf.Reset()
-	if _, err := buf.Write(code); err != nil {
-		return fmt.Errorf("cannot write code to buffer [%v]", err)
-	}
-
-	return nil
-}
-
-// Stores the Buffer `buf` content to a file in `filePath`
-func saveBufferToFile(buf *bytes.Buffer, filePath string) error {
-	file, err := os.Create(filePath)
-	defer file.Close()
-	if err != nil {
-		return fmt.Errorf("output file %s creation failed [%v]", filePath, err)
-	}
-
-	if _, err := buf.WriteTo(file); err != nil {
-		return fmt.Errorf("writing to output file %s failed [%v]", filePath, err)
-	}
-
-	return nil
+	return &buffer, nil
 }

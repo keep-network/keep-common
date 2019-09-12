@@ -29,7 +29,7 @@ func main() {
 		errorAndExit(fmt.Sprintf("Need exactly %d arguments.", expectedArgs)))
 	}
 
-	templateFile := os.Args[1]
+	templateFile := os.Args[templateFileArgIndex]
 	templateContents, err := ioutil.ReadFile(templateFile)
 	if err != nil {
 		errorAndExit(fmt.Sprintf("Failed to open template file: [%v].", err))

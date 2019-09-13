@@ -7,13 +7,13 @@ import (
 	logging "github.com/ipfs/go-log"
 )
 
-// Sets up logging configuration from the given string. This string is expected
-// to have a space-delimited set of level directives, which are each evaluated
-// in order by the evaluateLevelDirective function.
+// Configure sets up logging configuration from the given string. This string is
+// expected to have a space-delimited set of level directives, which are each
+// evaluated in order by the evaluateLevelDirective function.
 //
 // If the level directive string is empty, a default level of info for all keep*
 // subsystems is imposed.
-func SetUpLogging(levelDirectiveString string) error {
+func Configure(levelDirectiveString string) error {
 	// Default to info logs for keep.
 	if len(levelDirectiveString) == 0 {
 		levelDirectiveString = "keep*=info"

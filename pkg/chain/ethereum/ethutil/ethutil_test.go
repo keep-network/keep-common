@@ -35,7 +35,7 @@ func TestKeyFileDecryption(t *testing.T) {
 			keyFile:  goodKeyFile,
 			password: "nanananana",
 			errorMessage: fmt.Sprintf(
-				"unable to decrypt %v [could not decrypt key with given passphrase]",
+				"unable to decrypt %v [could not decrypt key with given password]",
 				goodKeyFile,
 			),
 		},
@@ -43,7 +43,7 @@ func TestKeyFileDecryption(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			_, err := DecryptKeyFile(test.keyFile, test.password)
+			_, err := ethutil.DecryptKeyFile(test.keyFile, test.password)
 			message := ""
 			if err != nil {
 				message = err.Error()

@@ -8,7 +8,7 @@ import (
 
 	"crypto/sha256"
 
-	"github.com/keep-network/keep-core/pkg/encryption"
+	"github.com/keep-network/keep-common/pkg/encryption"
 )
 
 const accountPassword = "grzeski"

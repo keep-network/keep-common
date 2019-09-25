@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/keep-network/keep-core/pkg/chain/ethereum/ethutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 )
 
 func TestKeyFileDecryption(t *testing.T) {
@@ -43,7 +43,7 @@ func TestKeyFileDecryption(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			_, err := ethutil.DecryptKeyFile(test.keyFile, test.password)
+			_, err := DecryptKeyFile(test.keyFile, test.password)
 			message := ""
 			if err != nil {
 				message = err.Error()

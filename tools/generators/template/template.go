@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	expectedArgs = 3
+	expectedArgs         = 3
 	templateFileArgIndex = 1
-	goFileArgIndex = 2
-	goExtension = ".go"
+	goFileArgIndex       = 2
+	goExtension          = ".go"
 )
 
 // The template generator takes a file and lifts its contents into a Go string
@@ -26,7 +26,7 @@ const (
 // The assumption is made that the string is already UTF-8.
 func main() {
 	if len(os.Args) != expectedArgs {
-		errorAndExit(fmt.Sprintf("Need exactly %d arguments.", expectedArgs)))
+		errorAndExit(fmt.Sprintf("Need exactly %d arguments.", expectedArgs))
 	}
 
 	templateFile := os.Args[templateFileArgIndex]

@@ -3,7 +3,7 @@ version: 2.1
 executors:
   docker-go:
     docker:
-      - image: golang:alpine
+      - image: golang:1.13.0
 
 jobs:
   test-go:
@@ -22,5 +22,4 @@ workflows:
   version: 2
   test:
     jobs:
-      - test-go:
-          context: keep-dev
+      - test-go

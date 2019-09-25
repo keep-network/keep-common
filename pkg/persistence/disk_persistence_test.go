@@ -1,12 +1,11 @@
 package persistence
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"sync"
 	"testing"
-
-	"github.com/keep-network/keep-core/pkg/internal/testutils"
 )
 
 var (
@@ -98,7 +97,14 @@ func TestDiskPersistence_ReadAll(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		testutils.AssertBytesEqual(t, expectedBytes[i], fileContent)
+		if !bytes.Equal(expectedBytes[i], fileContent) {
+			t.Errorf(
+				"unexpected file content [%d]\nexpected: [%v]\nactual:   [%v]\n",
+				i,
+				expectedBytes[i],
+				fileContent,
+			)
+		}
 	}
 }
 

@@ -1,11 +1,10 @@
 package persistence
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
 	"testing"
-
-	"github.com/keep-network/keep-core/pkg/internal/testutils"
 
 	"crypto/sha256"
 
@@ -75,7 +74,14 @@ func TestSaveReadAndDecryptData(t *testing.T) {
 	}
 
 	for i := 0; i < len(dataToEncrypt); i++ {
-		testutils.AssertBytesEqual(t, dataToEncrypt[i], decrypted[i])
+		if !bytes.Equal(dataToEncrypt[i], decrypted[i]) {
+			t.Errorf(
+				"unexpected decrypted item [%d]\nexpected: [%v]\nactual:   [%v]\n",
+				i,
+				dataToEncrypt[i],
+				decrypted[i],
+			)
+		}
 	}
 }
 

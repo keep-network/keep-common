@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/keep-network/keep-core/pkg/chain/ethereum/ethutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 )
 
 func TestKeyFileDecryption(t *testing.T) {
@@ -35,7 +35,7 @@ func TestKeyFileDecryption(t *testing.T) {
 			keyFile:  goodKeyFile,
 			password: "nanananana",
 			errorMessage: fmt.Sprintf(
-				"unable to decrypt %v [could not decrypt key with given passphrase]",
+				"unable to decrypt %v [could not decrypt key with given password]",
 				goodKeyFile,
 			),
 		},

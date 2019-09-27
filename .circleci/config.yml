@@ -1,0 +1,25 @@
+version: 2.1
+
+executors:
+  docker-go:
+    docker:
+      - image: golang:1.13.0
+
+jobs:
+  test-go:
+    executor: docker-go
+    steps:
+      - checkout
+      - run:
+          name: Run Go generators
+          command: |
+            go generate ./.../gen
+      - run:
+          name: Run Go tests
+          command: |
+            go test ./.../
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-go

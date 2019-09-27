@@ -3,7 +3,7 @@ version: 2.1
 executors:
   docker-go:
     docker:
-      - image: golang:1.13.0
+      - image: circleci/golang:1.13
 
 jobs:
   test-go:
@@ -11,13 +11,19 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Create test directories
+          command: |
+            mkdir -p test-results/keep-common
+      - run:
           name: Run Go generators
           command: |
             go generate ./.../gen
       - run:
           name: Run Go tests
           command: |
-            go test ./.../
+            gotestsum --junitfile test-results/keep-common/unit-tests.xml
+      - store_test_results:
+          path: test-results
 workflows:
   version: 2
   test:

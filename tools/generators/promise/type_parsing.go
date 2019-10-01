@@ -101,7 +101,7 @@ func parseTypesToConfig(goTypes []string) []promiseConfig {
 // For example, given big.Int, we create BigInt, and given event.RelayRequest,
 // we construct EventRelayRequest.
 func typeNameFrom(typePackage string, typeName string) string {
-	return strings.ToUpper(string(typePackage[0])) + typePackage[1:] + typeName
+	return strings.Title(typePackage) + strings.Title(typeName)
 }
 
 // Given the prefix of a promise's type name (e.g., BigInt for BigIntPromise, or

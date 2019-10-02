@@ -27,11 +27,6 @@ type promiseConfig struct {
 	Filename      string // Filename for promise.
 }
 
-// generatorConfig has one container, promises, for a set of promiseConfigs.
-type generatorConfig struct {
-	Promises []promiseConfig
-}
-
 var doHelp = flag.Bool(
 	"h",
 	false,

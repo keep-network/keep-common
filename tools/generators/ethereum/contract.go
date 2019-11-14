@@ -19,16 +19,23 @@ import (
 
 // Main function. Expects to be invoked as:
 //
-//   <executable> [input.abi] contract/[contract_output.go] cmd/[cmd_output.go]
+//   <executable> <input.ab>> contract/<contract_output.go> cmd/<cmd_output.go>
 //
 // The first file will receive a contract binding that is slightly higher-level
 // than abigen's output, including an event-based interface for contract event
 // interaction, support for revert error reporting, serialized transaction
 // submission, and simplified transactor handling.
 //
-// The second file will receive an urfave/cli-compatible command initialization
+// The second file will receive an urfave/cli-compatible cli.Command object
 // that can be used to add command-line interaction with the specified contract
-// by adding the relevant commands to a top-level urfave/cli.App object.
+// by adding the relevant commands to a top-level urfave/cli.App object. The
+// file's initializer will currently append the command object to an exported
+// package variable named AvailableCommands in the same package that the command
+// itself is in. This variable is NOT generated; instead, it is expected that it
+// will be set up out-of-band in the package.
+//
+// Note that currently the packages for contract and command are hardcoded to
+// contract and cmd, respectively.
 func main() {
 	configReader := flag.String(
 		"config-func",

@@ -10,7 +10,6 @@ import (
     "github.com/ethereum/go-ethereum/common/hexutil"
     "github.com/ethereum/go-ethereum/core/types"
 
-    "github.com/keep-network/keep-common/config"
     "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
     "github.com/keep-network/keep-common/pkg/cmd"
 
@@ -196,12 +195,10 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cli.Context) error {
 /// ------------------- Initialization -------------------
 
 func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
-    globalConfig, err := config.ReadConfig(c.GlobalString("config"))
+    config, err := {{.EthereumConfigReader}}(c.GlobalString("config"))
     if err != nil {
-        return nil, fmt.Errorf("error reading config file: [%v]", err)
+        return nil, fmt.Errorf("error reading Ethereum config from file: [%v]", err)
     }
-
-    config := globalConfig.Ethereum
 
     client, _, _, err := ethutil.ConnectClients(config.URL, config.URLRPC)
     if err != nil {

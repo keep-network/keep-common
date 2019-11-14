@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -29,7 +30,15 @@ import (
 // that can be used to add command-line interaction with the specified contract
 // by adding the relevant commands to a top-level urfave/cli.App object.
 func main() {
-	if len(os.Args) != 4 {
+	configReader := flag.String(
+		"config-func",
+		"config.ReadEthereumConfig",
+		"A config function that will return an ethereum.Config object given a config file name.",
+	)
+
+	flag.Parse()
+
+	if flag.NArg() != 3 {
 		panic(fmt.Sprintf(
 			"Expected `%v [input.abi] [contract_output.go] [cmd_output.go]`, but got [%v].",
 			os.Args[0],
@@ -37,9 +46,9 @@ func main() {
 		))
 	}
 
-	abiPath := os.Args[1]
-	contractOutputPath := os.Args[2]
-	commandOutputPath := os.Args[3]
+	abiPath := flag.Arg(0)
+	contractOutputPath := flag.Arg(1)
+	commandOutputPath := flag.Arg(2)
 
 	abiFile, err := ioutil.ReadFile(abiPath)
 	if err != nil {
@@ -78,7 +87,7 @@ func main() {
 	// ABI file, minus the extension.
 	abiClassName := path.Base(abiPath)
 	abiClassName = abiClassName[0 : len(abiClassName)-4] // strip .abi
-	contractInfo := buildContractInfo(abiClassName, &abi, payableInfo)
+	contractInfo := buildContractInfo(*configReader, abiClassName, &abi, payableInfo)
 
 	contractBuf, err := generateCode(
 		contractOutputPath,

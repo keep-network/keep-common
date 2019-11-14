@@ -1,5 +1,9 @@
-//go:generate sh -c "SOLIDITY_DIR=../../../contracts/solidity make"
-// Code generation execution command requires the package to be set to `main`.
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template contract_const_methods.go.tmpl contract_const_methods_template_content.go
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template contract_non_const_methods.go.tmpl contract_non_const_methods_template_content.go
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template contract_events.go.tmpl contract_events_template_content.go
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template contract.go.tmpl contract_template_content.go
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template command.go.tmpl command_template_content.go
+
 package main
 
 import (
@@ -66,7 +70,7 @@ func main() {
 		))
 	}
 
-	templates, err := template.ParseGlob("*.go.tmpl")
+	templates, err := parseTemplates()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to parse templates: [%v].", err))
 	}
@@ -142,6 +146,28 @@ func main() {
 			err,
 		))
 	}
+}
+
+func parseTemplates() (*template.Template, error) {
+	templates := map[string]string{
+		"contract_const_methods.go.tmpl":     contractConstMethodsTemplateContent,
+		"contract_non_const_methods.go.tmpl": contractNonConstMethodsTemplateContent,
+		"contract_events.go.tmpl":            contractEventsTemplateContent,
+		"contract.go.tmpl":                   contractTemplateContent,
+		"command.go.tmpl":                    commandTemplateContent,
+	}
+
+	combinedTemplate := template.New("")
+	for name, content := range templates {
+		var err error
+		// FIXME The generator should probably emit the {{define}}/{{end}}
+		// FIXME blocks itself.
+		combinedTemplate, err = combinedTemplate.Parse("{{define \"" + name + "\"}}" + content + "{{end}}")
+		if err != nil {
+			return nil, err
+		}
+	}
+	return combinedTemplate, nil
 }
 
 // Generates code by applying the named template in the passed template bundle

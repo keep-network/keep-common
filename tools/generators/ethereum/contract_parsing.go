@@ -148,6 +148,9 @@ func buildMethodInfo(
 			modifiers = append(modifiers, "constant")
 		}
 		modifierString := strings.Join(modifiers, " ")
+		if len(modifiers) > 0 {
+			modifierString += " "
+		}
 
 		paramDeclarations := ""
 		params := ""

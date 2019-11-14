@@ -11,9 +11,10 @@ import (
     "github.com/ethereum/go-ethereum/core/types"
 
     "github.com/keep-network/keep-common/config"
-    "github.com/keep-network/keep-common/pkg/chain/gen/contract"
-    "github.com/keep-network/keep-common/pkg/chain/ethereum"
     "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
+    "github.com/keep-network/keep-common/pkg/cmd"
+
+    "github.com/keep-network/keep-core/pkg/chain/gen/contract"
 
     "github.com/urfave/cli"
 )
@@ -57,8 +58,8 @@ func init() {
                     Usage: "Calls the {{$method.Modifiers}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
                     ArgsUsage: "{{ range $i, $param := $method.ParamInfos -}} [{{$param.Name}}] {{ end }}",
                     Action: {{$contract.ShortVar}}{{$method.CapsName}},
-                    Before: argCountChecker({{$method.ParamInfos | len}}),
-                    Flags: constFlags,
+                    Before: cmd.ArgCountChecker({{$method.ParamInfos | len}}),
+                    Flags: cmd.ConstFlags,
                 },
             {{- end -}}
             {{- end -}}
@@ -71,15 +72,15 @@ func init() {
                     Action: {{$contract.ShortVar}}{{$method.CapsName}},
                     Before:
                         {{- if $method.Payable -}}
-                        cli.BeforeFunc(payableArgsChecker.andThen(argCountChecker({{$method.ParamInfos | len}})))
+                        cli.BeforeFunc(cmd.PayableArgsChecker.AndThen(cmd.ArgCountChecker({{$method.ParamInfos | len}})))
                         {{- else -}}
-                        cli.BeforeFunc(nonConstArgsChecker.andThen(argCountChecker({{$method.ParamInfos | len}})))
+                        cli.BeforeFunc(cmd.NonConstArgsChecker.AndThen(cmd.ArgCountChecker({{$method.ParamInfos | len}})))
                         {{- end }},
                     Flags:
                         {{- if $method.Payable -}}
-                        payableFlags
+                        cmd.PayableFlags
                         {{- else -}}
-                        nonConstFlags
+                        cmd.NonConstFlags
                         {{- end }},
                 },
             {{- end -}}
@@ -112,14 +113,14 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cli.Context) error {
 
     result, err := contract.{{$method.CapsName}}AtBlock(
         {{$method.Params}}
-        blockFlagValue.Uint,
+        cmd.BlockFlagValue.Uint,
     )
 
     if err != nil {
     	return err
     }
 
-    printOutput(result)
+    cmd.PrintOutput(result)
 
     return nil
 }
@@ -156,32 +157,32 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cli.Context) error {
         {{ end -}}
     )
 
-    if c.Bool(submitFlag) {
+    if c.Bool(cmd.SubmitFlag) {
         // Do a regular submission. Take payable into account.
         transaction, err = contract.{{$method.CapsName}}(
             {{$method.Params}}
-            {{- if $method.Payable -}} valueFlagValue.Uint, {{- end -}}
+            {{- if $method.Payable -}} cmd.ValueFlagValue.Uint, {{- end -}}
         )
         if err != nil {
             return err
         }
 
-        printOutput(transaction.Hash)
+        cmd.PrintOutput(transaction.Hash)
     } else {
         // Do a call.
         {{ if gt (len $method.Return.Type) 0 -}} result, {{ end -}} err = contract.Call{{$method.CapsName}}(
             {{$method.Params}}
-            {{- if $method.Payable -}} valueFlagValue.Uint, {{- end -}}
-            blockFlagValue.Uint,
+            {{- if $method.Payable -}} cmd.ValueFlagValue.Uint, {{- end -}}
+            cmd.BlockFlagValue.Uint,
         )
         if err != nil {
             return err
         }
 
         {{ if gt (len $method.Return.Type) 0 -}}
-        printOutput(result)
+        cmd.PrintOutput(result)
         {{- else -}}
-        printOutput(nil)
+        cmd.PrintOutput(nil)
         {{- end }}
     }
 

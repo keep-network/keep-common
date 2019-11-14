@@ -11,33 +11,33 @@ import (
 func TestComposableArgCheckerComposesOnSuccess(t *testing.T) {
 	var seenFunctions []int
 
-	firstComposer := composableArgChecker(func(c *cli.Context) error {
+	firstComposer := ComposableArgChecker(func(c *cli.Context) error {
 		seenFunctions = append(seenFunctions, 1)
 		return nil
 	})
-	secondComposer := composableArgChecker(func(c *cli.Context) error {
+	secondComposer := ComposableArgChecker(func(c *cli.Context) error {
 		seenFunctions = append(seenFunctions, 2)
 		return nil
 	})
-	thirdComposer := composableArgChecker(func(c *cli.Context) error {
+	thirdComposer := ComposableArgChecker(func(c *cli.Context) error {
 		seenFunctions = append(seenFunctions, 3)
 		return nil
 	})
 
 	tests := map[string]struct {
-		composed composableArgChecker
+		composed ComposableArgChecker
 		sequence []int
 	}{
 		"1-2-3": {
-			composed: firstComposer.andThen(secondComposer).andThen(thirdComposer),
+			composed: firstComposer.AndThen(secondComposer).AndThen(thirdComposer),
 			sequence: []int{1, 2, 3},
 		},
 		"3-2-1": {
-			composed: thirdComposer.andThen(secondComposer).andThen(firstComposer),
+			composed: thirdComposer.AndThen(secondComposer).AndThen(firstComposer),
 			sequence: []int{3, 2, 1},
 		},
 		"2-1-3": {
-			composed: secondComposer.andThen(firstComposer).andThen(thirdComposer),
+			composed: secondComposer.AndThen(firstComposer).AndThen(thirdComposer),
 			sequence: []int{2, 1, 3},
 		},
 	}
@@ -69,49 +69,49 @@ func TestComposableArgCheckerComposesOnSuccess(t *testing.T) {
 func TestComposableArgCheckerShortCircuitsOnFailure(t *testing.T) {
 	var seenFunctions []int
 
-	firstComposer := composableArgChecker(func(c *cli.Context) error {
+	firstComposer := ComposableArgChecker(func(c *cli.Context) error {
 		seenFunctions = append(seenFunctions, 1)
 		return nil
 	})
-	secondComposer := composableArgChecker(func(c *cli.Context) error {
+	secondComposer := ComposableArgChecker(func(c *cli.Context) error {
 		seenFunctions = append(seenFunctions, 2)
 		return nil
 	})
-	thirdComposer := composableArgChecker(func(c *cli.Context) error {
+	thirdComposer := ComposableArgChecker(func(c *cli.Context) error {
 		seenFunctions = append(seenFunctions, 3)
 		return nil
 	})
-	errorComposer := composableArgChecker(func(c *cli.Context) error {
+	errorComposer := ComposableArgChecker(func(c *cli.Context) error {
 		return fmt.Errorf("ohai")
 	})
 
 	tests := map[string]struct {
-		composed     composableArgChecker
+		composed     ComposableArgChecker
 		sequence     []int
 		errorMessage string
 	}{
 		"1-2-error-3": {
-			composed:     firstComposer.andThen(secondComposer).andThen(errorComposer).andThen(thirdComposer),
+			composed:     firstComposer.AndThen(secondComposer).AndThen(errorComposer).AndThen(thirdComposer),
 			sequence:     []int{1, 2},
 			errorMessage: "ohai",
 		},
 		"3-error-2-1": {
-			composed:     thirdComposer.andThen(errorComposer).andThen(secondComposer).andThen(firstComposer),
+			composed:     thirdComposer.AndThen(errorComposer).AndThen(secondComposer).AndThen(firstComposer),
 			sequence:     []int{3},
 			errorMessage: "ohai",
 		},
 		"2-1-error-3": {
-			composed:     secondComposer.andThen(firstComposer).andThen(errorComposer).andThen(thirdComposer),
+			composed:     secondComposer.AndThen(firstComposer).AndThen(errorComposer).AndThen(thirdComposer),
 			sequence:     []int{2, 1},
 			errorMessage: "ohai",
 		},
 		"3-1-2-error": {
-			composed:     thirdComposer.andThen(firstComposer).andThen(secondComposer).andThen(errorComposer),
+			composed:     thirdComposer.AndThen(firstComposer).AndThen(secondComposer).AndThen(errorComposer),
 			sequence:     []int{3, 1, 2},
 			errorMessage: "ohai",
 		},
 		"3-1-2": {
-			composed:     thirdComposer.andThen(firstComposer).andThen(secondComposer),
+			composed:     thirdComposer.AndThen(firstComposer).AndThen(secondComposer),
 			sequence:     []int{3, 1, 2},
 			errorMessage: "",
 		},

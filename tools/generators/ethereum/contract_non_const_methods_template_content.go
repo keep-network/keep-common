@@ -10,7 +10,8 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{$method.ParamDeclarations -}}
 	{{- if $method.Payable -}}
 	value *big.Int,
-	{{ end -}}
+	{{ end }}
+	transactionOptions ...ethutil.TransactionOptions,
 ) (*types.Transaction, error) {
 	{{$logger}}.Debug(
 		"submitting transaction {{$method.LowerName}}\n",
@@ -29,6 +30,16 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{- else -}}
 	transactorOptions := {{$contract.ShortVar}}.transactorOptions
 	{{- end }}
+
+	if len(transactionOptions) > 0 {
+		if len(transactionOptions) > 1 {
+			return nil, fmt.Errorf(
+				"could not process multiple transaction options sets",
+			)
+		}
+
+		transactionOptions[0].Apply(transactorOptions)
+	}
 
 	transaction, err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(
 		transactorOptions,

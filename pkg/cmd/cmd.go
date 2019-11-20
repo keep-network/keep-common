@@ -106,9 +106,9 @@ var (
 // be chained. See AndThen for more.
 type ComposableArgChecker cli.BeforeFunc
 
-// AndThen on a ComposableArgChecker allows composing a ComposbleArgChecker with
-// another one, such that this ComposableArgChecker runs and, if it succeeds,
-// the nextChekcer runs.
+// AndThen on a ComposableArgChecker allows composing a ComposableArgChecker
+// with another one, such that this ComposableArgChecker runs and, if it
+// succeeds, the nextChecker runs.
 //
 // As an example, this allows for two BeforeFuncs to be composed as:
 //

@@ -23,7 +23,7 @@ import (
 
 // Main function. Expects to be invoked as:
 //
-//   <executable> <input.ab>> contract/<contract_output.go> cmd/<cmd_output.go>
+//   <executable> <input.abi> contract/<contract_output.go> cmd/<cmd_output.go>
 //
 // The first file will receive a contract binding that is slightly higher-level
 // than abigen's output, including an event-based interface for contract event

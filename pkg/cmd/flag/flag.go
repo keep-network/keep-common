@@ -1,3 +1,6 @@
+// Package flag contains helpers for accepting Ethereum data types as
+// command-line parameters, including transaction hashes as hex and uint256s in
+// either hex or decimal form.
 package flag
 
 import (

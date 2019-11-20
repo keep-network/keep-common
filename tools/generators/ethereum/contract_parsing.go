@@ -40,14 +40,15 @@ func init() {
 
 // The following structs are sent into the templates for compilation.
 type contractInfo struct {
-	Class           string
-	AbiClass        string
-	FullVar         string
-	ShortVar        string
-	DashedName      string
-	ConstMethods    []methodInfo
-	NonConstMethods []methodInfo
-	Events          []eventInfo
+	EthereumConfigReader string
+	Class                string
+	AbiClass             string
+	FullVar              string
+	ShortVar             string
+	DashedName           string
+	ConstMethods         []methodInfo
+	NonConstMethods      []methodInfo
+	Events               []eventInfo
 }
 
 type paramInfo struct {
@@ -86,6 +87,7 @@ type eventInfo struct {
 }
 
 func buildContractInfo(
+	configReader string,
 	abiClassName string,
 	abi *abi.ABI,
 	payableInfo []methodPayableInfo,
@@ -110,6 +112,7 @@ func buildContractInfo(
 	events := buildEventInfo(abi.Events)
 
 	return contractInfo{
+		configReader,
 		string(goClassName),
 		abiClassName,
 		lowercaseFirst(string(goClassName)),
@@ -145,6 +148,9 @@ func buildMethodInfo(
 			modifiers = append(modifiers, "constant")
 		}
 		modifierString := strings.Join(modifiers, " ")
+		if len(modifiers) > 0 {
+			modifierString += " "
+		}
 
 		paramDeclarations := ""
 		params := ""

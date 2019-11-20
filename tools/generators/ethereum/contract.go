@@ -1,10 +1,15 @@
-//go:generate sh -c "SOLIDITY_DIR=../../../contracts/solidity make"
-// Code generation execution command requires the package to be set to `main`.
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template contract_const_methods.go.tmpl contract_const_methods_template_content.go
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template contract_non_const_methods.go.tmpl contract_non_const_methods_template_content.go
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template contract_events.go.tmpl contract_events_template_content.go
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template contract.go.tmpl contract_template_content.go
+//go:generate go run github.com/keep-network/keep-common/tools/generators/template command.go.tmpl command_template_content.go
+
 package main
 
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -18,18 +23,33 @@ import (
 
 // Main function. Expects to be invoked as:
 //
-//   <executable> [input.abi] contract/[contract_output.go] cmd/[cmd_output.go]
+//   <executable> <input.abi> contract/<contract_output.go> cmd/<cmd_output.go>
 //
 // The first file will receive a contract binding that is slightly higher-level
 // than abigen's output, including an event-based interface for contract event
 // interaction, support for revert error reporting, serialized transaction
 // submission, and simplified transactor handling.
 //
-// The second file will receive an urfave/cli-compatible command initialization
+// The second file will receive an urfave/cli-compatible cli.Command object
 // that can be used to add command-line interaction with the specified contract
-// by adding the relevant commands to a top-level urfave/cli.App object.
+// by adding the relevant commands to a top-level urfave/cli.App object. The
+// file's initializer will currently append the command object to an exported
+// package variable named AvailableCommands in the same package that the command
+// itself is in. This variable is NOT generated; instead, it is expected that it
+// will be set up out-of-band in the package.
+//
+// Note that currently the packages for contract and command are hardcoded to
+// contract and cmd, respectively.
 func main() {
-	if len(os.Args) != 4 {
+	configReader := flag.String(
+		"config-func",
+		"config.ReadEthereumConfig",
+		"A config function that will return an ethereum.Config object given a config file name.",
+	)
+
+	flag.Parse()
+
+	if flag.NArg() != 3 {
 		panic(fmt.Sprintf(
 			"Expected `%v [input.abi] [contract_output.go] [cmd_output.go]`, but got [%v].",
 			os.Args[0],
@@ -37,9 +57,9 @@ func main() {
 		))
 	}
 
-	abiPath := os.Args[1]
-	contractOutputPath := os.Args[2]
-	commandOutputPath := os.Args[3]
+	abiPath := flag.Arg(0)
+	contractOutputPath := flag.Arg(1)
+	commandOutputPath := flag.Arg(2)
 
 	abiFile, err := ioutil.ReadFile(abiPath)
 	if err != nil {
@@ -50,7 +70,7 @@ func main() {
 		))
 	}
 
-	templates, err := template.ParseGlob("*.go.tmpl")
+	templates, err := parseTemplates()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to parse templates: [%v].", err))
 	}
@@ -78,7 +98,7 @@ func main() {
 	// ABI file, minus the extension.
 	abiClassName := path.Base(abiPath)
 	abiClassName = abiClassName[0 : len(abiClassName)-4] // strip .abi
-	contractInfo := buildContractInfo(abiClassName, &abi, payableInfo)
+	contractInfo := buildContractInfo(*configReader, abiClassName, &abi, payableInfo)
 
 	contractBuf, err := generateCode(
 		contractOutputPath,
@@ -126,6 +146,28 @@ func main() {
 			err,
 		))
 	}
+}
+
+func parseTemplates() (*template.Template, error) {
+	templates := map[string]string{
+		"contract_const_methods.go.tmpl":     contractConstMethodsTemplateContent,
+		"contract_non_const_methods.go.tmpl": contractNonConstMethodsTemplateContent,
+		"contract_events.go.tmpl":            contractEventsTemplateContent,
+		"contract.go.tmpl":                   contractTemplateContent,
+		"command.go.tmpl":                    commandTemplateContent,
+	}
+
+	combinedTemplate := template.New("")
+	for name, content := range templates {
+		var err error
+		// FIXME The generator should probably emit the {{define}}/{{end}}
+		// FIXME blocks itself.
+		combinedTemplate, err = combinedTemplate.Parse("{{define \"" + name + "\"}}" + content + "{{end}}")
+		if err != nil {
+			return nil, err
+		}
+	}
+	return combinedTemplate, nil
 }
 
 // Generates code by applying the named template in the passed template bundle

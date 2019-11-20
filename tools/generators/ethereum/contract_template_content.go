@@ -1,4 +1,7 @@
-// Code generated - DO NOT EDIT.
+package main
+
+// contractTemplateContent contains the template string from contract.go.tmpl
+var contractTemplateContent = `// Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
 
 package contract
@@ -16,7 +19,7 @@ import (
 
 	"github.com/ipfs/go-log"
 
-	"github.com/keep-network/keep-core/pkg/chain/ethereum/ethutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 	"github.com/keep-network/keep-core/pkg/chain/gen/abi"
 	"github.com/keep-network/keep-core/pkg/subscription"
 )
@@ -88,3 +91,4 @@ func New{{.Class}}(
 
 // ------ Events -------
 {{template "contract_events.go.tmpl" . -}}
+`

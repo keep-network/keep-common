@@ -70,7 +70,7 @@ func createDir(dirBasePath, newDirName string) error {
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.Mkdir(dirPath, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("error occured while creating a dir: [%v]", err)
+			return fmt.Errorf("error occurred while creating a dir: [%v]", err)
 		}
 	}
 
@@ -183,12 +183,12 @@ func move(directoryFromPath, directoryToPath string) error {
 		}
 		err = os.RemoveAll(directoryFromPath)
 		if err != nil {
-			return fmt.Errorf("error occured while removing archived dir: [%v]", err)
+			return fmt.Errorf("error occurred while removing archived dir: [%v]", err)
 		}
 	} else {
 		err := os.Rename(directoryFromPath, directoryToPath)
 		if err != nil {
-			return fmt.Errorf("error occured while moving a dir: [%v]", err)
+			return fmt.Errorf("error occurred while moving a dir: [%v]", err)
 		}
 	}
 

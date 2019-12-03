@@ -58,7 +58,7 @@ func (ds *diskPersistence) Archive(directory string) error {
 	from := fmt.Sprintf("%s/%s/%s", ds.dataDir, currentDir, directory)
 	to := fmt.Sprintf("%s/%s/%s", ds.dataDir, archiveDir, directory)
 
-	return move(from, to)
+	return moveAll(from, to)
 }
 
 func (ds *diskPersistence) getStorageCurrentDirPath() string {
@@ -170,7 +170,7 @@ func readAll(directoryPath string) (<-chan DataDescriptor, <-chan error) {
 	return dataChannel, errorChannel
 }
 
-func move(directoryFromPath, directoryToPath string) error {
+func moveAll(directoryFromPath, directoryToPath string) error {
 	if _, err := os.Stat(directoryToPath); !os.IsNotExist(err) {
 		files, _ := ioutil.ReadDir(directoryFromPath)
 		for _, file := range files {

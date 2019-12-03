@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"io/ioutil"
 )
 
 var (
@@ -143,4 +144,31 @@ func TestDiskPersistence_Archive(t *testing.T) {
 			t.Fatalf("Dir [%+v] was supposed to be created", pathMoveTo)
 		}
 	}
+}
+
+func TestDiskPersistence_AppendToArchive(t *testing.T) {
+	diskPersistence := NewDiskHandle(dataDir)
+
+	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
+	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, dirName1)
+
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	diskPersistence.Save(bytesToTest, dirName1, fileName11)
+	diskPersistence.Save(bytesToTest, dirName1, fileName12)
+	diskPersistence.Archive(dirName1)
+	
+	diskPersistence.Save(bytesToTest, dirName1, "/file13")
+	diskPersistence.Save(bytesToTest, dirName1, "/file14")
+	diskPersistence.Archive(dirName1)
+	
+	if _, err := os.Stat(pathMoveFrom); !os.IsNotExist(err) {
+		t.Fatalf("Dir [%+v] was supposed to be removed", pathMoveFrom)
+	}
+
+	files, _ := ioutil.ReadDir(pathMoveTo)
+	if len(files) != 4 {
+		t.Fatalf("Number of all files was supposed to be [%+v]", 4)
+	}
+
 }

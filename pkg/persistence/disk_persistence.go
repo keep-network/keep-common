@@ -58,7 +58,7 @@ func (ds *diskPersistence) Archive(directory string) error {
 	from := fmt.Sprintf("%s/%s/%s", ds.dataDir, currentDir, directory)
 	to := fmt.Sprintf("%s/%s/%s", ds.dataDir, archiveDir, directory)
 
-	return move(from, to)
+	return moveAll(from, to)
 }
 
 func (ds *diskPersistence) getStorageCurrentDirPath() string {
@@ -70,7 +70,7 @@ func createDir(dirBasePath, newDirName string) error {
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.Mkdir(dirPath, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("error occured while creating a dir: [%v]", err)
+			return fmt.Errorf("error occurred while creating a dir: [%v]", err)
 		}
 	}
 
@@ -170,10 +170,26 @@ func readAll(directoryPath string) (<-chan DataDescriptor, <-chan error) {
 	return dataChannel, errorChannel
 }
 
-func move(directoryFromPath, directoryToPath string) error {
-	err := os.Rename(directoryFromPath, directoryToPath)
-	if err != nil {
-		return fmt.Errorf("error occured while moving a dir: [%v]", err)
+func moveAll(directoryFromPath, directoryToPath string) error {
+	if _, err := os.Stat(directoryToPath); !os.IsNotExist(err) {
+		files, _ := ioutil.ReadDir(directoryFromPath)
+		for _, file := range files {
+			from := fmt.Sprintf("%s/%s", directoryFromPath, file.Name())
+			to := fmt.Sprintf("%s/%s", directoryToPath, file.Name())
+			err := os.Rename(from, to)
+			if err != nil {
+				return err
+			}
+		}
+		err = os.RemoveAll(directoryFromPath)
+		if err != nil {
+			return fmt.Errorf("error occurred while removing archived dir: [%v]", err)
+		}
+	} else {
+		err := os.Rename(directoryFromPath, directoryToPath)
+		if err != nil {
+			return fmt.Errorf("error occurred while moving a dir: [%v]", err)
+		}
 	}
 
 	return nil

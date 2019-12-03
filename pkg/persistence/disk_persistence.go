@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 )
@@ -177,7 +176,7 @@ func move(directoryFromPath, directoryToPath string) error {
 		for _, file := range files {
 			from := fmt.Sprintf("%s/%s", directoryFromPath, file.Name())
 			to := fmt.Sprintf("%s/%s", directoryToPath, file.Name())
-			err = copy(from, to)
+			err := os.Rename(from, to)
 			if err != nil {
 				return err
 			}
@@ -191,27 +190,6 @@ func move(directoryFromPath, directoryToPath string) error {
 		if err != nil {
 			return fmt.Errorf("error occured while moving a dir: [%v]", err)
 		}
-	}
-
-	return nil
-}
-
-func copy(from, to string) error {
-	source, err := os.Open(from)
-	if err != nil {
-		return fmt.Errorf("error occured while opening a file to copy: [%v]", err)
-	}
-	defer source.Close()
-
-	destination, err := os.Create(to)
-	if err != nil {
-		return fmt.Errorf("error occured while creating a file to copy: [%v]", err)
-	}
-	defer destination.Close()
-
-	_, err = io.Copy(destination, source)
-	if err != nil {
-		return fmt.Errorf("error occured while copying a file: [%v]", err)
 	}
 
 	return nil

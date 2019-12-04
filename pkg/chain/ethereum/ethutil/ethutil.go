@@ -161,7 +161,7 @@ func (lw *loggingWrapper) EstimateGas(ctx context.Context, msg ethereum.CallMsg)
 		return 0, err
 	}
 
-	lw.logger.Debugf("received gas price estimate: [%v]", gas)
+	lw.logger.Debugf("received gas estimate: [%v]", gas)
 	return gas, nil
 }
 

@@ -31,13 +31,11 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	transactorOptions := {{$contract.ShortVar}}.transactorOptions
 	{{- end }}
 
-	if len(transactionOptions) > 0 {
-		if len(transactionOptions) > 1 {
-			return nil, fmt.Errorf(
-				"could not process multiple transaction options sets",
-			)
-		}
-
+	if len(transactionOptions) > 1 {
+		return nil, fmt.Errorf(
+			"could not process multiple transaction options sets",
+		)
+	} else if len(transactionOptions) > 0 {
 		transactionOptions[0].Apply(transactorOptions)
 	}
 

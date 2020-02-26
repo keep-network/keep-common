@@ -49,9 +49,9 @@ func main() {
 
 	flag.Parse()
 
-	if flag.NArg() != 3 {
+	if flag.NArg() != 4 {
 		panic(fmt.Sprintf(
-			"Expected `%v [input.abi] [contract_output.go] [cmd_output.go]`, but got [%v].",
+			"Expected `%v [input.abi] [contract_output.go] [cmd_output.go] [packagePath]`, but got [%v].",
 			os.Args[0],
 			os.Args,
 		))
@@ -60,6 +60,7 @@ func main() {
 	abiPath := flag.Arg(0)
 	contractOutputPath := flag.Arg(1)
 	commandOutputPath := flag.Arg(2)
+	packagePath := flag.Arg(3)
 
 	abiFile, err := ioutil.ReadFile(abiPath)
 	if err != nil {
@@ -98,7 +99,7 @@ func main() {
 	// ABI file, minus the extension.
 	abiClassName := path.Base(abiPath)
 	abiClassName = abiClassName[0 : len(abiClassName)-4] // strip .abi
-	contractInfo := buildContractInfo(*configReader, abiClassName, &abi, payableInfo)
+	contractInfo := buildContractInfo(*configReader, abiClassName, packagePath, &abi, payableInfo)
 
 	contractBuf, err := generateCode(
 		contractOutputPath,

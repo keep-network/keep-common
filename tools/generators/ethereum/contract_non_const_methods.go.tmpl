@@ -22,7 +22,8 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	defer {{$contract.ShortVar}}.transactionMutex.Unlock()
 
 	// create a copy
-    transactorOptions := &(*{{$contract.ShortVar}}.transactorOptions)
+    transactorOptions := new(bind.TransactOpts)
+    *transactorOptions = *{{$contract.ShortVar}}.transactorOptions
 
     {{if $method.Payable -}}
     transactorOptions.Value = value

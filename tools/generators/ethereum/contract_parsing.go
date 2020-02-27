@@ -46,7 +46,6 @@ type contractInfo struct {
 	FullVar              string
 	ShortVar             string
 	DashedName           string
-	PackagePath          string
 	ConstMethods         []methodInfo
 	NonConstMethods      []methodInfo
 	Events               []eventInfo
@@ -90,7 +89,6 @@ type eventInfo struct {
 func buildContractInfo(
 	configReader string,
 	abiClassName string,
-	packagePath string,
 	abi *abi.ABI,
 	payableInfo []methodPayableInfo,
 ) contractInfo {
@@ -126,7 +124,6 @@ func buildContractInfo(
 		lowercaseFirst(string(goClassName)),
 		string(shortVar),
 		string(dashedName),
-		packagePath,
 		constMethods,
 		nonConstMethods,
 		events,

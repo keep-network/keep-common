@@ -24,20 +24,19 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{$contract.ShortVar}}.transactionMutex.Lock()
 	defer {{$contract.ShortVar}}.transactionMutex.Unlock()
 
-	{{if $method.Payable -}}
-	transactorOptions := &(*{{$contract.ShortVar}}.transactorOptions) // create a copy
-	transactorOptions.Value = value
-	{{- else -}}
-	transactorOptions := {{$contract.ShortVar}}.transactorOptions
-	{{- end }}
+	// create a copy
+    transactorOptions := new(bind.TransactOpts)
+    *transactorOptions = *{{$contract.ShortVar}}.transactorOptions
 
-	if len(transactionOptions) > 0 {
-		if len(transactionOptions) > 1 {
-			return nil, fmt.Errorf(
-				"could not process multiple transaction options sets",
-			)
-		}
+    {{if $method.Payable -}}
+    transactorOptions.Value = value
+    {{- end }}
 
+	if len(transactionOptions) > 1 {
+		return nil, fmt.Errorf(
+			"could not process multiple transaction options sets",
+		)
+	} else if len(transactionOptions) > 0 {
 		transactionOptions[0].Apply(transactorOptions)
 	}
 

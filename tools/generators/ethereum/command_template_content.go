@@ -16,8 +16,6 @@ import (
     "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
     "github.com/keep-network/keep-common/pkg/cmd"
 
-    "github.com/keep-network/keep-core/pkg/chain/gen/contract"
-
     "github.com/urfave/cli"
 )
 

@@ -115,6 +115,17 @@ func main() {
 		))
 	}
 
+	// Save the contract code to a file. We save the code before running command
+	// code generation as the command code imports bits of contract code and we
+	// need to resolve these imports on command code imports organization.
+	if err := saveBufferToFile(contractBuf, contractOutputPath); err != nil {
+		panic(fmt.Sprintf(
+			"Failed to save Go file at [%v]: [%v].",
+			contractOutputPath,
+			err,
+		))
+	}
+
 	commandBuf, err := generateCode(
 		commandOutputPath,
 		templates,
@@ -125,15 +136,6 @@ func main() {
 		panic(fmt.Sprintf(
 			"Failed to generate Go file at [%v]: [%v].",
 			commandOutputPath,
-			err,
-		))
-	}
-
-	// Save the contract code to a file.
-	if err := saveBufferToFile(contractBuf, contractOutputPath); err != nil {
-		panic(fmt.Sprintf(
-			"Failed to save Go file at [%v]: [%v].",
-			contractOutputPath,
 			err,
 		))
 	}

@@ -1,5 +1,11 @@
 package ethereum
 
+import (
+	"fmt"
+
+	"github.com/ethereum/go-ethereum/common"
+)
+
 // Account is a struct that contains the configuration for accessing an
 // Ethereum network and a contract on the network.
 type Account struct {
@@ -32,4 +38,27 @@ type Config struct {
 	ContractAddresses map[string]string
 
 	Account Account
+}
+
+// ContractAddress finds a given contract's address configuration and returns it
+// as ethereum Address.
+func (c Config) ContractAddress(contractName string) (*common.Address, error) {
+	addressString, exists := c.ContractAddresses[contractName]
+	if !exists {
+		return nil, fmt.Errorf(
+			"no address information for [%v] in configuration",
+			contractName,
+		)
+	}
+
+	if !common.IsHexAddress(addressString) {
+		return nil, fmt.Errorf(
+			"configured address [%v] for contract [%v] is not valid hex address",
+			addressString,
+			contractName,
+		)
+	}
+
+	address := common.HexToAddress(addressString)
+	return &address, nil
 }

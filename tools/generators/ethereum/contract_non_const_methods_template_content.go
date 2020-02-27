@@ -24,12 +24,13 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{$contract.ShortVar}}.transactionMutex.Lock()
 	defer {{$contract.ShortVar}}.transactionMutex.Unlock()
 
-	{{if $method.Payable -}}
-	transactorOptions := &(*{{$contract.ShortVar}}.transactorOptions) // create a copy
-	transactorOptions.Value = value
-	{{- else -}}
-	transactorOptions := {{$contract.ShortVar}}.transactorOptions
-	{{- end }}
+	// create a copy
+    transactorOptions := new(bind.TransactOpts)
+    *transactorOptions = *{{$contract.ShortVar}}.transactorOptions
+
+    {{if $method.Payable -}}
+    transactorOptions.Value = value
+    {{- end }}
 
 	if len(transactionOptions) > 1 {
 		return nil, fmt.Errorf(

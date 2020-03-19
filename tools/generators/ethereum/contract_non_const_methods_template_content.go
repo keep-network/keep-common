@@ -15,10 +15,14 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 ) (*types.Transaction, error) {
 	{{$logger}}.Debug(
 		"submitting transaction {{$method.LowerName}}\n",
-		{{$method.Params}}
-		{{- if $method.Payable -}}
+		{{if $method.Params -}}
+		fmt.Sprint(
+			{{$method.Params}}
+		),
+		{{end -}}
+		{{if $method.Payable -}}
 		"\nValue: ", value,
-		{{ end -}}
+		{{- end}}
 	)
 
 	{{$contract.ShortVar}}.transactionMutex.Lock()

@@ -14,14 +14,15 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	transactionOptions ...ethutil.TransactionOptions,
 ) (*types.Transaction, error) {
 	{{$logger}}.Debug(
-		"submitting transaction {{$method.LowerName}}\n",
+		"submitting transaction {{$method.LowerName}}",
 		{{if $method.Params -}}
+		"params: ",
 		fmt.Sprint(
 			{{$method.Params}}
 		),
 		{{end -}}
 		{{if $method.Payable -}}
-		"\nValue: ", value,
+		"value: ", value,
 		{{- end}}
 	)
 

@@ -14,11 +14,16 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	transactionOptions ...ethutil.TransactionOptions,
 ) (*types.Transaction, error) {
 	{{$logger}}.Debug(
-		"submitting transaction {{$method.LowerName}}\n",
-		{{$method.Params}}
-		{{- if $method.Payable -}}
-		"\nValue: ", value,
-		{{ end -}}
+		"submitting transaction {{$method.LowerName}}",
+		{{if $method.Params -}}
+		"params: ",
+		fmt.Sprint(
+			{{$method.Params}}
+		),
+		{{end -}}
+		{{if $method.Payable -}}
+		"value: ", value,
+		{{- end}}
 	)
 
 	{{$contract.ShortVar}}.transactionMutex.Lock()

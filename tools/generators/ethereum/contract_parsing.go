@@ -95,13 +95,13 @@ func buildContractInfo(
 	payableMethods := make(map[string]struct{})
 	for _, methodPayableInfo := range payableInfo {
 		if methodPayableInfo.Payable {
-			name := methodPayableInfo.Name
-			_, ok := payableMethods[name]
+			normalizedName := toCamelCase(methodPayableInfo.Name)
+			_, ok := payableMethods[normalizedName]
 			for idx := 0; ok; idx++ {
-				name = fmt.Sprintf("%s%d", methodPayableInfo.Name, idx)
-				_, ok = payableMethods[name]
+				normalizedName = fmt.Sprintf("%s%d", normalizedName, idx)
+				_, ok = payableMethods[normalizedName]
 			}
-			payableMethods[name] = struct{}{}
+			payableMethods[normalizedName] = struct{}{}
 		}
 	}
 
@@ -138,12 +138,13 @@ func buildMethodInfo(
 	constMethods = make([]methodInfo, 0, len(methodsByName))
 
 	for name, method := range methodsByName {
+		normalizedName := toCamelCase(name)
 		dashedName := strings.ToLower(string(shortVarRegexp.ReplaceAll(
-			[]byte(name),
+			[]byte(normalizedName),
 			[]byte("-$0"),
 		)))
 
-		_, payable := payableMethods[name]
+		_, payable := payableMethods[normalizedName]
 		commandCallable := true
 
 		modifiers := make([]string, 0, 0)
@@ -195,7 +196,7 @@ func buildMethodInfo(
 		returned := returnInfo{}
 		if len(method.Outputs) > 1 {
 			returned.Multi = true
-			returned.Type = strings.Replace(name, "get", "", 1)
+			returned.Type = strings.Replace(normalizedName, "get", "", 1)
 
 			for _, output := range method.Outputs {
 				goType := output.Type.Type.String()
@@ -216,8 +217,8 @@ func buildMethodInfo(
 		}
 
 		info := methodInfo{
-			uppercaseFirst(name),
-			lowercaseFirst(name),
+			uppercaseFirst(normalizedName),
+			lowercaseFirst(normalizedName),
 			dashedName,
 			modifierString,
 			payable,
@@ -279,4 +280,14 @@ func uppercaseFirst(str string) string {
 
 func lowercaseFirst(str string) string {
 	return strings.ToLower(str[0:1]) + str[1:]
+}
+
+func toCamelCase(input string) string {
+	parts := strings.Split(input, "_")
+	for i, s := range parts {
+		if len(s) > 0 {
+			parts[i] = strings.ToUpper(s[:1]) + s[1:]
+		}
+	}
+	return strings.Join(parts, "")
 }

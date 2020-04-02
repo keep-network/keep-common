@@ -104,7 +104,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) subscribe{{$event.CapsName}}(
 					subscriptionMutex.Unlock()
 					return
 				}
-				success(
+				go success(
                     {{$event.ParamExtractors}}
 				)
 				subscriptionMutex.Unlock()
@@ -126,4 +126,5 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) subscribe{{$event.CapsName}}(
 	return subscription.NewEventSubscription(unsubscribeCallback), nil
 }
 
-{{- end -}}`
+{{- end -}}
+`

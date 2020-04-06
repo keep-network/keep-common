@@ -29,13 +29,14 @@ import (
 var {{.ShortVar}}Logger = log.Logger("keep-contract-{{.Class}}")
 
 type {{.Class}} struct {
-	contract          *abi.{{.AbiClass}}
-	contractAddress   common.Address
-	contractABI       *ethereumabi.ABI
-	caller            bind.ContractCaller
-	callerOptions     *bind.CallOpts
-	transactorOptions *bind.TransactOpts
-	errorResolver     *ethutil.ErrorResolver
+	contract           *abi.{{.AbiClass}}
+	contractAddress    common.Address
+	contractABI        *ethereumabi.ABI
+	caller             bind.ContractCaller
+	transactor         bind.ContractTransactor
+	callerOptions      *bind.CallOpts
+	transactorOptions  *bind.TransactOpts
+	errorResolver      *ethutil.ErrorResolver
 
 	transactionMutex *sync.Mutex
 }
@@ -75,6 +76,7 @@ func New{{.Class}}(
 		contractAddress:   contractAddress,
 		contractABI: 	   &contractABI,
 		caller:     	   backend,
+		transactor:        backend,
 		callerOptions:     callerOptions,
 		transactorOptions: transactorOptions,
 		errorResolver:     ethutil.NewErrorResolver(backend, &contractABI, &contractAddress),

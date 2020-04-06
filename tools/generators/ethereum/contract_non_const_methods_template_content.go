@@ -111,5 +111,22 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Call{{$method.CapsName}}(
 	return {{$returnVar}}err
 }
 
+func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}GasEstimate(
+	{{$method.ParamDeclarations -}}
+) (uint64, error) {
+	var result uint64
+
+	result, err := ethutil.EstimateGas(
+		{{$contract.ShortVar}}.callerOptions.From,
+		{{$contract.ShortVar}}.contractAddress,
+		"{{$method.LowerName}}",
+		{{$contract.ShortVar}}.contractABI,
+		{{$contract.ShortVar}}.transactor,
+		{{$method.Params}}
+	)
+
+	return result, err
+}
+
 {{- end -}}
 `

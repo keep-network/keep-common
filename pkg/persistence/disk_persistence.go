@@ -20,23 +20,11 @@ func NewDiskHandle(path string) (Handle, error) {
 
 	err = createDir(path, currentDir)
 	if err != nil {
-		logger.Errorf(
-			"failed while creating directory [%v]: [%v]",
-			currentDir,
-			err,
-		)
-
 		return nil, err
 	}
 
 	err = createDir(path, archiveDir)
 	if err != nil {
-		logger.Errorf(
-			"failed while creating directory [%v]: [%v]",
-			archiveDir,
-			err,
-		)
-
 		return nil, err
 	}
 

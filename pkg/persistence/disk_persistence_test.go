@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,6 +26,9 @@ var (
 
 	pathToCurrent = fmt.Sprintf("%s/%s", dataDir, dirCurrent)
 	pathToArchive = fmt.Sprintf("%s/%s", dataDir, dirArchive)
+
+	errExpectedRead  = errors.New("cannot read from the storage directory: ")
+	errExpectedWrite = errors.New("cannot write to the storage directory: ")
 )
 
 func TestMain(m *testing.M) {
@@ -50,31 +54,21 @@ func TestDiskPersistence_Save(t *testing.T) {
 func TestDiskPersistence_StoragePermission(t *testing.T) {
 	tempDir := "./data_storage"
 
-	err := os.Mkdir(tempDir, 000) // d---------
+	err := os.Mkdir(tempDir, 0000) // d---------
 	if _, err := os.Stat(tempDir); os.IsNotExist(err) {
 		t.Fatalf("dir [%+v] was supposed to be created", tempDir)
 	}
 	defer os.RemoveAll(tempDir)
 
 	_, err = NewDiskHandle(tempDir)
-	if err == nil {
-		t.Fatalf("error was supposed to be returned")
-	}
-	
-	expectedReadErr := "cannot read from the storage directory"
-	if !strings.Contains(err.Error(), expectedReadErr) {
+	if !strings.Contains(err.Error(), errExpectedRead.Error()) {
 		t.Fatalf("error on read was supposed to be returned")
 	}
-	
+
 	os.Chmod(tempDir, 0444) // dr--r--r
-	
+
 	_, err = NewDiskHandle(tempDir)
-	if err == nil {
-		t.Fatalf("error was supposed to be returned")
-	}
-	
-	expectedWriteErr := "cannot write to the storage directory"
-	if !strings.Contains(err.Error(), expectedWriteErr) {
+	if !strings.Contains(err.Error(), errExpectedWrite.Error()) {
 		t.Fatalf("error on write was supposed to be returned")
 	}
 }

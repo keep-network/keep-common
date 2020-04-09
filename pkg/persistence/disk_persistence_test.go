@@ -61,14 +61,14 @@ func TestDiskPersistence_StoragePermission(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	_, err = NewDiskHandle(tempDir)
-	if !strings.Contains(err.Error(), errExpectedRead.Error()) {
+	if err == nil || !strings.Contains(err.Error(), errExpectedRead.Error()) {
 		t.Fatalf("error on read was supposed to be returned")
 	}
 
 	os.Chmod(tempDir, 0444) // dr--r--r
 
 	_, err = NewDiskHandle(tempDir)
-	if !strings.Contains(err.Error(), errExpectedWrite.Error()) {
+	if err == nil || !strings.Contains(err.Error(), errExpectedWrite.Error()) {
 		t.Fatalf("error on write was supposed to be returned")
 	}
 }

@@ -80,12 +80,12 @@ func checkStoragePermission(dirBasePath string) error {
 		return fmt.Errorf("cannot read from the storage directory: [%v]", err)
 	}
 
-	tempDir, err := ioutil.TempDir(dirBasePath, "temp")
+	tempFile, err := ioutil.TempFile(dirBasePath, "write-test.*.tmp")
 	if err != nil {
 		return fmt.Errorf("cannot write to the storage directory: [%v]", err)
 	}
 
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempFile.Name())
 
 	return nil
 }

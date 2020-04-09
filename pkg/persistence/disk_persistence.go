@@ -12,28 +12,25 @@ const (
 )
 
 // NewDiskHandle creates on-disk data persistence handle
-func NewDiskHandle(path string) Handle {
-	err := createDir(path, currentDir)
+func NewDiskHandle(path string) (Handle, error) {
+	err := checkStoragePermission(path)
 	if err != nil {
-		logger.Errorf(
-			"failed while creating directory [%v]: [%v]",
-			currentDir,
-			err,
-		)
+		return nil, err
+	}
+
+	err = createDir(path, currentDir)
+	if err != nil {
+		return nil, err
 	}
 
 	err = createDir(path, archiveDir)
 	if err != nil {
-		logger.Errorf(
-			"failed while creating directory [%v]: [%v]",
-			archiveDir,
-			err,
-		)
+		return nil, err
 	}
 
 	return &diskPersistence{
 		dataDir: path,
-	}
+	}, nil
 }
 
 type diskPersistence struct {
@@ -63,6 +60,22 @@ func (ds *diskPersistence) Archive(directory string) error {
 
 func (ds *diskPersistence) getStorageCurrentDirPath() string {
 	return fmt.Sprintf("%s/%s", ds.dataDir, currentDir)
+}
+
+func checkStoragePermission(dirBasePath string) error {
+	_, err := ioutil.ReadDir(dirBasePath)
+	if err != nil {
+		return fmt.Errorf("cannot read from the storage directory: [%v]", err)
+	}
+
+	tempFile, err := ioutil.TempFile(dirBasePath, "write-test.*.tmp")
+	if err != nil {
+		return fmt.Errorf("cannot write to the storage directory: [%v]", err)
+	}
+
+	defer os.RemoveAll(tempFile.Name())
+
+	return nil
 }
 
 func createDir(dirBasePath, newDirName string) error {

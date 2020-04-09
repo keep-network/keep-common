@@ -2,11 +2,13 @@ package persistence
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 	"testing"
-	"io/ioutil"
 )
 
 var (
@@ -24,6 +26,9 @@ var (
 
 	pathToCurrent = fmt.Sprintf("%s/%s", dataDir, dirCurrent)
 	pathToArchive = fmt.Sprintf("%s/%s", dataDir, dirArchive)
+
+	errExpectedRead  = errors.New("cannot read from the storage directory: ")
+	errExpectedWrite = errors.New("cannot write to the storage directory: ")
 )
 
 func TestMain(m *testing.M) {
@@ -34,7 +39,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestDiskPersistence_Save(t *testing.T) {
-	diskPersistence := NewDiskHandle(dataDir)
+	diskPersistence, _ := NewDiskHandle(dataDir)
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
 	diskPersistence.Save(bytesToTest, dirName1, fileName11)
@@ -46,8 +51,30 @@ func TestDiskPersistence_Save(t *testing.T) {
 	}
 }
 
+func TestDiskPersistence_StoragePermission(t *testing.T) {
+	tempDir := "./data_storage"
+
+	err := os.Mkdir(tempDir, 0000) // d---------
+	if _, err := os.Stat(tempDir); os.IsNotExist(err) {
+		t.Fatalf("dir [%+v] was supposed to be created", tempDir)
+	}
+	defer os.RemoveAll(tempDir)
+
+	_, err = NewDiskHandle(tempDir)
+	if err == nil || !strings.Contains(err.Error(), errExpectedRead.Error()) {
+		t.Fatalf("error on read was supposed to be returned")
+	}
+
+	os.Chmod(tempDir, 0444) // dr--r--r
+
+	_, err = NewDiskHandle(tempDir)
+	if err == nil || !strings.Contains(err.Error(), errExpectedWrite.Error()) {
+		t.Fatalf("error on write was supposed to be returned")
+	}
+}
+
 func TestDiskPersistence_ReadAll(t *testing.T) {
-	diskPersistence := NewDiskHandle(dataDir)
+	diskPersistence, _ := NewDiskHandle(dataDir)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 	expectedBytes := [][]byte{bytesToTest, bytesToTest, bytesToTest}
@@ -110,7 +137,7 @@ func TestDiskPersistence_ReadAll(t *testing.T) {
 }
 
 func TestDiskPersistence_Archive(t *testing.T) {
-	diskPersistence := NewDiskHandle(dataDir)
+	diskPersistence, _ := NewDiskHandle(dataDir)
 
 	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
 	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, dirName1)
@@ -147,7 +174,7 @@ func TestDiskPersistence_Archive(t *testing.T) {
 }
 
 func TestDiskPersistence_AppendToArchive(t *testing.T) {
-	diskPersistence := NewDiskHandle(dataDir)
+	diskPersistence, _ := NewDiskHandle(dataDir)
 
 	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
 	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, dirName1)
@@ -157,11 +184,11 @@ func TestDiskPersistence_AppendToArchive(t *testing.T) {
 	diskPersistence.Save(bytesToTest, dirName1, fileName11)
 	diskPersistence.Save(bytesToTest, dirName1, fileName12)
 	diskPersistence.Archive(dirName1)
-	
+
 	diskPersistence.Save(bytesToTest, dirName1, "/file13")
 	diskPersistence.Save(bytesToTest, dirName1, "/file14")
 	diskPersistence.Archive(dirName1)
-	
+
 	if _, err := os.Stat(pathMoveFrom); !os.IsNotExist(err) {
 		t.Fatalf("Dir [%+v] was supposed to be removed", pathMoveFrom)
 	}

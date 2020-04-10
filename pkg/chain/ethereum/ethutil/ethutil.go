@@ -136,6 +136,37 @@ func CallAtBlock(
 	return nil
 }
 
+// EstimateGas tries to estimate the gas needed to execute a specific transaction based on
+// the current pending state of the backend blockchain. There is no guarantee that this is
+// the true gas limit requirement as other transactions may be added or removed by miners,
+// but it should provide a basis for setting a reasonable default.
+func EstimateGas(
+	from common.Address, 
+	to common.Address,
+	method string,
+	contractABI *abi.ABI,
+	transactor bind.ContractTransactor,
+	parameters ...interface{},
+) (uint64, error) {
+	input, err := contractABI.Pack(method, parameters...)
+	if err != nil {
+		return 0, err
+	}
+
+	msg := ethereum.CallMsg{
+		From: from,
+		To:   &to,
+		Data: input,
+	}
+
+	gas, err := transactor.EstimateGas(context.TODO(), msg)
+	if err != nil {
+		return 0, err
+	}
+
+	return gas, nil
+}
+
 type loggingWrapper struct {
 	bind.ContractBackend
 

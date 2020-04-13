@@ -95,7 +95,7 @@ func buildContractInfo(
 	payableMethods := make(map[string]struct{})
 	for _, methodPayableInfo := range payableInfo {
 		if methodPayableInfo.Payable {
-			normalizedName := toCamelCase(methodPayableInfo.Name)
+			normalizedName := camelCase(methodPayableInfo.Name)
 			_, ok := payableMethods[normalizedName]
 			for idx := 0; ok; idx++ {
 				normalizedName = fmt.Sprintf("%s%d", normalizedName, idx)
@@ -138,7 +138,7 @@ func buildMethodInfo(
 	constMethods = make([]methodInfo, 0, len(methodsByName))
 
 	for name, method := range methodsByName {
-		normalizedName := toCamelCase(name)
+		normalizedName := camelCase(name)
 		dashedName := strings.ToLower(string(shortVarRegexp.ReplaceAll(
 			[]byte(normalizedName),
 			[]byte("-$0"),
@@ -275,19 +275,25 @@ func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
 }
 
 func uppercaseFirst(str string) string {
+	if len(str) == 0 {
+		return str
+	}
 	return strings.ToUpper(str[0:1]) + str[1:]
 }
 
 func lowercaseFirst(str string) string {
+	if len(str) == 0 {
+		return str
+	}
 	return strings.ToLower(str[0:1]) + str[1:]
 }
 
-func toCamelCase(input string) string {
+func camelCase(input string) string {
 	parts := strings.Split(input, "_")
 	for i, s := range parts {
 		if len(s) > 0 {
 			parts[i] = strings.ToUpper(s[:1]) + s[1:]
 		}
 	}
-	return strings.Join(parts, "")
+	return lowercaseFirst(strings.Join(parts, ""))
 }

@@ -67,3 +67,44 @@ func TestUppercaseFirst(t *testing.T) {
 		})
 	}
 }
+
+func TestCamelCase(t *testing.T) {
+	var tests = map[string]struct {
+		input    string
+		expected string
+	}{
+		"empty string": {
+			input:    "",
+			expected: "",
+		},
+		"no underscores": {
+			input:    "HelloWorld",
+			expected: "helloWorld",
+		},
+		"with underscores": {
+			input:    "hello_world",
+			expected: "helloWorld",
+		},
+		"one underscore first": {
+			input:    "_beacon_callback",
+			expected: "beaconCallback",
+		},
+		"multiple underscores first": {
+			input:    "__beacon_callback",
+			expected: "beaconCallback",
+		},
+	}
+
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			actual := camelCase(test.input)
+			if actual != test.expected {
+				t.Errorf(
+					"unexpected output\nexpected: [%v]\nactual:   [%v]",
+					test.expected,
+					actual,
+				)
+			}
+		})
+	}
+}

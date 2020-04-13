@@ -275,10 +275,18 @@ func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
 }
 
 func uppercaseFirst(str string) string {
+	if len(str) == 0 {
+		return str
+	}
+
 	return strings.ToUpper(str[0:1]) + str[1:]
 }
 
 func lowercaseFirst(str string) string {
+	if len(str) == 0 {
+		return str
+	}
+
 	return strings.ToLower(str[0:1]) + str[1:]
 }
 

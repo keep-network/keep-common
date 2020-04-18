@@ -1,9 +1,9 @@
 // Package persistence adds a layer which handles data storage. This package
-// separates the data from the business layer and is responsible for saving and 
+// separates the data from the business layer and is responsible for saving and
 // retrieving it.
 package persistence
 
-import "github.com/ipfs/go-log"
+import "github.com/ipfs/go-log/v2"
 
 var logger = log.Logger("keep-persistence")
 

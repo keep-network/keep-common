@@ -51,7 +51,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
     	for {
     		select {
     		case <-errorChan:
-    		    {{$logger}}.Warning(
+    		    {{$logger}}.Warn(
                     "subscription to event {{$event.CapsName}} terminated with error; " +
                         "resubscription attempt will be performed after the retry delay",
                 )

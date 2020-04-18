@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"math/big"
 
-	"github.com/ipfs/go-log"
+	"github.com/ipfs/go-log/v2"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -141,7 +141,7 @@ func CallAtBlock(
 // the true gas limit requirement as other transactions may be added or removed by miners,
 // but it should provide a basis for setting a reasonable default.
 func EstimateGas(
-	from common.Address, 
+	from common.Address,
 	to common.Address,
 	method string,
 	contractABI *abi.ABI,

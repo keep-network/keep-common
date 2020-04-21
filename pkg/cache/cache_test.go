@@ -47,6 +47,23 @@ func TestExpiration(t *testing.T) {
 	}
 
 	if cache.Has(strconv.Itoa(0)) {
-		t.Fatal("should have dropped '0' key from the cache already")
+		t.Fatal("should have dropped '0' key from the cache")
+	}
+}
+
+func TestSweep(t *testing.T) {
+	cache := NewTimeCache(500 * time.Millisecond)
+	cache.Add("old")
+	time.Sleep(100 * time.Millisecond)
+	cache.Add("new")
+	time.Sleep(400 * time.Millisecond)
+
+	cache.Sweep()
+
+	if cache.Has("old") {
+		t.Fatal("should have dropped 'old' key from the cache")
+	}
+	if !cache.Has("new") {
+		t.Fatal("should still have 'new' in the cache")
 	}
 }

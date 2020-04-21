@@ -49,7 +49,33 @@ func (tc *TimeCache) Add(item string) bool {
 		return false
 	}
 
-	// sweep old entries (those for which caching timespan has passed)
+	tc.sweep()
+
+	tc.cache[item] = time.Now()
+	tc.indexer.PushFront(item)
+	return true
+}
+
+// Has checks presence of an entry in the cache. Returns `true` if entry is
+// present and `false` otherwise.
+func (tc *TimeCache) Has(item string) bool {
+	tc.mutex.RLock()
+	defer tc.mutex.RUnlock()
+
+	_, ok := tc.cache[item]
+	return ok
+}
+
+// Sweep removes old entries. That is those for which caching timespan has
+// passed.
+func (tc *TimeCache) Sweep() {
+	tc.mutex.Lock()
+	defer tc.mutex.Unlock()
+
+	tc.sweep()
+}
+
+func (tc *TimeCache) sweep() {
 	for {
 		back := tc.indexer.Back()
 		if back == nil {
@@ -73,18 +99,4 @@ func (tc *TimeCache) Add(item string) bool {
 			break
 		}
 	}
-
-	tc.cache[item] = time.Now()
-	tc.indexer.PushFront(item)
-	return true
-}
-
-// Has checks presence of an entry in the cache. Returns `true` if entry is
-// present and `false` otherwise.
-func (tc *TimeCache) Has(item string) bool {
-	tc.mutex.RLock()
-	defer tc.mutex.RUnlock()
-
-	_, ok := tc.cache[item]
-	return ok
 }

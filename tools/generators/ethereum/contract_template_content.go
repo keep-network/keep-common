@@ -48,8 +48,9 @@ func New{{.Class}}(
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{
-		From: contractAddress,
+		From: accountKey.Address,
 	}
+
 	transactorOptions := bind.NewKeyedTransactor(
 		accountKey.PrivateKey,
 	)

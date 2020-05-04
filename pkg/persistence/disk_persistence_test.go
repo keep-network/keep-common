@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -18,37 +17,97 @@ var (
 	dirArchive = "archive"
 
 	dirName1   = "0x424242"
-	fileName11 = "/file11"
-	fileName12 = "/file12"
+	fileName11 = "file11"
+	fileName12 = "file12"
 
 	dirName2   = "0x777777"
-	fileName21 = "/file21"
+	fileName21 = "file21"
 
 	pathToCurrent = fmt.Sprintf("%s/%s", dataDir, dirCurrent)
 	pathToArchive = fmt.Sprintf("%s/%s", dataDir, dirArchive)
 
-	errExpectedRead  = errors.New("cannot read from the storage directory: ")
-	errExpectedWrite = errors.New("cannot write to the storage directory: ")
+	errExpectedRead  = fmt.Errorf("cannot read from the storage directory: ")
+	errExpectedWrite = fmt.Errorf("cannot write to the storage directory: ")
+
+	// 128 characters
+	maxAllowedName = "0cc2abf49e067b3bede8426d9369c6952655d33629f44610536445c00c974c7e2740dfac967dbfceeeec0af88cd48a5d8c1c167df93cad1b8301a4a204c9f235"
+	// 129 charactes
+	notAllowedName = "0cc2abf49e067b3bede8426d9369c6952655d33629f44610536445c00c974c7e2740dfac967dbfceeeec0af88cd48a5d8c1c167df93cad1b8301a4a204c9f235a"
+
+	errDirectoryNameLength = fmt.Errorf("the maximum directory name length of [128] exceeded for [%v]", notAllowedName)
+	errFileNameLength      = fmt.Errorf("the maximum file name length of [128] exceeded for [%v]", notAllowedName)
 )
 
-func TestMain(m *testing.M) {
-	code := m.Run()
+func cleanup() {
 	os.RemoveAll(pathToCurrent)
 	os.RemoveAll(pathToArchive)
-	os.Exit(code)
 }
 
 func TestDiskPersistence_Save(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
-	diskPersistence.Save(bytesToTest, dirName1, fileName11)
+	err := diskPersistence.Save(bytesToTest, dirName1, fileName11)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	pathToFile := fmt.Sprintf("%s/%s%s", pathToCurrent, dirName1, fileName11)
+	pathToFile := fmt.Sprintf("%s/%s/%s", pathToCurrent, dirName1, fileName11)
 
 	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
 		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
 	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_SaveMaxAllowed(t *testing.T) {
+	diskPersistence, _ := NewDiskHandle(dataDir)
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	err := diskPersistence.Save(bytesToTest, maxAllowedName, maxAllowedName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pathToFile := fmt.Sprintf("%s/%s/%s", pathToCurrent, maxAllowedName, maxAllowedName)
+
+	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
+		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
+	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_RefuseSave(t *testing.T) {
+	diskPersistence, _ := NewDiskHandle(dataDir)
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	err := diskPersistence.Save(bytesToTest, notAllowedName, fileName11)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if errDirectoryNameLength.Error() != err.Error() {
+		t.Fatalf(
+			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+			errDirectoryNameLength.Error(),
+			err.Error(),
+		)
+	}
+
+	err = diskPersistence.Save(bytesToTest, dirName1, notAllowedName)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if errFileNameLength.Error() != err.Error() {
+		t.Fatalf(
+			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+			errFileNameLength.Error(),
+			err.Error(),
+		)
+	}
+
+	cleanup()
 }
 
 func TestDiskPersistence_StoragePermission(t *testing.T) {
@@ -71,6 +130,8 @@ func TestDiskPersistence_StoragePermission(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), errExpectedWrite.Error()) {
 		t.Fatalf("error on write was supposed to be returned")
 	}
+
+	cleanup()
 }
 
 func TestDiskPersistence_ReadAll(t *testing.T) {
@@ -134,6 +195,8 @@ func TestDiskPersistence_ReadAll(t *testing.T) {
 			)
 		}
 	}
+
+	cleanup()
 }
 
 func TestDiskPersistence_Archive(t *testing.T) {
@@ -171,6 +234,68 @@ func TestDiskPersistence_Archive(t *testing.T) {
 			t.Fatalf("Dir [%+v] was supposed to be created", pathMoveTo)
 		}
 	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_ArchiveMaxAllowed(t *testing.T) {
+	diskPersistence, _ := NewDiskHandle(dataDir)
+
+	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, maxAllowedName)
+	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, maxAllowedName)
+
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	diskPersistence.Save(bytesToTest, maxAllowedName, maxAllowedName)
+
+	if _, err := os.Stat(pathMoveFrom); os.IsNotExist(err) {
+		if err != nil {
+			t.Fatalf("Dir [%+v] was supposed to be created", pathMoveFrom)
+		}
+	}
+
+	if _, err := os.Stat(pathMoveTo); !os.IsNotExist(err) {
+		if err != nil {
+			t.Fatalf("Dir [%+v] was supposed to be empty", pathMoveTo)
+		}
+	}
+
+	err := diskPersistence.Archive(maxAllowedName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(pathMoveFrom); !os.IsNotExist(err) {
+		if err != nil {
+			t.Fatalf("Dir [%+v] was supposed to be moved", pathMoveFrom)
+		}
+	}
+
+	if _, err := os.Stat(pathMoveTo); os.IsNotExist(err) {
+		if err != nil {
+			t.Fatalf("Dir [%+v] was supposed to be created", pathMoveTo)
+		}
+	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_RefuseArchive(t *testing.T) {
+	diskPersistence, _ := NewDiskHandle(dataDir)
+
+	err := diskPersistence.Archive(notAllowedName)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if errDirectoryNameLength.Error() != err.Error() {
+		t.Fatalf(
+			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+			errDirectoryNameLength.Error(),
+			err.Error(),
+		)
+	}
+
+	cleanup()
 }
 
 func TestDiskPersistence_AppendToArchive(t *testing.T) {
@@ -198,4 +323,5 @@ func TestDiskPersistence_AppendToArchive(t *testing.T) {
 		t.Fatalf("Number of all files was supposed to be [%+v]", 4)
 	}
 
+	cleanup()
 }

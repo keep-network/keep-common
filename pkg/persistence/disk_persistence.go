@@ -9,6 +9,8 @@ import (
 const (
 	currentDir = "current"
 	archiveDir = "archive"
+
+	maxFileNameLength = 128
 )
 
 // NewDiskHandle creates on-disk data persistence handle
@@ -38,13 +40,29 @@ type diskPersistence struct {
 }
 
 func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
+	if len(dirName) > maxFileNameLength {
+		return fmt.Errorf(
+			"the maximum directory name length of [%v] exceeded for [%v]",
+			maxFileNameLength,
+			dirName,
+		)
+	}
+
+	if len(fileName) > maxFileNameLength {
+		return fmt.Errorf(
+			"the maximum file name length of [%v] exceeded for [%v]",
+			maxFileNameLength,
+			fileName,
+		)
+	}
+
 	dirPath := ds.getStorageCurrentDirPath()
 	err := createDir(dirPath, dirName)
 	if err != nil {
 		return err
 	}
 
-	return write(fmt.Sprintf("%s/%s%s", dirPath, dirName, fileName), data)
+	return write(fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName), data)
 }
 
 func (ds *diskPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
@@ -52,6 +70,14 @@ func (ds *diskPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
 }
 
 func (ds *diskPersistence) Archive(directory string) error {
+	if len(directory) > maxFileNameLength {
+		return fmt.Errorf(
+			"the maximum directory name length of [%v] exceeded for [%v]",
+			maxFileNameLength,
+			directory,
+		)
+	}
+
 	from := fmt.Sprintf("%s/%s/%s", ds.dataDir, currentDir, directory)
 	to := fmt.Sprintf("%s/%s/%s", ds.dataDir, archiveDir, directory)
 

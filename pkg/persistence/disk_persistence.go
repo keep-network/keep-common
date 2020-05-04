@@ -210,25 +210,40 @@ func readAll(directoryPath string) (<-chan DataDescriptor, <-chan error) {
 }
 
 func moveAll(directoryFromPath, directoryToPath string) error {
-	if _, err := os.Stat(directoryToPath); !os.IsNotExist(err) {
-		files, _ := ioutil.ReadDir(directoryFromPath)
-		for _, file := range files {
-			from := fmt.Sprintf("%s/%s", directoryFromPath, file.Name())
-			to := fmt.Sprintf("%s/%s", directoryToPath, file.Name())
-			err := os.Rename(from, to)
-			if err != nil {
-				return err
-			}
-		}
-		err = os.RemoveAll(directoryFromPath)
-		if err != nil {
-			return fmt.Errorf("error occurred while removing archived dir: [%v]", err)
-		}
-	} else {
+	_, err := os.Stat(directoryToPath)
+
+	// target directory does not exist, we can move everything
+	if os.IsNotExist(err) {
 		err := os.Rename(directoryFromPath, directoryToPath)
 		if err != nil {
 			return fmt.Errorf("error occurred while moving a dir: [%v]", err)
 		}
+
+		return nil
+	}
+
+	// unexpected error occurred while checking target directory existence,
+	// returning
+	if err != nil {
+		return fmt.Errorf("could not stat target directory: [%v]", err)
+	}
+
+	// target directory does exit, we need to append files
+	files, err := ioutil.ReadDir(directoryFromPath)
+	if err != nil {
+		return fmt.Errorf("could not read directory [%v]: [%v]", directoryFromPath, err)
+	}
+	for _, file := range files {
+		from := fmt.Sprintf("%s/%s", directoryFromPath, file.Name())
+		to := fmt.Sprintf("%s/%s", directoryToPath, file.Name())
+		err := os.Rename(from, to)
+		if err != nil {
+			return err
+		}
+	}
+	err = os.RemoveAll(directoryFromPath)
+	if err != nil {
+		return fmt.Errorf("error occurred while removing archived dir: [%v]", err)
 	}
 
 	return nil

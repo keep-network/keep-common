@@ -9,6 +9,8 @@ import (
 const (
 	currentDir = "current"
 	archiveDir = "archive"
+
+	maxFileNameLength = 128
 )
 
 // NewDiskHandle creates on-disk data persistence handle
@@ -38,13 +40,29 @@ type diskPersistence struct {
 }
 
 func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
+	if len(dirName) > maxFileNameLength {
+		return fmt.Errorf(
+			"the maximum directory name length of [%v] exceeded for [%v]",
+			maxFileNameLength,
+			dirName,
+		)
+	}
+
+	if len(fileName) > maxFileNameLength {
+		return fmt.Errorf(
+			"the maximum file name length of [%v] exceeded for [%v]",
+			maxFileNameLength,
+			fileName,
+		)
+	}
+
 	dirPath := ds.getStorageCurrentDirPath()
 	err := createDir(dirPath, dirName)
 	if err != nil {
 		return err
 	}
 
-	return write(fmt.Sprintf("%s/%s%s", dirPath, dirName, fileName), data)
+	return write(fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName), data)
 }
 
 func (ds *diskPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
@@ -52,6 +70,14 @@ func (ds *diskPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
 }
 
 func (ds *diskPersistence) Archive(directory string) error {
+	if len(directory) > maxFileNameLength {
+		return fmt.Errorf(
+			"the maximum directory name length of [%v] exceeded for [%v]",
+			maxFileNameLength,
+			directory,
+		)
+	}
+
 	from := fmt.Sprintf("%s/%s/%s", ds.dataDir, currentDir, directory)
 	to := fmt.Sprintf("%s/%s/%s", ds.dataDir, archiveDir, directory)
 
@@ -184,25 +210,40 @@ func readAll(directoryPath string) (<-chan DataDescriptor, <-chan error) {
 }
 
 func moveAll(directoryFromPath, directoryToPath string) error {
-	if _, err := os.Stat(directoryToPath); !os.IsNotExist(err) {
-		files, _ := ioutil.ReadDir(directoryFromPath)
-		for _, file := range files {
-			from := fmt.Sprintf("%s/%s", directoryFromPath, file.Name())
-			to := fmt.Sprintf("%s/%s", directoryToPath, file.Name())
-			err := os.Rename(from, to)
-			if err != nil {
-				return err
-			}
-		}
-		err = os.RemoveAll(directoryFromPath)
-		if err != nil {
-			return fmt.Errorf("error occurred while removing archived dir: [%v]", err)
-		}
-	} else {
+	_, err := os.Stat(directoryToPath)
+
+	// target directory does not exist, we can move everything
+	if os.IsNotExist(err) {
 		err := os.Rename(directoryFromPath, directoryToPath)
 		if err != nil {
 			return fmt.Errorf("error occurred while moving a dir: [%v]", err)
 		}
+
+		return nil
+	}
+
+	// unexpected error occurred while checking target directory existence,
+	// returning
+	if err != nil {
+		return fmt.Errorf("could not stat target directory: [%v]", err)
+	}
+
+	// target directory does exit, we need to append files
+	files, err := ioutil.ReadDir(directoryFromPath)
+	if err != nil {
+		return fmt.Errorf("could not read directory [%v]: [%v]", directoryFromPath, err)
+	}
+	for _, file := range files {
+		from := fmt.Sprintf("%s/%s", directoryFromPath, file.Name())
+		to := fmt.Sprintf("%s/%s", directoryToPath, file.Name())
+		err := os.Rename(from, to)
+		if err != nil {
+			return err
+		}
+	}
+	err = os.RemoveAll(directoryFromPath)
+	if err != nil {
+		return fmt.Errorf("error occurred while removing archived dir: [%v]", err)
 	}
 
 	return nil

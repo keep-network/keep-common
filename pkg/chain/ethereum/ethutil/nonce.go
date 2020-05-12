@@ -8,9 +8,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// The time for which the nonce value cached locally is valid. The local copy
-// is invalidated after the certain duration to let the nonce recover in case
-// the mempool crashed before propagating the last transaction sent.
+// The inactivity time after which the local nonce is refreshed with the value
+// from the chain. The local value is invalidated after the certain duration to
+// let the nonce recover in case the mempool crashed before propagating the last
+// transaction sent.
 const localNonceTrustDuration = 5 * time.Second
 
 // NonceManager tracks the nonce for the account and allows to update it after
@@ -89,6 +90,14 @@ func (nm *NonceManager) CurrentNonce() (uint64, error) {
 		}
 	}
 
+	// After localNonceTrustDuration of inactivity (no CurrentNonce() calls),
+	// the local copy is considered as no longer up-to-date and it's always
+	// reset to the pending nonce value as seen by the chain.
+	//
+	// We do it to recover from potential mempool crashes.
+	//
+	// Keep in mind, the local copy is considered valid as long as transactions
+	// are submitted one after another.
 	nm.expirationDate = now.Add(localNonceTrustDuration)
 
 	if pendingNonce > nm.localNonce {

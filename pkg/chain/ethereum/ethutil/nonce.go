@@ -15,7 +15,7 @@ import (
 const localNonceTrustDuration = 5 * time.Second
 
 // NonceManager tracks the nonce for the account and allows to update it after
-// each successfully submitted transaction. Tracking the nonce locall is
+// each successfully submitted transaction. Tracking the nonce locally is
 // required when transactions are submitted from multiple goroutines or when
 // multiple Ethereum clients are deployed behind a load balancer, there are no
 // sticky sessions and mempool synchronization between them takes some time.

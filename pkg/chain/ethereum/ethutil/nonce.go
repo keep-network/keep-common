@@ -2,10 +2,16 @@ package ethutil
 
 import (
 	"context"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 )
+
+// The time for which the nonce value cached locally is valid. The local copy
+// is invalidated after the certain duration to let the nonce recover in case
+// the mempool crashed before propagating the last transaction sent.
+const localNonceTrustDuration = 5 * time.Second
 
 // NonceManager tracks the nonce for the account and allows to update it after
 // each successfully submitted transaction. Tracking the nonce locall is
@@ -23,9 +29,10 @@ import (
 // 4. Call IncrementNonce(),
 // 5. Release transaction lock.
 type NonceManager struct {
-	account    common.Address
-	transactor bind.ContractTransactor
-	localNonce uint64
+	account        common.Address
+	transactor     bind.ContractTransactor
+	localNonce     uint64
+	expirationDate time.Time
 }
 
 // NewNonceManager creates NonceManager instance for the provided account using
@@ -45,7 +52,9 @@ func NewNonceManager(
 
 // CurrentNonce returns the nonce value that should be used for the next
 // transaction. The nonce is evaluated as the higher value from the local
-// nonce and pending nonce fetched from the Ethereum client.
+// nonce and pending nonce fetched from the Ethereum client. The local nonce
+// is cached for the specific duration. If the local nonce expired, the pending
+// nonce returned from the chain is used.
 //
 // CurrentNonce is NOT safe for concurrent use. It is up to the code using this
 // function to provide the required synchronization, optionally including
@@ -59,17 +68,32 @@ func (nm *NonceManager) CurrentNonce() (uint64, error) {
 		return 0, err
 	}
 
+	now := time.Now()
+
 	if pendingNonce < nm.localNonce {
-		logger.Infof(
-			"local nonce [%v] is higher than pending [%v]; using the local one",
-			nm.localNonce,
-			pendingNonce,
-		)
+		if now.Before(nm.expirationDate) {
+			logger.Infof(
+				"local nonce [%v] is higher than pending [%v]; using the local one",
+				nm.localNonce,
+				pendingNonce,
+			)
+		} else {
+			logger.Infof(
+				"local nonce [%v] is higher than pending [%v] but local "+
+					"nonce expired; updating local nonce",
+				nm.localNonce,
+				pendingNonce,
+			)
+
+			nm.localNonce = pendingNonce
+		}
 	}
+
+	nm.expirationDate = now.Add(localNonceTrustDuration)
 
 	if pendingNonce > nm.localNonce {
 		logger.Infof(
-			"local nonce [%v] is lower than pending [%v]; updating",
+			"local nonce [%v] is lower than pending [%v]; updating local nonce",
 			nm.localNonce,
 			pendingNonce,
 		)

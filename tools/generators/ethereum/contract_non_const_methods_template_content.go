@@ -45,11 +45,17 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 		transactionOptions[0].Apply(transactorOptions)
 	}
 
+	nonce, err := {{$contract.ShortVar}}.nonceManager.CurrentNonce()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve account nonce: %v", err)
+	}
+
+	transactorOptions.Nonce = new(big.Int).SetUint64(nonce)
+
 	transaction, err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(
 		transactorOptions,
 		{{$method.Params}}
 	)
-
 	if err != nil {
 		return transaction, {{$contract.ShortVar}}.errorResolver.ResolveError(
 			err,
@@ -68,6 +74,8 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 		"submitted transaction {{$method.LowerName}} with id: [%v]",
 		transaction.Hash().Hex(),
 	)
+
+	{{$contract.ShortVar}}.nonceManager.IncrementNonce()
 
 	return transaction, err
 }

@@ -224,6 +224,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         address,
         key,
         client,
+        ethutil.NewNonceManager(key.Address, client),
         &sync.Mutex{},
     )
 }

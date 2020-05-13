@@ -37,6 +37,7 @@ type {{.Class}} struct {
 	callerOptions      *bind.CallOpts
 	transactorOptions  *bind.TransactOpts
 	errorResolver      *ethutil.ErrorResolver
+	nonceManager       *ethutil.NonceManager
 
 	transactionMutex *sync.Mutex
 }
@@ -45,6 +46,7 @@ func New{{.Class}}(
     contractAddress common.Address,
     accountKey *keystore.Key,
     backend bind.ContractBackend,
+    nonceManager *ethutil.NonceManager,
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{
@@ -81,6 +83,7 @@ func New{{.Class}}(
 		callerOptions:     callerOptions,
 		transactorOptions: transactorOptions,
 		errorResolver:     ethutil.NewErrorResolver(backend, &contractABI, &contractAddress),
+		nonceManager:      nonceManager,
 		transactionMutex:  transactionMutex,
 	}, nil
 }

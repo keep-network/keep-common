@@ -225,6 +225,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         key,
         client,
         ethutil.NewNonceManager(key.Address, client),
+        ethutil.NewMiningWaiter(client),
         &sync.Mutex{},
     )
 }

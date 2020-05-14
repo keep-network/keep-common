@@ -2,6 +2,7 @@ package ethutil
 
 import (
 	"context"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,7 +27,7 @@ func (mw *MiningWaiter) WaitMined(
 	timeout time.Duration, 
 	tx *types.Transaction,
 ) (*types.Receipt, error) {
-	ctx, cancel := context.WithTimeout(timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	return bind.WaitMined(ctx, mw.backend, tx)

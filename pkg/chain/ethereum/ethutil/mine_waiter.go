@@ -127,7 +127,7 @@ func (mw MiningWaiter) ForceMining(
 		)
 		transaction, err = resubmitFn(gasPrice)
 		if err != nil {
-			logger.Errorf("failed resubmitting TX with a higher gas price: [%v]", err)
+			logger.Warningf("could not resubmit TX with a higher gas price: [%v]", err)
 			return
 		}
 	}

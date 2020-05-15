@@ -38,6 +38,10 @@ type Config struct {
 	ContractAddresses map[string]string
 
 	Account Account
+
+	MiningCheckInterval int
+
+	MaxGasPrice uint64
 }
 
 // ContractAddress finds a given contract's address configuration and returns it

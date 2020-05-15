@@ -70,9 +70,10 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 		)
 	}
 
-	{{$logger}}.Debugf(
-		"submitted transaction {{$method.LowerName}} with id: [%v]",
+	{{$logger}}.Infof(
+		"submitted transaction {{$method.LowerName}} with id: [%v] and nonce [%v]",
 		transaction.Hash().Hex(),
+		transaction.Nonce(),
 	)
 
 	go {{$contract.ShortVar}}.miningWaiter.ForceMining(
@@ -98,6 +99,12 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	        		{{$method.Params}}
 	        	)
 			}
+
+			{{$logger}}.Infof(
+				"submitted transaction {{$method.LowerName}} with id: [%v] and nonce [%v]",
+				transaction.Hash().Hex(),
+				transaction.Nonce(),
+			)
 
 			return transaction, nil
 		},

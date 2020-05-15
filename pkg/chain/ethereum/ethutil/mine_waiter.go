@@ -2,8 +2,8 @@ package ethutil
 
 import (
 	"context"
-	"time"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -12,9 +12,9 @@ import (
 // MiningWaiter allows to block the execution until the given transaction is
 // mined.
 type MiningWaiter struct {
-	backend bind.DeployBackend
+	backend       bind.DeployBackend
 	checkInterval time.Duration
-	maxGasPrice *big.Int
+	maxGasPrice   *big.Int
 }
 
 // NewMiningWaiter creates a new MiningWaiter instance for the provided
@@ -35,12 +35,27 @@ func NewMiningWaiter(
 // hash is mined. Execution is blocked until the transaction is mined or until
 // the given timeout passes.
 func (mw *MiningWaiter) WaitMined(
-	timeout time.Duration, 
+	timeout time.Duration,
 	tx *types.Transaction,
 ) (*types.Receipt, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	return bind.WaitMined(ctx, mw.backend, tx)	
+
+	queryTicker := time.NewTicker(time.Second)
+	defer queryTicker.Stop()
+
+	for {
+		receipt, _ := mw.backend.TransactionReceipt(context.TODO(), tx.Hash())
+		if receipt != nil {
+			return receipt, nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-queryTicker.C:
+		}
+	}
 }
 
 type ResubmitTransactionFn func(gasPrice *big.Int) (*types.Transaction, error)
@@ -59,7 +74,7 @@ func (mw MiningWaiter) ForceMining(
 				err,
 			)
 		}
-		
+
 		// transaction mined, we are good
 		if receipt != nil {
 			logger.Infof(
@@ -75,8 +90,8 @@ func (mw MiningWaiter) ForceMining(
 		gasPrice := transaction.GasPrice()
 		twentyPercent := new(big.Int).Div(gasPrice, big.NewInt(5))
 		gasPrice = new(big.Int).Add(gasPrice, twentyPercent)
-		
-		// transaction not yet mined but we reached the maximum allowed gas 
+
+		// transaction not yet mined but we reached the maximum allowed gas
 		// price; giving up, we need to wait for the last submitted TX to be
 		// mined
 		if gasPrice.Cmp(mw.maxGasPrice) > 0 {
@@ -87,11 +102,11 @@ func (mw MiningWaiter) ForceMining(
 		// transaction not yet mined and we can still increase gas price
 		// resubmitting transaction with 20% higher gas price
 		logger.Infof(
-			"resubmitting previous transaction [%v] with higher gas price [%v]",
+			"resubmitting previous transaction [%v] with a higher gas price [%v]",
 			transaction.Hash().TerminalString(),
 			gasPrice,
 		)
-	
+
 		transaction, err = resubmitFn(gasPrice)
 		if err != nil {
 			logger.Errorf("failed resubmitting TX with higher gas price: [%v]", err)

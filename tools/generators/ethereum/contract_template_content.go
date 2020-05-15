@@ -48,7 +48,7 @@ func New{{.Class}}(
     accountKey *keystore.Key,
     backend bind.ContractBackend,
     nonceManager *ethutil.NonceManager,
-	miningWaiter *ethutil.MiningWaiter,
+    miningWaiter *ethutil.MiningWaiter,
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{

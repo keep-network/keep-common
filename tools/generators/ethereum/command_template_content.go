@@ -218,8 +218,8 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         )
     }
 
-	checkInterval := 30 * time.Second
-	maxGasPrice := big.NewInt(50000000000) // 50 Gwei
+	checkInterval := cmd.DefaultMiningCheckInterval
+	maxGasPrice := cmd.DefaultMaxGasPrice
 	if config.MiningCheckInterval != 0 {
 		checkInterval = time.Duration(config.MiningCheckInterval) * time.Second
 	}

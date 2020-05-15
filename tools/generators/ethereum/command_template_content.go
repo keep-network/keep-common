@@ -218,6 +218,17 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         )
     }
 
+	checkInterval := cmd.DefaultMiningCheckInterval
+	maxGasPrice := cmd.DefaultMaxGasPrice
+	if config.MiningCheckInterval != 0 {
+		checkInterval = time.Duration(config.MiningCheckInterval) * time.Second
+	}
+	if config.MaxGasPrice != 0 {
+		maxGasPrice = new(big.Int).SetUint64(config.MaxGasPrice)
+	}
+
+	miningWaiter := ethutil.NewMiningWaiter(client, checkInterval, maxGasPrice)
+
     address := common.HexToAddress(config.ContractAddresses["{{.Class}}"])
 
     return contract.New{{.Class}}(
@@ -225,6 +236,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         key,
         client,
         ethutil.NewNonceManager(key.Address, client),
+        miningWaiter,
         &sync.Mutex{},
     )
 }

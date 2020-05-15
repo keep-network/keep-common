@@ -67,9 +67,44 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 		)
 	}
 
-	{{$logger}}.Debugf(
-		"submitted transaction {{$method.LowerName}} with id: [%v]",
+	{{$logger}}.Infof(
+		"submitted transaction {{$method.LowerName}} with id: [%v] and nonce [%v]",
 		transaction.Hash().Hex(),
+		transaction.Nonce(),
+	)
+
+	go {{$contract.ShortVar}}.miningWaiter.ForceMining(
+		transaction,
+		func(newGasPrice *big.Int) (*types.Transaction, error) {
+			transactorOptions.GasLimit = transaction.Gas()
+			transactorOptions.GasPrice = newGasPrice
+
+			transaction, err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(
+		        transactorOptions,
+		        {{$method.Params}}
+	        )
+	        if err != nil {
+	        	return transaction, {{$contract.ShortVar}}.errorResolver.ResolveError(
+	        		err,
+	        		{{$contract.ShortVar}}.transactorOptions.From,
+	        		{{if $method.Payable -}}
+	        		value
+	        		{{- else -}}
+	        		nil
+	        		{{- end -}},
+	        		"{{$method.LowerName}}",
+	        		{{$method.Params}}
+	        	)
+			}
+
+			{{$logger}}.Infof(
+				"submitted transaction {{$method.LowerName}} with id: [%v] and nonce [%v]",
+				transaction.Hash().Hex(),
+				transaction.Nonce(),
+			)
+
+			return transaction, nil
+		},
 	)
 
 	{{$contract.ShortVar}}.nonceManager.IncrementNonce()

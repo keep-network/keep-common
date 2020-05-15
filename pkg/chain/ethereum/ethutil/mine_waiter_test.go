@@ -126,14 +126,13 @@ func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 
 	var resubmissionGasPrices []*big.Int
 
-	expectedAttempts := 4
+	expectedAttempts := 5
 	expectedResubmissionGasPrices := []*big.Int{
 		big.NewInt(24000000000), // + 20%
 		big.NewInt(28800000000), // + 20%
 		big.NewInt(34560000000), // + 20%
 		big.NewInt(41472000000), // + 20%
-		// the next one would be 49766400000 but since maxGasPrice = 45 Gwei
-		// resubmissions should stop here
+		big.NewInt(45000000000), // max allowed
 	}
 
 	resubmitFn := func(gasPrice *big.Int) (*types.Transaction, error) {

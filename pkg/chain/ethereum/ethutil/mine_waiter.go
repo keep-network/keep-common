@@ -104,17 +104,22 @@ func (mw MiningWaiter) ForceMining(
 			return
 		}
 
-		// transaction not yet mined, add 20% to the previous gas price
+		// transaction not yet mined, if the previous gas price was the maximum
+		// one, we no longer resubmit
 		gasPrice := transaction.GasPrice()
+		if gasPrice.Cmp(mw.maxGasPrice) == 0 {
+			logger.Infof("reached the maximum allowed gas price; stopping resubmissions")
+			return
+		}
+
+		// if we still have some margin, add 20% to the previous gas price
 		twentyPercent := new(big.Int).Div(gasPrice, big.NewInt(5))
 		gasPrice = new(big.Int).Add(gasPrice, twentyPercent)
 
-		// transaction not yet mined but we reached the maximum allowed gas
-		// price; giving up, we need to wait for the last submitted TX to be
-		// mined
+		// if we reached the maximum allowed gas price, submit one more time
+		// with the maximum
 		if gasPrice.Cmp(mw.maxGasPrice) > 0 {
-			logger.Infof("reached the maximum allowed gas price; stopping resubmissions")
-			return
+			gasPrice = mw.maxGasPrice
 		}
 
 		// transaction not yet mined and we are still under the maximum allowed

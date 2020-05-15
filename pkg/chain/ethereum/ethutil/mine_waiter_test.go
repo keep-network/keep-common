@@ -168,6 +168,33 @@ func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 	}
 }
 
+func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
+	// original transaction was priced at 46 Gwei, the maximum allowed gas price
+	// is 45 Gwei
+	originalTransaction := createTransaction(big.NewInt(46000000000))
+
+	mockBackend := &mockDeployBackend{}
+
+	var resubmissionGasPrices []*big.Int
+
+	resubmitFn := func(gasPrice *big.Int) (*types.Transaction, error) {
+		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
+		// not setting mockBackend.receipt, mining takes a very long time
+		return createTransaction(gasPrice), nil
+	}
+
+	waiter := NewMiningWaiter(mockBackend, checkInterval, maxGasPrice)
+	waiter.ForceMining(
+		originalTransaction,
+		resubmitFn,
+	)
+
+	resubmissionCount := len(resubmissionGasPrices)
+	if resubmissionCount != 0 {
+		t.Fatalf("expected no resubmissions; has: [%v]", resubmissionCount)
+	}
+}
+
 func createTransaction(gasPrice *big.Int) *types.Transaction {
 	return types.NewTransaction(
 		10, // nonce

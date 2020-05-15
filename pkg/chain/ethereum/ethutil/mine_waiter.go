@@ -82,6 +82,16 @@ func (mw MiningWaiter) ForceMining(
 	originalTransaction *types.Transaction,
 	resubmitFn ResubmitTransactionFn,
 ) {
+	// if the original transaction's gas price was higher or equal the max
+	// allowed we do nothing; we need to wait for it to be mined
+	if originalTransaction.GasPrice().Cmp(mw.maxGasPrice) >= 0 {
+		logger.Infof(
+			"original transaction gas price is higher than the max allowed; " +
+				"skipping resubmissions",
+		)
+		return
+	}
+
 	transaction := originalTransaction
 	for {
 		receipt, err := mw.WaitMined(mw.checkInterval, transaction)

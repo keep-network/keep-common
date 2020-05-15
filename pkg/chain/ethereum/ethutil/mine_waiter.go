@@ -10,7 +10,8 @@ import (
 )
 
 // MiningWaiter allows to block the execution until the given transaction is
-// mined.
+// mined as well as monitor the transaction and bump up the gas price in case
+// it is not mined in the given timeout.
 type MiningWaiter struct {
 	backend       bind.DeployBackend
 	checkInterval time.Duration
@@ -18,7 +19,17 @@ type MiningWaiter struct {
 }
 
 // NewMiningWaiter creates a new MiningWaiter instance for the provided
-// client backend.
+// client backend. It accepts two parameters setting up monitoring rules of the
+// transaction mining status.
+//
+// Check interval is the time given for the transaction to be mined. If the
+// transaction is not mined within that time, the gas price is increased by
+// 20% and transaction is replaced with the one with a higher gas price.
+//
+// Max gas price specifies the maximum gas price the client is willing to pay
+// for the transaction to be mined. The offered transaction gas price can not
+// be higher than this value. If the maximum allowed gas price is reached, no
+// further resubmission attempts are performed.
 func NewMiningWaiter(
 	backend bind.DeployBackend,
 	checkInterval time.Duration,
@@ -58,8 +69,15 @@ func (mw *MiningWaiter) WaitMined(
 	}
 }
 
+// ResubmitTransactionFn implements the code for resubmitting the transaction
+// with the higher gas price. It should guarantee the same nonce is used for
+// transaction resubmission.
 type ResubmitTransactionFn func(gasPrice *big.Int) (*types.Transaction, error)
 
+// ForceMining blocks until the transaction is mined and bumps up the gas price
+// by 20% in the intervals defined by MiningWaiter in case the transaction has
+// not been mined yet. It accepts the original transaction reference and the
+// function responsible for executing transaction resubmission.
 func (mw MiningWaiter) ForceMining(
 	originalTransaction *types.Transaction,
 	resubmitFn ResubmitTransactionFn,
@@ -86,7 +104,7 @@ func (mw MiningWaiter) ForceMining(
 			return
 		}
 
-		// add 20% to the previous gas price
+		// transaction not yet mined, add 20% to the previous gas price
 		gasPrice := transaction.GasPrice()
 		twentyPercent := new(big.Int).Div(gasPrice, big.NewInt(5))
 		gasPrice = new(big.Int).Add(gasPrice, twentyPercent)
@@ -99,17 +117,17 @@ func (mw MiningWaiter) ForceMining(
 			return
 		}
 
-		// transaction not yet mined and we can still increase gas price
-		// resubmitting transaction with 20% higher gas price
+		// transaction not yet mined and we are still under the maximum allowed
+		// gas price; resubmitting transaction with 20% higher gas price
+		// evaluated earlier
 		logger.Infof(
 			"resubmitting previous transaction [%v] with a higher gas price [%v]",
 			transaction.Hash().TerminalString(),
 			gasPrice,
 		)
-
 		transaction, err = resubmitFn(gasPrice)
 		if err != nil {
-			logger.Errorf("failed resubmitting TX with higher gas price: [%v]", err)
+			logger.Errorf("failed resubmitting TX with a higher gas price: [%v]", err)
 			return
 		}
 	}

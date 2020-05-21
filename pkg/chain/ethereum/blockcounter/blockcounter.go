@@ -101,8 +101,8 @@ func (ebc *EthereumBlockCounter) receiveBlocks() {
 	for block := range ebc.subscriptionChannel {
 		topBlockNumber, err := strconv.ParseInt(block.Number, 0, 32)
 		if err != nil {
-			// FIXME Consider the right thing to do here.
 			logger.Errorf("error receiving a new block: [%v]", err)
+			continue
 		}
 
 		// receivedBlockHeight is the current blockchain height as just

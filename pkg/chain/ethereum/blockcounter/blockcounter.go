@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ipfs/go-log"
+	"github.com/ipfs/go-log/v2"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -173,7 +173,7 @@ func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client *et
 			newBlockChan,
 		)
 		if err != nil {
-			logger.Warningf("could not create subscription to new blocks: [%v]", err)
+			logger.Warnf("could not create subscription to new blocks: [%v]", err)
 			errorChan <- err
 			return
 		}
@@ -183,7 +183,7 @@ func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client *et
 			case header := <-newBlockChan:
 				ebc.subscriptionChannel <- block{header.Number.String()}
 			case err = <-subscription.Err():
-				logger.Warningf("subscription to new blocks interrupted: [%v]", err)
+				logger.Warnf("subscription to new blocks interrupted: [%v]", err)
 				subscription.Unsubscribe()
 				errorChan <- err
 				return

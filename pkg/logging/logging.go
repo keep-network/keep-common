@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	logging "github.com/ipfs/go-log"
+	logging "github.com/ipfs/go-log/v2"
 )
 
 // Configure sets up logging configuration from the given string. This string is

@@ -5,19 +5,23 @@ import (
 	"time"
 )
 
-// Source defines a source of metric data.
-type Source func() float64
+// ObserverInput defines a source of metric data.
+type ObserverInput func() float64
 
-// Sink defines a destination of collected metric data.
-type Sink interface {
+// ObserverOutput defines a destination of collected metric data.
+type ObserverOutput interface {
 	Set(value float64)
 }
 
-// Observe triggers a cyclic metric observation goroutine.
-func Observe(
+// Observer represent a definition of a cyclic metric observation process.
+type Observer struct {
+	input  ObserverInput
+	output ObserverOutput
+}
+
+// Observe triggers a cyclic metric observation process.
+func (o *Observer) Observe(
 	ctx context.Context,
-	source Source,
-	sink Sink,
 	tick time.Duration,
 ) {
 	go func() {
@@ -27,7 +31,7 @@ func Observe(
 		for {
 			select {
 			case <-ticker.C:
-				sink.Set(source())
+				o.output.Set(o.input())
 			case <-ctx.Done():
 				return
 			}

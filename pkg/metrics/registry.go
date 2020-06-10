@@ -100,3 +100,18 @@ func (r *Registry) NewGauge(name string) (*Gauge, error) {
 	r.metrics[name] = gauge
 	return gauge, nil
 }
+
+func (r *Registry) NewGaugeObserver(
+	name string,
+	input ObserverInput,
+) (*Observer, error) {
+	gauge, err := r.NewGauge(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Observer{
+		input:  input,
+		output: gauge,
+	}, nil
+}

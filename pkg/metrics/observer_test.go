@@ -7,17 +7,15 @@ import (
 )
 
 func TestObserve(t *testing.T) {
+	input := func() float64 {
+		return 5000
+	}
 	gauge := &Gauge{}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Millisecond)
 
-	Observe(
-		ctx,
-		func() float64 {
-			return 5000
-		},
-		gauge,
-		1*time.Millisecond,
-	)
+	observer := &Observer{input, gauge}
+
+	observer.Observe(ctx, 1*time.Millisecond)
 
 	<-ctx.Done()
 

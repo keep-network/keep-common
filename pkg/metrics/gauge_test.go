@@ -59,3 +59,26 @@ func TestGaugeExpose(t *testing.T) {
 		)
 	}
 }
+
+func TestGaugeWithoutLabelsExpose(t *testing.T) {
+	gauge := &Gauge{
+		name:      "test_gauge",
+		labels:    map[string]string{},
+		value:     500,
+		timestamp: 1000,
+	}
+
+	actualText := gauge.expose()
+
+	expectedText := "# TYPE test_gauge gauge\ntest_gauge 500 1000"
+
+	if actualText != expectedText {
+		t.Fatalf(
+			"incorrect gauge expose text:\n"+
+				"expected: [%v]\n"+
+				"actual:   [%v]",
+			expectedText,
+			actualText,
+		)
+	}
+}

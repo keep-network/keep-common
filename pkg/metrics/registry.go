@@ -42,48 +42,15 @@ func NewLabel(name, value string) Label {
 // Registry performs all management of metrics. Specifically, it allows
 // to registering new metrics and exposing them through the metrics server.
 type Registry struct {
-	labels map[string]string
-
 	metrics      map[string]metric
 	metricsMutex sync.RWMutex
 }
 
 // NewRegistry creates a new metrics registry.
-func NewRegistry(
-	application, identifier string,
-	additionalLabels ...Label,
-) *Registry {
-	labels := mergeLabels(
-		map[string]string{
-			"application": application,
-			"identifier":  identifier,
-		},
-		additionalLabels,
-	)
-
+func NewRegistry() *Registry {
 	return &Registry{
-		labels:  labels,
 		metrics: make(map[string]metric),
 	}
-}
-
-func mergeLabels(
-	labels map[string]string,
-	additionalLabels []Label,
-) map[string]string {
-	for _, additionalLabel := range additionalLabels {
-		if additionalLabel.name == "" || additionalLabel.value == "" {
-			continue
-		}
-
-		if _, exists := labels[additionalLabel.name]; exists {
-			continue
-		}
-
-		labels[additionalLabel.name] = additionalLabel.value
-	}
-
-	return labels
 }
 
 // EnableServer enables the metrics server on the given port. Data will
@@ -122,7 +89,7 @@ func (r *Registry) exposeMetrics() string {
 // will be returned.
 func (r *Registry) NewGauge(
 	name string,
-	additionalLabels ...Label,
+	labels ...Label,
 ) (*Gauge, error) {
 	r.metricsMutex.Lock()
 	defer r.metricsMutex.Unlock()
@@ -133,7 +100,7 @@ func (r *Registry) NewGauge(
 
 	gauge := &Gauge{
 		name:   name,
-		labels: mergeLabels(r.labels, additionalLabels),
+		labels: processLabels(labels),
 	}
 
 	r.metrics[name] = gauge
@@ -146,9 +113,9 @@ func (r *Registry) NewGauge(
 func (r *Registry) NewGaugeObserver(
 	name string,
 	input ObserverInput,
-	additionalLabels ...Label,
+	labels ...Label,
 ) (*Observer, error) {
-	gauge, err := r.NewGauge(name, additionalLabels...)
+	gauge, err := r.NewGauge(name, labels...)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +131,7 @@ func (r *Registry) NewGaugeObserver(
 // will be returned.
 func (r *Registry) NewInfo(
 	name string,
-	additionalLabels ...Label,
+	labels []Label,
 ) (*Info, error) {
 	r.metricsMutex.Lock()
 	defer r.metricsMutex.Unlock()
@@ -173,11 +140,31 @@ func (r *Registry) NewInfo(
 		return nil, fmt.Errorf("metric [%v] already exists", name)
 	}
 
+	if len(labels) == 0 {
+		return nil, fmt.Errorf("at least one label should be set")
+	}
+
 	info := &Info{
 		name:   name,
-		labels: mergeLabels(r.labels, additionalLabels),
+		labels: processLabels(labels),
 	}
 
 	r.metrics[name] = info
 	return info, nil
+}
+
+func processLabels(
+	labels []Label,
+) map[string]string {
+	result := make(map[string]string)
+
+	for _, label := range labels {
+		if label.name == "" || label.value == "" {
+			continue
+		}
+
+		result[label.name] = label.value
+	}
+
+	return result
 }

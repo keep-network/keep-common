@@ -43,7 +43,11 @@ func (g *Gauge) expose() string {
 	}
 	labels := strings.Join(labelsStrings, ",")
 
-	body := fmt.Sprintf("%v{%v} %v %v", g.name, labels, g.value, g.timestamp)
+	if len(labels) > 0 {
+		labels = "{" + labels + "}"
+	}
+
+	body := fmt.Sprintf("%v%v %v %v", g.name, labels, g.value, g.timestamp)
 
 	return fmt.Sprintf("%v\n%v", typeLine, body)
 }

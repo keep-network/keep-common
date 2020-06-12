@@ -28,8 +28,7 @@ type metric interface {
 	expose() string
 }
 
-// Label represents an arbitrary information which will be attached to all
-// metrics managed by the registry.
+// Label represents an arbitrary information attached to the metrics.
 type Label struct {
 	name  string
 	value string
@@ -54,11 +53,24 @@ func NewRegistry(
 	application, identifier string,
 	additionalLabels ...Label,
 ) *Registry {
-	labels := map[string]string{
-		"application": application,
-		"identifier":  identifier,
-	}
+	labels := mergeLabels(
+		map[string]string{
+			"application": application,
+			"identifier":  identifier,
+		},
+		additionalLabels,
+	)
 
+	return &Registry{
+		labels:  labels,
+		metrics: make(map[string]metric),
+	}
+}
+
+func mergeLabels(
+	labels map[string]string,
+	additionalLabels []Label,
+) map[string]string {
 	for _, additionalLabel := range additionalLabels {
 		if additionalLabel.name == "" || additionalLabel.value == "" {
 			continue
@@ -71,10 +83,7 @@ func NewRegistry(
 		labels[additionalLabel.name] = additionalLabel.value
 	}
 
-	return &Registry{
-		labels:  labels,
-		metrics: make(map[string]metric),
-	}
+	return labels
 }
 
 // EnableServer enables the metrics server on the given port. Data will
@@ -111,28 +120,35 @@ func (r *Registry) exposeMetrics() string {
 // NewGauge creates and registers a new gauge metric which will be exposed
 // through the metrics server. In case a metric already exists, an error
 // will be returned.
-func (r *Registry) NewGauge(name string) (*Gauge, error) {
+func (r *Registry) NewGauge(
+	name string,
+	additionalLabels ...Label,
+) (*Gauge, error) {
 	r.metricsMutex.Lock()
 	defer r.metricsMutex.Unlock()
 
 	if _, exists := r.metrics[name]; exists {
-		return nil, fmt.Errorf("gauge [%v] already exists", name)
+		return nil, fmt.Errorf("metric [%v] already exists", name)
 	}
 
 	gauge := &Gauge{
 		name:   name,
-		labels: r.labels,
+		labels: mergeLabels(r.labels, additionalLabels),
 	}
 
 	r.metrics[name] = gauge
 	return gauge, nil
 }
 
+// NewGaugeObserver creates and registers a gauge just like `NewGauge` method
+// and wrap it with a ready to use observer of the provided input. This allows
+// to easily create self-refreshing metrics.
 func (r *Registry) NewGaugeObserver(
 	name string,
 	input ObserverInput,
+	additionalLabels ...Label,
 ) (*Observer, error) {
-	gauge, err := r.NewGauge(name)
+	gauge, err := r.NewGauge(name, additionalLabels...)
 	if err != nil {
 		return nil, err
 	}
@@ -141,4 +157,27 @@ func (r *Registry) NewGaugeObserver(
 		input:  input,
 		output: gauge,
 	}, nil
+}
+
+// NewInfo creates and registers a new info metric which will be exposed
+// through the metrics server. In case a metric already exists, an error
+// will be returned.
+func (r *Registry) NewInfo(
+	name string,
+	additionalLabels ...Label,
+) (*Info, error) {
+	r.metricsMutex.Lock()
+	defer r.metricsMutex.Unlock()
+
+	if _, exists := r.metrics[name]; exists {
+		return nil, fmt.Errorf("metric [%v] already exists", name)
+	}
+
+	info := &Info{
+		name:   name,
+		labels: mergeLabels(r.labels, additionalLabels),
+	}
+
+	r.metrics[name] = info
+	return info, nil
 }

@@ -6,7 +6,7 @@
 // types are implemented. The main motivation of creating a custom
 // package was a need to avoid usage of external unaudited dependencies.
 //
-// Following specifications was used as reference:
+// Following specifications were used as reference:
 // - https://prometheus.io/docs/instrumenting/writing_clientlibs/
 // - https://prometheus.io/docs/instrumenting/exposition_formats/
 package metrics
@@ -28,22 +28,52 @@ type metric interface {
 	expose() string
 }
 
+// Label represents an arbitrary information which will be attached to all
+// metrics managed by the registry.
+type Label struct {
+	name  string
+	value string
+}
+
+// NewLabel creates a new label using the given name and value.
+func NewLabel(name, value string) Label {
+	return Label{name, value}
+}
+
 // Registry performs all management of metrics. Specifically, it allows
 // to registering new metrics and exposing them through the metrics server.
 type Registry struct {
-	application string
-	identifier  string
+	labels map[string]string
 
 	metrics      map[string]metric
 	metricsMutex sync.RWMutex
 }
 
 // NewRegistry creates a new metrics registry.
-func NewRegistry(application, identifier string) *Registry {
+func NewRegistry(
+	application, identifier string,
+	additionalLabels ...Label,
+) *Registry {
+	labels := map[string]string{
+		"application": application,
+		"identifier":  identifier,
+	}
+
+	for _, additionalLabel := range additionalLabels {
+		if additionalLabel.name == "" || additionalLabel.value == "" {
+			continue
+		}
+
+		if _, exists := labels[additionalLabel.name]; exists {
+			continue
+		}
+
+		labels[additionalLabel.name] = additionalLabel.value
+	}
+
 	return &Registry{
-		application: application,
-		identifier:  identifier,
-		metrics:     make(map[string]metric),
+		labels:  labels,
+		metrics: make(map[string]metric),
 	}
 }
 
@@ -90,11 +120,8 @@ func (r *Registry) NewGauge(name string) (*Gauge, error) {
 	}
 
 	gauge := &Gauge{
-		name: name,
-		labels: map[string]string{
-			"application": r.application,
-			"identifier":  r.identifier,
-		},
+		name:   name,
+		labels: r.labels,
 	}
 
 	r.metrics[name] = gauge

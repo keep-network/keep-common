@@ -3,8 +3,7 @@
 //
 // Currently, this package is intended to use with Prometheus but
 // can be easily extended if needed. Also, not all Prometheus metric
-// types are implemented. The main motivation of creating a custom
-// package was a need to avoid usage of external unaudited dependencies.
+// types are implemented.
 //
 // Following specifications were used as reference:
 // - https://prometheus.io/docs/instrumenting/writing_clientlibs/

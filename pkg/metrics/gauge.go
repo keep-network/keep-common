@@ -14,7 +14,7 @@ type Gauge struct {
 	labels map[string]string
 
 	value     float64
-	timestamp int64
+	timestamp int64 // timestamp expressed as milliseconds
 	mutex     sync.RWMutex
 }
 
@@ -24,7 +24,7 @@ func (g *Gauge) Set(value float64) {
 	defer g.mutex.Unlock()
 
 	g.value = value
-	g.timestamp = time.Now().UnixNano() / int64(time.Millisecond)
+	g.timestamp = time.Now().UnixNano() / 1e6
 }
 
 // Exposes the gauge in the text-based exposition format.

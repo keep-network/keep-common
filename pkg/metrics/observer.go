@@ -25,6 +25,8 @@ func (o *Observer) Observe(
 	tick time.Duration,
 ) {
 	go func() {
+		o.output.Set(o.input()) // execute the first check immediately
+
 		ticker := time.NewTicker(tick)
 		defer ticker.Stop()
 

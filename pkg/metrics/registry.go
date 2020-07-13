@@ -11,6 +11,7 @@
 package metrics
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -38,10 +39,16 @@ func NewLabel(name, value string) Label {
 	return Label{name, value}
 }
 
+type PeerInfo struct {
+	PeerId      string
+	PeerAddress string
+}
+
 // Registry performs all management of metrics. Specifically, it allows
 // to registering new metrics and exposing them through the metrics server.
 type Registry struct {
 	metrics      map[string]metric
+	peers        []PeerInfo
 	metricsMutex sync.RWMutex
 }
 
@@ -59,7 +66,13 @@ func (r *Registry) EnableServer(port int) {
 
 	http.HandleFunc("/metrics", func(response http.ResponseWriter, _ *http.Request) {
 		if _, err := io.WriteString(response, r.exposeMetrics()); err != nil {
-			logger.Errorf("could not write response: [%v]", err)
+			logger.Errorf("could not write metrics response: [%v]", err)
+		}
+	})
+
+	http.HandleFunc("/peers", func(response http.ResponseWriter, _ *http.Request) {
+		if _, err := io.WriteString(response, r.exposePeers()); err != nil {
+			logger.Errorf("could not write peers response: [%v]", err)
 		}
 	})
 
@@ -81,6 +94,21 @@ func (r *Registry) exposeMetrics() string {
 	}
 
 	return strings.Join(metrics, "\n\n")
+}
+
+// Exposes peers list in JSON format.
+func (r *Registry) exposePeers() string {
+	r.metricsMutex.RLock()
+	defer r.metricsMutex.RUnlock()
+
+	bytes, err := json.Marshal(r.peers)
+	peers := "[]"
+
+	if err == nil {
+		peers = string(bytes)
+	}
+
+	return peers
 }
 
 // NewGauge creates and registers a new gauge metric which will be exposed
@@ -177,6 +205,17 @@ func (r *Registry) UpdateInfo(
 
 	r.metrics[name] = info
 	return info, nil
+}
+
+// UpdatePeers updates existing peers list which will be exposed
+// through the metrics server.
+func (r *Registry) UpdatePeers(
+	peers []PeerInfo,
+) {
+	r.metricsMutex.Lock()
+	defer r.metricsMutex.Unlock()
+
+	r.peers = peers
 }
 
 func processLabels(

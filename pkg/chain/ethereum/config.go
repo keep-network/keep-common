@@ -9,11 +9,6 @@ import (
 // Account is a struct that contains the configuration for accessing an
 // Ethereum network and a contract on the network.
 type Account struct {
-	// Address is the address of this Ethereum account, from which transactions
-	// will be sent when interacting with the Ethereum network.
-	// Example: "0x6ffba2d0f4c8fd7263f546afaaf25fe2d56f6044".
-	Address string
-
 	// Keyfile is a full path to a key file.  Normally this file is one of the
 	// imported keys in your local Ethereum server.  It can normally be found in
 	// a directory <some-path>/data/keystore/ and starts with its creation date

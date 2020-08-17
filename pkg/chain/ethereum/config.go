@@ -45,6 +45,14 @@ type Config struct {
 	// allowed gas price is reached, no further resubmission attempts are
 	// performed.
 	MaxGasPrice uint64
+
+	// RequestsPerSecondLimit sets the maximum average number of requests
+	// per second which can be executed against the Ethereum node.
+	RequestsPerSecondLimit int
+
+	// ConcurrencyLimit sets the maximum number of concurrent requests which
+	// can be executed against the Ethereum node in the same time.
+	ConcurrencyLimit int
 }
 
 // ContractAddress finds a given contract's address configuration and returns it

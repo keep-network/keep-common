@@ -30,7 +30,7 @@ type RateLimiterConfig struct {
 	RequestsPerSecondLimit int
 
 	// ConcurrencyLimit sets the maximum number of concurrent requests which
-	// can be executed against the underlying contract backend in the same time.
+	// can be executed against the underlying contract backend at the same time.
 	ConcurrencyLimit int
 
 	// AcquirePermitTimeout determines how long a request can wait trying

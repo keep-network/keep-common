@@ -174,7 +174,6 @@ func (mb *mockBackend) CodeAt(
 	contract common.Address,
 	blockNumber *big.Int,
 ) ([]byte, error) {
-
 	return nil, nil
 }
 

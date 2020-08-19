@@ -40,6 +40,8 @@ type RateLimiterConfig struct {
 
 // WrapRateLimiting wraps the given contract backend with rate limiting
 // capabilities with respect to the provided configuration.
+// All types of requests to the contract are rate-limited,
+// including view function calls.
 func WrapRateLimiting(
 	backend bind.ContractBackend,
 	config *RateLimiterConfig,

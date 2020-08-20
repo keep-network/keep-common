@@ -38,7 +38,7 @@ func OrganizeImports(codeBuffer *bytes.Buffer, filePath string) error {
 // error writing the file.
 func SaveBufferToFile(buffer *bytes.Buffer, filePath string) error {
 	file, err := os.Create(filePath)
-	defer file.Close()
+	defer file.Close() // #nosec
 	if err != nil {
 		return fmt.Errorf("output file %s creation failed [%v]", filePath, err)
 	}

@@ -61,7 +61,7 @@ func main() {
 	contractOutputPath := flag.Arg(1)
 	commandOutputPath := flag.Arg(2)
 
-	abiFile, err := ioutil.ReadFile(abiPath)
+	abiFile, err := ioutil.ReadFile(abiPath) // #nosec
 	if err != nil {
 		panic(fmt.Sprintf(
 			"Failed to read ABI file at [%v]: [%v].",
@@ -223,7 +223,7 @@ func organizeImports(outFile string, buf *bytes.Buffer) error {
 // Stores the Buffer `buf` content to a file in `filePath`
 func saveBufferToFile(buf *bytes.Buffer, filePath string) error {
 	file, err := os.Create(filePath)
-	defer file.Close()
+	defer file.Close() // #nosec
 	if err != nil {
 		return fmt.Errorf("output file %s creation failed [%v]", filePath, err)
 	}

@@ -96,12 +96,12 @@ func generatePromisesCode(generationDir string, promisesConfig []promiseConfig) 
 		return fmt.Errorf("template creation failed [%v]", err)
 	}
 
-	for _, promiseConfig := range promisesConfig {
-		outputFile := promiseConfig.Filename
+	for i := range promisesConfig {
+		outputFile := promisesConfig[i].Filename
 		outputFilePath := path.Join(generationDir, outputFile)
 
 		// Generate promise code.
-		buffer, err := generateCode(promiseTemplate, &promiseConfig, outputFilePath)
+		buffer, err := generateCode(promiseTemplate, &promisesConfig[i], outputFilePath)
 		if err != nil {
 			return fmt.Errorf("promise generation failed [%v]", err)
 		}

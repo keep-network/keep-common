@@ -30,7 +30,7 @@ func main() {
 	}
 
 	templateFile := os.Args[templateFileArgIndex]
-	templateContents, err := ioutil.ReadFile(templateFile)
+	templateContents, err := ioutil.ReadFile(templateFile) // #nosec
 	if err != nil {
 		errorAndExit(fmt.Sprintf("Failed to open template file: [%v].", err))
 	}

@@ -35,7 +35,7 @@ func AddressFromHex(hex string) (common.Address, error) {
 
 // DecryptKeyFile reads in a key file and uses the password to decrypt it.
 func DecryptKeyFile(keyFile, password string) (*keystore.Key, error) {
-	data, err := ioutil.ReadFile(keyFile)
+	data, err := ioutil.ReadFile(keyFile) // #nosec
 	if err != nil {
 		return nil, fmt.Errorf("unable to read KeyFile %s [%v]", keyFile, err)
 	}
@@ -141,7 +141,7 @@ func CallAtBlock(
 // the true gas limit requirement as other transactions may be added or removed by miners,
 // but it should provide a basis for setting a reasonable default.
 func EstimateGas(
-	from common.Address, 
+	from common.Address,
 	to common.Address,
 	method string,
 	contractABI *abi.ABI,

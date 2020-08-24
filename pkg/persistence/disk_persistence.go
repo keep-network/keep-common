@@ -123,26 +123,32 @@ func write(filePath string, data []byte) error {
 		return err
 	}
 
-	defer writeFile.Close()
+	defer closeFile(writeFile)
 
 	_, err = writeFile.Write(data)
 	if err != nil {
 		return err
 	}
 
-	writeFile.Sync()
+	err = writeFile.Sync()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 // read a file from a file system
 func read(filePath string) ([]byte, error) {
+	// #nosec G304 (file path provided as taint input)
+	// This line opens a file from the predefined storage.
+	// There is no user input.
 	readFile, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	defer readFile.Close()
+	defer closeFile(readFile)
 
 	data, err := ioutil.ReadAll(readFile)
 	if err != nil {
@@ -150,6 +156,13 @@ func read(filePath string) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func closeFile(file *os.File) {
+	err := file.Close()
+	if err != nil {
+		logger.Errorf("could not close file [%v]: [%v]", file.Name(), err)
+	}
 }
 
 // readAll reads all files from the provided directoryPath and outputs them

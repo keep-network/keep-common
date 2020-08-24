@@ -30,6 +30,11 @@ func main() {
 	}
 
 	templateFile := os.Args[templateFileArgIndex]
+
+	// #nosec G304 (file path provided as taint input)
+	// This line is placed in the auxiliary generator code,
+	// not in the core application. User input has to be passed to provide a
+	// path to the template file.
 	templateContents, err := ioutil.ReadFile(templateFile)
 	if err != nil {
 		errorAndExit(fmt.Sprintf("Failed to open template file: [%v].", err))

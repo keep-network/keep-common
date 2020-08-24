@@ -140,7 +140,10 @@ func write(filePath string, data []byte) error {
 
 // read a file from a file system
 func read(filePath string) ([]byte, error) {
-	readFile, err := os.Open(filePath) // #nosec
+	// #nosec G304 (file path provided as taint input)
+	// This line opens a file from the predefined storage.
+	// There is no user input.
+	readFile, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}

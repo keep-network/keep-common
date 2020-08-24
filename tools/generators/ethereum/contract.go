@@ -61,7 +61,11 @@ func main() {
 	contractOutputPath := flag.Arg(1)
 	commandOutputPath := flag.Arg(2)
 
-	abiFile, err := ioutil.ReadFile(abiPath) // #nosec
+	// #nosec G304 (file path provided as taint input)
+	// This line is placed in the auxiliary generator code,
+	// not in the core application. User input has to be passed to
+	// provide a path to the contract ABI.
+	abiFile, err := ioutil.ReadFile(abiPath)
 	if err != nil {
 		panic(fmt.Sprintf(
 			"Failed to read ABI file at [%v]: [%v].",
@@ -223,7 +227,13 @@ func organizeImports(outFile string, buf *bytes.Buffer) error {
 // Stores the Buffer `buf` content to a file in `filePath`
 func saveBufferToFile(buf *bytes.Buffer, filePath string) error {
 	file, err := os.Create(filePath)
-	defer file.Close() // #nosec
+
+	// #nosec G104 (audit errors not checked)
+	// This line is placed in the auxiliary generator code,
+	// not in the core application. Also, the Close function returns only
+	// the error. It doesn't return any other values which can be a security
+	// threat when used without checking the error.
+	defer file.Close()
 	if err != nil {
 		return fmt.Errorf("output file %s creation failed [%v]", filePath, err)
 	}

@@ -35,7 +35,9 @@ func AddressFromHex(hex string) (common.Address, error) {
 
 // DecryptKeyFile reads in a key file and uses the password to decrypt it.
 func DecryptKeyFile(keyFile, password string) (*keystore.Key, error) {
-	data, err := ioutil.ReadFile(keyFile) // #nosec
+	// #nosec G304 (file path provided as taint input)
+	// This line is used to read a local key file. There is no user input.
+	data, err := ioutil.ReadFile(keyFile)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read KeyFile %s [%v]", keyFile, err)
 	}

@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync"
+	"time"
 )
 
 const (
-	currentDir = "current"
-	archiveDir = "archive"
+	currentDir  = "current"
+	archiveDir  = "archive"
+	snapshotDir = "snapshot"
 
 	maxFileNameLength = 128
 )
@@ -30,13 +33,27 @@ func NewDiskHandle(path string) (Handle, error) {
 		return nil, err
 	}
 
+	err = createDir(path, snapshotDir)
+	if err != nil {
+		return nil, err
+	}
+
+	snapshotSuffixGenerator := func() string {
+		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+		return fmt.Sprintf(".%d", timestamp)
+	}
+
 	return &diskPersistence{
-		dataDir: path,
+		dataDir:                 path,
+		snapshotSuffixGenerator: snapshotSuffixGenerator,
 	}, nil
 }
 
 type diskPersistence struct {
 	dataDir string
+
+	snapshotMutex           sync.Mutex
+	snapshotSuffixGenerator func() string
 }
 
 func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
@@ -63,6 +80,53 @@ func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
 	}
 
 	return write(fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName), data)
+}
+
+func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error {
+	ds.snapshotMutex.Lock()
+	defer ds.snapshotMutex.Unlock()
+
+	if len(dirName) > maxFileNameLength {
+		return fmt.Errorf(
+			"the maximum directory name length of [%v] exceeded for [%v]",
+			maxFileNameLength,
+			dirName,
+		)
+	}
+
+	snapshotSuffix := ds.snapshotSuffixGenerator()
+
+	maxSnapshotFileNameLength := maxFileNameLength - len(snapshotSuffix)
+	if len(fileName) > maxSnapshotFileNameLength {
+		return fmt.Errorf(
+			"the maximum file name length of [%v] exceeded for [%v]",
+			maxSnapshotFileNameLength,
+			fileName,
+		)
+	}
+
+	dirPath := fmt.Sprintf("%s/%s", ds.dataDir, snapshotDir)
+	err := createDir(dirPath, dirName)
+	if err != nil {
+		return err
+	}
+
+	filePath := fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName+snapshotSuffix)
+
+	// very unlikely but better fail than overwrite an existing file
+	if canWrite := isNotExist(filePath); !canWrite {
+		return fmt.Errorf(
+			"could not create unique snapshot; " +
+				"snapshot name collision has been detected",
+		)
+	}
+
+	return write(filePath, data)
+}
+
+func isNotExist(filePath string) bool {
+	_, err := os.Stat(filePath)
+	return os.IsNotExist(err)
 }
 
 func (ds *diskPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {

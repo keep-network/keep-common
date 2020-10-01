@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -13,8 +14,9 @@ import (
 var (
 	dataDir = "./"
 
-	dirCurrent = "current"
-	dirArchive = "archive"
+	dirCurrent  = "current"
+	dirArchive  = "archive"
+	dirSnapshot = "snapshot"
 
 	dirName1   = "0x424242"
 	fileName11 = "file11"
@@ -23,8 +25,9 @@ var (
 	dirName2   = "0x777777"
 	fileName21 = "file21"
 
-	pathToCurrent = fmt.Sprintf("%s/%s", dataDir, dirCurrent)
-	pathToArchive = fmt.Sprintf("%s/%s", dataDir, dirArchive)
+	pathToCurrent  = fmt.Sprintf("%s/%s", dataDir, dirCurrent)
+	pathToArchive  = fmt.Sprintf("%s/%s", dataDir, dirArchive)
+	pathToSnapshot = fmt.Sprintf("%s/%s", dataDir, dirSnapshot)
 
 	errExpectedRead  = fmt.Errorf("cannot read from the storage directory: ")
 	errExpectedWrite = fmt.Errorf("cannot write to the storage directory: ")
@@ -41,6 +44,7 @@ var (
 func cleanup() {
 	os.RemoveAll(pathToCurrent)
 	os.RemoveAll(pathToArchive)
+	os.RemoveAll(pathToSnapshot)
 }
 
 func TestDiskPersistence_Save(t *testing.T) {
@@ -104,6 +108,176 @@ func TestDiskPersistence_RefuseSave(t *testing.T) {
 			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
 			errFileNameLength.Error(),
 			err.Error(),
+		)
+	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_Snapshot(t *testing.T) {
+	diskHandle, _ := NewDiskHandle(dataDir)
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	counter := 0
+	diskHandle.(*diskPersistence).snapshotSuffixGenerator = func() string {
+		counter++
+		return fmt.Sprintf(".%d", counter)
+	}
+
+	for i := 0; i < 3; i++ {
+		err := diskHandle.Snapshot(bytesToTest, dirName1, fileName11)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	pathToFile := fmt.Sprintf(
+		"%s/%s/%s",
+		pathToSnapshot,
+		dirName1,
+		fileName11+".1",
+	)
+
+	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
+		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
+	}
+
+	pathToFile = fmt.Sprintf(
+		"%s/%s/%s",
+		pathToSnapshot,
+		dirName1,
+		fileName11+".2",
+	)
+
+	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
+		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
+	}
+
+	pathToFile = fmt.Sprintf(
+		"%s/%s/%s",
+		pathToSnapshot,
+		dirName1,
+		fileName11+".3",
+	)
+
+	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
+		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
+	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_SnapshotMaxAllowed(t *testing.T) {
+	diskHandle, _ := NewDiskHandle(dataDir)
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	snapshotSuffix := ".suffix"
+	diskHandle.(*diskPersistence).snapshotSuffixGenerator = func() string {
+		return snapshotSuffix
+	}
+
+	maxAllowedSnapshotName := maxAllowedName[0 : len(maxAllowedName)-len(snapshotSuffix)]
+	err := diskHandle.Snapshot(bytesToTest, maxAllowedName, maxAllowedSnapshotName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pathToFile := fmt.Sprintf(
+		"%s/%s/%s",
+		pathToSnapshot,
+		maxAllowedName,
+		maxAllowedSnapshotName+snapshotSuffix,
+	)
+
+	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
+		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
+	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_RefuseSnapshot_MaxAllowedExceeded(t *testing.T) {
+	diskHandle, _ := NewDiskHandle(dataDir)
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	snapshotSuffix := ".suffix"
+	diskHandle.(*diskPersistence).snapshotSuffixGenerator = func() string {
+		return snapshotSuffix
+	}
+
+	err := diskHandle.Snapshot(bytesToTest, notAllowedName, fileName11)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	if errDirectoryNameLength.Error() != err.Error() {
+		t.Fatalf(
+			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+			errDirectoryNameLength.Error(),
+			err.Error(),
+		)
+	}
+
+	err = diskHandle.Snapshot(bytesToTest, dirName1, notAllowedName)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	errSnapshotFileNameLength := fmt.Errorf(
+		"the maximum file name length of [%d] exceeded for [%v]",
+		128-len(snapshotSuffix),
+		notAllowedName,
+	)
+
+	if errSnapshotFileNameLength.Error() != err.Error() {
+		t.Fatalf(
+			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+			errFileNameLength.Error(),
+			err.Error(),
+		)
+	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_RefuseSnapshot_NameCollision(t *testing.T) {
+	diskHandle, _ := NewDiskHandle(dataDir)
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	// snapshot suffix generator return always the same suffix in order to
+	// cause name collision.
+	snapshotSuffix := ".suffix"
+	diskHandle.(*diskPersistence).snapshotSuffixGenerator = func() string {
+		return snapshotSuffix
+	}
+
+	err := diskHandle.Snapshot(bytesToTest, dirName1, fileName11)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pathToFile := fmt.Sprintf(
+		"%s/%s/%s",
+		pathToSnapshot,
+		dirName1,
+		fileName11+snapshotSuffix,
+	)
+
+	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
+		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
+	}
+
+	err = diskHandle.Snapshot(bytesToTest, dirName1, fileName11)
+
+	expectedDuplicateError := fmt.Errorf(
+		"could not create unique snapshot; " +
+			"snapshot name collision has been detected",
+	)
+	if err == nil || (!reflect.DeepEqual(expectedDuplicateError, err)) {
+		t.Fatalf(
+			"unexpected error\nexpected: [%v]\nactual:   [%v]",
+			expectedDuplicateError,
+			err,
 		)
 	}
 

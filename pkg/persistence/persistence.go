@@ -1,5 +1,5 @@
 // Package persistence adds a layer which handles data storage. This package
-// separates the data from the business layer and is responsible for saving and 
+// separates the data from the business layer and is responsible for saving and
 // retrieving it.
 package persistence
 
@@ -15,6 +15,11 @@ type Handle interface {
 	// provided directory appropriate for the given persistent storage
 	// implementation.
 	Save(data []byte, directory string, name string) error
+
+	// Snapshot takes the provided data and persists it as an unique snapshot
+	// file in the provided directory appropriate for the given persistent
+	// storage implementation.
+	Snapshot(data []byte, directory string, name string) error
 
 	// ReadAll returns all non-archived data. It returns two channels: the first
 	// channel returned is a non-buffered channel streaming DataDescriptors of

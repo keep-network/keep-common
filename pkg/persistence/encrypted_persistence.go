@@ -34,6 +34,15 @@ func (ep *encryptedPersistence) Save(data []byte, directory string, name string)
 	return ep.delegate.Save(encrypted, directory, name)
 }
 
+func (ep *encryptedPersistence) Snapshot(data []byte, directory string, name string) error {
+	encrypted, err := ep.box.Encrypt(data)
+	if err != nil {
+		return err
+	}
+
+	return ep.delegate.Snapshot(encrypted, directory, name)
+}
+
 func (ep *encryptedPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
 	outputData := make(chan DataDescriptor)
 	outputErrors := make(chan error)

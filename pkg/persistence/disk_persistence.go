@@ -114,7 +114,7 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 	defer ds.snapshotMutex.Unlock()
 
 	// very unlikely but better fail than overwrite an existing file
-	if canWrite := isNotExist(filePath); !canWrite {
+	if !isNonExistingFile(filePath) {
 		return fmt.Errorf(
 			"could not create unique snapshot; " +
 				"snapshot name collision has been detected",
@@ -124,7 +124,7 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 	return write(filePath, data)
 }
 
-func isNotExist(filePath string) bool {
+func isNonExistingFile(filePath string) bool {
 	_, err := os.Stat(filePath)
 	return os.IsNotExist(err)
 }

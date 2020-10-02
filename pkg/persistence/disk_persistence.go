@@ -23,17 +23,17 @@ func NewDiskHandle(path string) (Handle, error) {
 		return nil, err
 	}
 
-	err = createDir(path, currentDir)
+	err = ensureDirectoryExists(path, currentDir)
 	if err != nil {
 		return nil, err
 	}
 
-	err = createDir(path, archiveDir)
+	err = ensureDirectoryExists(path, archiveDir)
 	if err != nil {
 		return nil, err
 	}
 
-	err = createDir(path, snapshotDir)
+	err = ensureDirectoryExists(path, snapshotDir)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
 	}
 
 	dirPath := ds.getStorageCurrentDirPath()
-	err := createDir(dirPath, dirName)
+	err := ensureDirectoryExists(dirPath, dirName)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 	}
 
 	dirPath := fmt.Sprintf("%s/%s", ds.dataDir, snapshotDir)
-	err := createDir(dirPath, dirName)
+	err := ensureDirectoryExists(dirPath, dirName)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func checkStoragePermission(dirBasePath string) error {
 	return nil
 }
 
-func createDir(dirBasePath, newDirName string) error {
+func ensureDirectoryExists(dirBasePath, newDirName string) error {
 	dirPath := fmt.Sprintf("%s/%s", dirBasePath, newDirName)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.Mkdir(dirPath, os.ModePerm)

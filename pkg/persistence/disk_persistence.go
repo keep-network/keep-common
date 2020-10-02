@@ -83,9 +83,6 @@ func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
 }
 
 func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error {
-	ds.snapshotMutex.Lock()
-	defer ds.snapshotMutex.Unlock()
-
 	if len(dirName) > maxFileNameLength {
 		return fmt.Errorf(
 			"the maximum directory name length of [%v] exceeded for [%v]",
@@ -112,6 +109,9 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 	}
 
 	filePath := fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName+snapshotSuffix)
+
+	ds.snapshotMutex.Lock()
+	defer ds.snapshotMutex.Unlock()
 
 	// very unlikely but better fail than overwrite an existing file
 	if canWrite := isNotExist(filePath); !canWrite {

@@ -85,10 +85,6 @@ func TestSaveReadAndDecryptData(t *testing.T) {
 	}
 }
 
-func TestEncryptedSnapshot(t *testing.T) {
-
-}
-
 type delegatePersistenceMock struct{}
 
 func (dpm *delegatePersistenceMock) Save(data []byte, directory string, name string) error {

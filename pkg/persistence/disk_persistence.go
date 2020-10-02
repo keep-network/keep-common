@@ -102,6 +102,9 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 		)
 	}
 
+	ds.snapshotMutex.Lock()
+	defer ds.snapshotMutex.Unlock()
+
 	dirPath := fmt.Sprintf("%s/%s", ds.dataDir, snapshotDir)
 	err := ensureDirectoryExists(dirPath, dirName)
 	if err != nil {
@@ -109,9 +112,6 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 	}
 
 	filePath := fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName+snapshotSuffix)
-
-	ds.snapshotMutex.Lock()
-	defer ds.snapshotMutex.Unlock()
 
 	// very unlikely but better fail than overwrite an existing file
 	if !isNonExistingFile(filePath) {

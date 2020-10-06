@@ -57,6 +57,10 @@ type Config struct {
 	// This limit affects all types of chain requests,
 	// including view function calls.
 	ConcurrencyLimit int
+
+	// BalanceAlertThreshold defines a minimum value of the operator's account
+	// balance below which an alert will be triggered.
+	BalanceAlertThreshold uint64
 }
 
 // ContractAddress finds a given contract's address configuration and returns it

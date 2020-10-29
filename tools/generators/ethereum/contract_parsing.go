@@ -278,6 +278,9 @@ func uppercaseFirst(str string) string {
 	if len(str) == 0 {
 		return str
 	}
+
+	str = strings.TrimPrefix(str, "_")
+
 	return strings.ToUpper(str[0:1]) + str[1:]
 }
 
@@ -285,6 +288,9 @@ func lowercaseFirst(str string) string {
 	if len(str) == 0 {
 		return str
 	}
+
+	str = strings.TrimPrefix(str, "_")
+
 	return strings.ToLower(str[0:1]) + str[1:]
 }
 

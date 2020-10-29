@@ -49,9 +49,11 @@ func main() {
 
 	flag.Parse()
 
-	if flag.NArg() != 3 {
+	// Two leading arguments (`input.abi` and `contract_output.go`) are required.
+	// The third argument (`cmd_output.go`) is optional.
+	if !(flag.NArg() == 2 || flag.NArg() == 3) {
 		panic(fmt.Sprintf(
-			"Expected `%v [input.abi] [contract_output.go] [cmd_output.go]`, but got [%v].",
+			"Expected `%v <input.abi> <contract_output.go> [cmd_output.go]`, but got [%v].",
 			os.Args[0],
 			os.Args,
 		))
@@ -130,27 +132,29 @@ func main() {
 		))
 	}
 
-	commandBuf, err := generateCode(
-		commandOutputPath,
-		templates,
-		"command.go.tmpl",
-		&contractInfo,
-	)
-	if err != nil {
-		panic(fmt.Sprintf(
-			"Failed to generate Go file at [%v]: [%v].",
+	if len(commandOutputPath) > 0 {
+		commandBuf, err := generateCode(
 			commandOutputPath,
-			err,
-		))
-	}
+			templates,
+			"command.go.tmpl",
+			&contractInfo,
+		)
+		if err != nil {
+			panic(fmt.Sprintf(
+				"Failed to generate Go file at [%v]: [%v].",
+				commandOutputPath,
+				err,
+			))
+		}
 
-	// Save the command code to a file.
-	if err := saveBufferToFile(commandBuf, commandOutputPath); err != nil {
-		panic(fmt.Sprintf(
-			"Failed to save Go file at [%v]: [%v].",
-			commandOutputPath,
-			err,
-		))
+		// Save the command code to a file.
+		if err := saveBufferToFile(commandBuf, commandOutputPath); err != nil {
+			panic(fmt.Sprintf(
+				"Failed to save Go file at [%v]: [%v].",
+				commandOutputPath,
+				err,
+			))
+		}
 	}
 }
 

@@ -21,6 +21,15 @@ import (
 
 var logger = log.Logger("keep-ethutil")
 
+// EthereumClient wraps the core `bind.ContractBackend` interface with
+// some other interfaces allowing to expose additional methods provided
+// by client implementations.
+type EthereumClient interface {
+	bind.ContractBackend
+	ethereum.ChainReader
+	ethereum.TransactionReader
+}
+
 // AddressFromHex converts the passed string to a common.Address and returns it,
 // unless it is not a valid address, in which case it returns an error. Compare
 // to common.HexToAddress, which assumes the address is valid and does not
@@ -170,13 +179,13 @@ func EstimateGas(
 }
 
 type loggingWrapper struct {
-	bind.ContractBackend
+	EthereumClient
 
 	logger log.EventLogger
 }
 
 func (lw *loggingWrapper) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
-	price, err := lw.ContractBackend.SuggestGasPrice(ctx)
+	price, err := lw.EthereumClient.SuggestGasPrice(ctx)
 
 	if err != nil {
 		lw.logger.Debugf("error requesting gas price suggestion: [%v]", err)
@@ -188,7 +197,7 @@ func (lw *loggingWrapper) SuggestGasPrice(ctx context.Context) (*big.Int, error)
 }
 
 func (lw *loggingWrapper) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-	gas, err := lw.ContractBackend.EstimateGas(ctx, msg)
+	gas, err := lw.EthereumClient.EstimateGas(ctx, msg)
 
 	if err != nil {
 		return 0, err
@@ -198,9 +207,9 @@ func (lw *loggingWrapper) EstimateGas(ctx context.Context, msg ethereum.CallMsg)
 	return gas, nil
 }
 
-// WrapCallLogging wraps certain call-related methods on the given `backend`
+// WrapCallLogging wraps certain call-related methods on the given `client`
 // with debug logging sent to the given `logger`. Actual functionality is
-// delegated to the passed backend.
-func WrapCallLogging(logger log.EventLogger, backend bind.ContractBackend) bind.ContractBackend {
-	return &loggingWrapper{backend, logger}
+// delegated to the passed client.
+func WrapCallLogging(logger log.EventLogger, client EthereumClient) EthereumClient {
+	return &loggingWrapper{client, logger}
 }

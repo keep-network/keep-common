@@ -3,6 +3,7 @@ package blockcounter
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"strconv"
 	"sync"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/ipfs/go-log"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 var logger = log.Logger("keep-block-counter")
@@ -155,7 +155,7 @@ func (ebc *EthereumBlockCounter) receiveBlocks() {
 }
 
 // subscribeBlocks creates a subscription to Geth to get each block.
-func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client *ethclient.Client) error {
+func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client ethereum.ChainReader) error {
 	errorChan := make(chan error)
 	newBlockChan := make(chan *types.Header)
 
@@ -213,7 +213,7 @@ func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client *et
 	return nil
 }
 
-func CreateBlockCounter(client *ethclient.Client) (*EthereumBlockCounter, error) {
+func CreateBlockCounter(client ethereum.ChainReader) (*EthereumBlockCounter, error) {
 	ctx := context.Background()
 
 	startupBlock, err := client.BlockByNumber(

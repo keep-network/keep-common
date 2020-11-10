@@ -3,7 +3,6 @@ package ethutil
 import (
 	"context"
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
@@ -20,14 +19,14 @@ func TestRateLimiter(t *testing.T) {
 	requests := 500
 	requestDuration := 10 * time.Millisecond
 
-	backend := &mockBackend{
+	client := &mockEthereumClient{
 		requestDuration,
 		make([]string, 0),
 		sync.Mutex{},
 	}
 
-	rateLimitingBackend := WrapRateLimiting(
-		backend,
+	rateLimitingClient := WrapRateLimiting(
+		client,
 		&RateLimiterConfig{
 			RequestsPerSecondLimit: requestsPerSecondLimit,
 			ConcurrencyLimit:       concurrencyLimit,
@@ -35,7 +34,7 @@ func TestRateLimiter(t *testing.T) {
 		},
 	)
 
-	for testName, test := range getTests(rateLimitingBackend) {
+	for testName, test := range getTests(rateLimitingClient) {
 		t.Run(testName, func(t *testing.T) {
 			wg := sync.WaitGroup{}
 			wg.Add(requests)
@@ -75,7 +74,7 @@ func TestRateLimiter(t *testing.T) {
 
 			maxConcurrency := 0
 			temporaryConcurrency := 0
-			for _, event := range backend.events {
+			for _, event := range client.events {
 				if event == "start" {
 					temporaryConcurrency++
 				}
@@ -109,14 +108,14 @@ func TestRateLimiter_RequestsPerSecondLimitOnly(t *testing.T) {
 	requests := 500
 	requestDuration := 10 * time.Millisecond
 
-	backend := &mockBackend{
+	client := &mockEthereumClient{
 		requestDuration,
 		make([]string, 0),
 		sync.Mutex{},
 	}
 
-	rateLimitingBackend := WrapRateLimiting(
-		backend,
+	rateLimitingClient := WrapRateLimiting(
+		client,
 		&RateLimiterConfig{
 			RequestsPerSecondLimit: requestsPerSecondLimit,
 			ConcurrencyLimit:       concurrencyLimit,
@@ -124,7 +123,7 @@ func TestRateLimiter_RequestsPerSecondLimitOnly(t *testing.T) {
 		},
 	)
 
-	for testName, test := range getTests(rateLimitingBackend) {
+	for testName, test := range getTests(rateLimitingClient) {
 		t.Run(testName, func(t *testing.T) {
 			wg := sync.WaitGroup{}
 			wg.Add(requests)
@@ -176,14 +175,14 @@ func TestRateLimiter_ConcurrencyLimitOnly(t *testing.T) {
 	requests := 500
 	requestDuration := 10 * time.Millisecond
 
-	backend := &mockBackend{
+	client := &mockEthereumClient{
 		requestDuration,
 		make([]string, 0),
 		sync.Mutex{},
 	}
 
-	rateLimitingBackend := WrapRateLimiting(
-		backend,
+	rateLimitingClient := WrapRateLimiting(
+		client,
 		&RateLimiterConfig{
 			RequestsPerSecondLimit: requestsPerSecondLimit,
 			ConcurrencyLimit:       concurrencyLimit,
@@ -191,7 +190,7 @@ func TestRateLimiter_ConcurrencyLimitOnly(t *testing.T) {
 		},
 	)
 
-	for testName, test := range getTests(rateLimitingBackend) {
+	for testName, test := range getTests(rateLimitingClient) {
 		t.Run(testName, func(t *testing.T) {
 			wg := sync.WaitGroup{}
 			wg.Add(requests)
@@ -217,7 +216,7 @@ func TestRateLimiter_ConcurrencyLimitOnly(t *testing.T) {
 
 			maxConcurrency := 0
 			temporaryConcurrency := 0
-			for _, event := range backend.events {
+			for _, event := range client.events {
 				if event == "start" {
 					temporaryConcurrency++
 				}
@@ -251,14 +250,14 @@ func TestRateLimiter_AcquirePermitTimout(t *testing.T) {
 	requests := 3
 	requestDuration := 250 * time.Millisecond
 
-	backend := &mockBackend{
+	client := &mockEthereumClient{
 		requestDuration,
 		make([]string, 0),
 		sync.Mutex{},
 	}
 
-	rateLimitingBackend := WrapRateLimiting(
-		backend,
+	rateLimitingClient := WrapRateLimiting(
+		client,
 		&RateLimiterConfig{
 			RequestsPerSecondLimit: requestsPerSecondLimit,
 			ConcurrencyLimit:       concurrencyLimit,
@@ -276,7 +275,7 @@ func TestRateLimiter_AcquirePermitTimout(t *testing.T) {
 		go func() {
 			<-startSignal
 
-			err := rateLimitingBackend.SendTransaction(context.Background(), nil)
+			err := rateLimitingClient.SendTransaction(context.Background(), nil)
 			if err != nil {
 				errors <- err
 			}
@@ -305,106 +304,179 @@ func TestRateLimiter_AcquirePermitTimout(t *testing.T) {
 	}
 }
 
-type mockBackend struct {
+type mockEthereumClient struct {
 	requestDuration time.Duration
 
 	events []string
 	mutex  sync.Mutex
 }
 
-func (mb *mockBackend) mockRequest() {
-	mb.mutex.Lock()
-	mb.events = append(mb.events, "start")
-	mb.mutex.Unlock()
+func (mec *mockEthereumClient) mockRequest() {
+	mec.mutex.Lock()
+	mec.events = append(mec.events, "start")
+	mec.mutex.Unlock()
 
-	time.Sleep(mb.requestDuration)
+	time.Sleep(mec.requestDuration)
 
-	mb.mutex.Lock()
-	mb.events = append(mb.events, "end")
-	mb.mutex.Unlock()
+	mec.mutex.Lock()
+	mec.events = append(mec.events, "end")
+	mec.mutex.Unlock()
 }
 
-func (mb *mockBackend) CodeAt(
+func (mec *mockEthereumClient) CodeAt(
 	ctx context.Context,
 	contract common.Address,
 	blockNumber *big.Int,
 ) ([]byte, error) {
-	mb.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mb *mockBackend) CallContract(
+func (mec *mockEthereumClient) CallContract(
 	ctx context.Context,
 	call ethereum.CallMsg,
 	blockNumber *big.Int,
 ) ([]byte, error) {
-	mb.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mb *mockBackend) PendingCodeAt(
+func (mec *mockEthereumClient) PendingCodeAt(
 	ctx context.Context,
 	account common.Address,
 ) ([]byte, error) {
-	mb.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mb *mockBackend) PendingNonceAt(
+func (mec *mockEthereumClient) PendingNonceAt(
 	ctx context.Context,
 	account common.Address,
 ) (uint64, error) {
-	mb.mockRequest()
+	mec.mockRequest()
 	return 0, nil
 }
 
-func (mb *mockBackend) SuggestGasPrice(
+func (mec *mockEthereumClient) SuggestGasPrice(
 	ctx context.Context,
 ) (*big.Int, error) {
-	mb.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mb *mockBackend) EstimateGas(
+func (mec *mockEthereumClient) EstimateGas(
 	ctx context.Context,
 	call ethereum.CallMsg,
 ) (uint64, error) {
-	mb.mockRequest()
+	mec.mockRequest()
 	return 0, nil
 }
 
-func (mb *mockBackend) SendTransaction(
+func (mec *mockEthereumClient) SendTransaction(
 	ctx context.Context,
 	tx *types.Transaction,
 ) error {
-	mb.mockRequest()
+	mec.mockRequest()
 	return nil
 }
 
-func (mb *mockBackend) FilterLogs(
+func (mec *mockEthereumClient) FilterLogs(
 	ctx context.Context,
 	query ethereum.FilterQuery,
 ) ([]types.Log, error) {
-	mb.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mb *mockBackend) SubscribeFilterLogs(
+func (mec *mockEthereumClient) SubscribeFilterLogs(
 	ctx context.Context,
 	query ethereum.FilterQuery,
 	ch chan<- types.Log,
 ) (ethereum.Subscription, error) {
-	mb.mockRequest()
+	mec.mockRequest()
+	return nil, nil
+}
+
+func (mec *mockEthereumClient) BlockByHash(
+	ctx context.Context,
+	hash common.Hash,
+) (*types.Block, error) {
+	mec.mockRequest()
+	return nil, nil
+}
+
+func (mec *mockEthereumClient) BlockByNumber(
+	ctx context.Context,
+	number *big.Int,
+) (*types.Block, error) {
+	mec.mockRequest()
+	return nil, nil
+}
+
+func (mec *mockEthereumClient) HeaderByHash(
+	ctx context.Context,
+	hash common.Hash,
+) (*types.Header, error) {
+	mec.mockRequest()
+	return nil, nil
+}
+
+func (mec *mockEthereumClient) HeaderByNumber(
+	ctx context.Context,
+	number *big.Int,
+) (*types.Header, error) {
+	mec.mockRequest()
+	return nil, nil
+}
+
+func (mec *mockEthereumClient) TransactionCount(
+	ctx context.Context,
+	blockHash common.Hash,
+) (uint, error) {
+	mec.mockRequest()
+	return 0, nil
+}
+
+func (mec *mockEthereumClient) TransactionInBlock(
+	ctx context.Context,
+	blockHash common.Hash,
+	index uint,
+) (*types.Transaction, error) {
+	mec.mockRequest()
+	return nil, nil
+}
+
+func (mec *mockEthereumClient) SubscribeNewHead(
+	ctx context.Context,
+	ch chan<- *types.Header,
+) (ethereum.Subscription, error) {
+	mec.mockRequest()
+	return nil, nil
+}
+
+func (mec *mockEthereumClient) TransactionByHash(
+	ctx context.Context,
+	txHash common.Hash,
+) (*types.Transaction, bool, error) {
+	mec.mockRequest()
+	return nil, false, nil
+}
+
+func (mec *mockEthereumClient) TransactionReceipt(
+	ctx context.Context,
+	txHash common.Hash,
+) (*types.Receipt, error) {
+	mec.mockRequest()
 	return nil, nil
 }
 
 func getTests(
-	backend bind.ContractBackend,
+	client EthereumClient,
 ) map[string]struct{ function func() error } {
 	return map[string]struct{ function func() error }{
 		"test CodeAt": {
 			function: func() error {
-				_, err := backend.CodeAt(
+				_, err := client.CodeAt(
 					context.Background(),
 					[20]byte{},
 					nil,
@@ -414,7 +486,7 @@ func getTests(
 		},
 		"test CallContract": {
 			function: func() error {
-				_, err := backend.CallContract(
+				_, err := client.CallContract(
 					context.Background(),
 					ethereum.CallMsg{},
 					nil,
@@ -424,7 +496,7 @@ func getTests(
 		},
 		"test PendingCodeAt": {
 			function: func() error {
-				_, err := backend.PendingCodeAt(
+				_, err := client.PendingCodeAt(
 					context.Background(),
 					[20]byte{},
 				)
@@ -433,7 +505,7 @@ func getTests(
 		},
 		"test PendingNonceAt": {
 			function: func() error {
-				_, err := backend.PendingNonceAt(
+				_, err := client.PendingNonceAt(
 					context.Background(),
 					[20]byte{},
 				)
@@ -442,7 +514,7 @@ func getTests(
 		},
 		"test SuggestGasPrice": {
 			function: func() error {
-				_, err := backend.SuggestGasPrice(
+				_, err := client.SuggestGasPrice(
 					context.Background(),
 				)
 				return err
@@ -450,7 +522,7 @@ func getTests(
 		},
 		"test EstimateGas": {
 			function: func() error {
-				_, err := backend.EstimateGas(
+				_, err := client.EstimateGas(
 					context.Background(),
 					ethereum.CallMsg{},
 				)
@@ -459,7 +531,7 @@ func getTests(
 		},
 		"test SendTransaction": {
 			function: func() error {
-				err := backend.SendTransaction(
+				err := client.SendTransaction(
 					context.Background(),
 					nil,
 				)
@@ -468,7 +540,7 @@ func getTests(
 		},
 		"test FilterLogs": {
 			function: func() error {
-				_, err := backend.FilterLogs(
+				_, err := client.FilterLogs(
 					context.Background(),
 					ethereum.FilterQuery{},
 				)
@@ -477,10 +549,92 @@ func getTests(
 		},
 		"test SubscribeFilterLogs": {
 			function: func() error {
-				_, err := backend.SubscribeFilterLogs(
+				_, err := client.SubscribeFilterLogs(
 					context.Background(),
 					ethereum.FilterQuery{},
 					nil,
+				)
+				return err
+			},
+		},
+		"test BlockByHash": {
+			function: func() error {
+				_, err := client.BlockByHash(
+					context.Background(),
+					common.Hash{},
+				)
+				return err
+			},
+		},
+		"test BlockByNumber": {
+			function: func() error {
+				_, err := client.BlockByNumber(
+					context.Background(),
+					nil,
+				)
+				return err
+			},
+		},
+		"test HeaderByHash": {
+			function: func() error {
+				_, err := client.HeaderByHash(
+					context.Background(),
+					common.Hash{},
+				)
+				return err
+			},
+		},
+		"test HeaderByNumber": {
+			function: func() error {
+				_, err := client.HeaderByNumber(
+					context.Background(),
+					nil,
+				)
+				return err
+			},
+		},
+		"test TransactionCount": {
+			function: func() error {
+				_, err := client.TransactionCount(
+					context.Background(),
+					common.Hash{},
+				)
+				return err
+			},
+		},
+		"test TransactionInBlock": {
+			function: func() error {
+				_, err := client.TransactionInBlock(
+					context.Background(),
+					common.Hash{},
+					0,
+				)
+				return err
+			},
+		},
+		"test SubscribeNewHead": {
+			function: func() error {
+				_, err := client.SubscribeNewHead(
+					context.Background(),
+					nil,
+				)
+				return err
+			},
+		},
+		"test TransactionByHash": {
+			function: func() error {
+				_, _, err := client.TransactionByHash(
+					context.Background(),
+					common.Hash{},
+				)
+				return err
+			},
+		},
+		"test TransactionReceipt": {
+			function: func() error {
+				_, err := client.TransactionReceipt(
+					context.Background(),
+					common.Hash{},
 				)
 				return err
 			},

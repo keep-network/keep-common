@@ -1,18 +1,24 @@
-package ethutil
+package chainutil
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/ipfs/go-log"
+)
+
+var logger = log.Logger("keep-chainutil")
 
 // BlockHeightWaiter provides the ability to wait for a given block height.
 type BlockHeightWaiter interface {
 	WaitForBlockHeight(blockNumber uint64) error
 }
 
-// WaitForChainConfirmation ensures that after receiving specific number of block
+// WaitForBlockConfirmations ensures that after receiving specific number of block
 // confirmations the state of the chain is actually as expected. It waits for
 // predefined number of blocks since the start block number provided. After the
 // required block number is reached it performs a check of the chain state with
 // a provided function returning a boolean value.
-func WaitForChainConfirmation(
+func WaitForBlockConfirmations(
 	blockHeightWaiter BlockHeightWaiter,
 	startBlockNumber uint64,
 	blockConfirmations uint64,

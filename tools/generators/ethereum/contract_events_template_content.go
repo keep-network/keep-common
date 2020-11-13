@@ -9,6 +9,35 @@ type {{$contract.FullVar}}{{$event.CapsName}}Func func(
     {{$event.ParamDeclarations -}}
 )
 
+func ({{$contract.ShortVar}} *{{$contract.Class}}) Past{{$event.CapsName}}Events(
+	startBlock uint64,
+	endBlock *uint64,
+	{{$event.IndexedFilterDeclarations -}}
+) ([]*abi.{{$contract.AbiClass}}{{$event.CapsName}}, error){
+	iterator, err := {{$contract.ShortVar}}.contract.Filter{{$event.CapsName}}(
+		&bind.FilterOpts{
+			Start: startBlock,
+			End:   endBlock,
+		},
+		{{$event.IndexedFilters}}
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error retrieving past {{$event.CapsName}} events: [%v]",
+			err,
+		)
+	}
+
+	events := make([]*abi.{{$contract.AbiClass}}{{$event.CapsName}}, 0)
+
+	for iterator.Next() {
+		event := iterator.Event
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
 func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 	success {{$contract.FullVar}}{{$event.CapsName}}Func,
 	fail func(err error) error,

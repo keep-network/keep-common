@@ -12,7 +12,7 @@ import (
 // from the chain. The local value is invalidated after the certain duration to
 // let the nonce recover in case the mempool crashed before propagating the last
 // transaction sent.
-const localNonceTrustDuration = 5 * time.Second
+const localNonceTrustDuration = 30 * time.Second
 
 // NonceManager tracks the nonce for the account and allows to update it after
 // each successfully submitted transaction. Tracking the nonce locally is

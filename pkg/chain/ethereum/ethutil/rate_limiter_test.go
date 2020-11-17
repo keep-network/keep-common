@@ -470,6 +470,15 @@ func (mec *mockEthereumClient) TransactionReceipt(
 	return nil, nil
 }
 
+func (mec *mockEthereumClient) BalanceAt(
+	ctx context.Context,
+	account common.Address,
+	blockNumber *big.Int,
+) (*big.Int, error) {
+	mec.mockRequest()
+	return nil, nil
+}
+
 func getTests(
 	client EthereumClient,
 ) map[string]struct{ function func() error } {
@@ -635,6 +644,16 @@ func getTests(
 				_, err := client.TransactionReceipt(
 					context.Background(),
 					common.Hash{},
+				)
+				return err
+			},
+		},
+		"test BalanceAt": {
+			function: func() error {
+				_, err := client.BalanceAt(
+					context.Background(),
+					common.Address{},
+					big.NewInt(0),
 				)
 				return err
 			},

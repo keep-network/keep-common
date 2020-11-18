@@ -335,3 +335,17 @@ func (rl *rateLimiter) TransactionReceipt(
 
 	return rl.EthereumClient.TransactionReceipt(ctx, txHash)
 }
+
+func (rl *rateLimiter) BalanceAt(
+	ctx context.Context,
+	account common.Address,
+	blockNumber *big.Int,
+) (*big.Int, error) {
+	err := rl.acquirePermit()
+	if err != nil {
+		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
+	}
+	defer rl.releasePermit()
+
+	return rl.EthereumClient.BalanceAt(ctx, account, blockNumber)
+}

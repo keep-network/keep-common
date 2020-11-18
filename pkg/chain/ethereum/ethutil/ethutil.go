@@ -28,6 +28,12 @@ type EthereumClient interface {
 	bind.ContractBackend
 	ethereum.ChainReader
 	ethereum.TransactionReader
+
+	BalanceAt(
+		ctx context.Context,
+		account common.Address,
+		blockNumber *big.Int,
+	) (*big.Int, error)
 }
 
 // AddressFromHex converts the passed string to a common.Address and returns it,

@@ -39,12 +39,12 @@ type Config struct {
 	// time, the gas price is increased and transaction is resubmitted.
 	MiningCheckInterval int
 
-	// MaxGasPrice specifies the maximum gas price the client is
+	// MaxGasPrice specifies the maximum gas price (in wei) the client is
 	// willing to pay for the transaction to be mined. The offered transaction
 	// gas price can not be higher than the max gas price value. If the maximum
 	// allowed gas price is reached, no further resubmission attempts are
 	// performed.
-	MaxGasPrice uint64
+	MaxGasPrice *Ethers
 
 	// RequestsPerSecondLimit sets the maximum average number of requests
 	// per second which can be executed against the Ethereum node.
@@ -58,9 +58,9 @@ type Config struct {
 	// including view function calls.
 	ConcurrencyLimit int
 
-	// BalanceAlertThreshold defines a minimum value of the operator's account
+	// BalanceAlertThreshold defines a minimum value (wei) of the operator's account
 	// balance below which an alert will be triggered.
-	BalanceAlertThreshold uint64
+	BalanceAlertThreshold *Ethers
 }
 
 // ContractAddress finds a given contract's address configuration and returns it

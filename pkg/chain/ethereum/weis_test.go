@@ -80,7 +80,7 @@ func TestUnmarshalText(t *testing.T) {
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
 
-			e := &Ethers{}
+			e := &Weis{}
 			err := e.UnmarshalText([]byte(test.value))
 			if test.expectedError != nil {
 				if !reflect.DeepEqual(test.expectedError, err) {

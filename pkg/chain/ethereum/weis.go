@@ -9,12 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// Ethers is a custom type to handle Ether value parsing in configuration files
+// Weis is a custom type to handle Ether value parsing in configuration files
 // using BurntSushi/toml package. It supports wei, Gwei and ether units. The
 // Ether value is kept as `wei` and `wei` is the default unit.
 // The value can be provided in the text file as e.g.: `1 wei`, `200 Gwei` or
 // `0.5 ether`.
-type Ethers struct {
+type Weis struct {
 	*big.Int
 }
 
@@ -33,7 +33,7 @@ func (u Unit) String() string {
 }
 
 // UnmarshalText is a function used to parse a value of Ethers.
-func (e *Ethers) UnmarshalText(text []byte) error {
+func (e *Weis) UnmarshalText(text []byte) error {
 	re := regexp.MustCompile(`^(\d*[\.]?[\d]*)[ ]*([\w]*)$`)
 	matched := re.FindSubmatch(text)
 

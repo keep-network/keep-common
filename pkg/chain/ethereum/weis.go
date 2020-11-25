@@ -37,7 +37,7 @@ func (e *Weis) UnmarshalText(text []byte) error {
 	re := regexp.MustCompile(`^(\d+[\.]?[\d]*)[ ]?([\w]*)$`)
 	matched := re.FindSubmatch(text)
 
-	if len(matched) < 1 {
+	if len(matched) != 3 {
 		return fmt.Errorf("failed to parse value: [%s]", text)
 	}
 

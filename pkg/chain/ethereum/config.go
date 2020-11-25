@@ -44,7 +44,7 @@ type Config struct {
 	// gas price can not be higher than the max gas price value. If the maximum
 	// allowed gas price is reached, no further resubmission attempts are
 	// performed.
-	MaxGasPrice *Weis
+	MaxGasPrice *Wei
 
 	// RequestsPerSecondLimit sets the maximum average number of requests
 	// per second which can be executed against the Ethereum node.
@@ -60,7 +60,7 @@ type Config struct {
 
 	// BalanceAlertThreshold defines a minimum value (wei) of the operator's account
 	// balance below which an alert will be triggered.
-	BalanceAlertThreshold *Weis
+	BalanceAlertThreshold *Wei
 }
 
 // ContractAddress finds a given contract's address configuration and returns it

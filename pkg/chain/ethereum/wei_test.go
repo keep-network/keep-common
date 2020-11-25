@@ -8,7 +8,6 @@ import (
 )
 
 func TestUnmarshalText(t *testing.T) {
-
 	int5000ether, _ := new(big.Int).SetString("5000000000000000000000", 10)
 
 	var tests = map[string]struct {
@@ -141,7 +140,7 @@ func TestUnmarshalText(t *testing.T) {
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
 
-			e := &Weis{}
+			e := &Wei{}
 			err := e.UnmarshalText([]byte(test.value))
 			if test.expectedError != nil {
 				if !reflect.DeepEqual(test.expectedError, err) {

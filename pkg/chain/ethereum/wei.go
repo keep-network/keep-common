@@ -9,20 +9,20 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// Weis is a custom type to handle Ether value parsing in configuration files
+// Wei is a custom type to handle Ether value parsing in configuration files
 // using BurntSushi/toml package. It supports wei, Gwei and ether units. The
 // Ether value is kept as `wei` and `wei` is the default unit.
 // The value can be provided in the text file as e.g.: `1 wei`, `200 Gwei` or
 // `0.5 ether`.
-type Weis struct {
+type Wei struct {
 	*big.Int
 }
 
-// The most common units for Ether values.
+// The most common units for ether values.
 const (
-	Wei unit = iota
-	Gwei
-	Ether
+	wei unit = iota
+	gwei
+	ether
 )
 
 // unit represents Ether value unit.
@@ -33,7 +33,7 @@ func (u unit) String() string {
 }
 
 // UnmarshalText is a function used to parse a value of Ethers.
-func (e *Weis) UnmarshalText(text []byte) error {
+func (e *Wei) UnmarshalText(text []byte) error {
 	re := regexp.MustCompile(`^(\d+[\.]?[\d]*)[ ]?([\w]*)$`)
 	matched := re.FindSubmatch(text)
 
@@ -55,13 +55,13 @@ func (e *Weis) UnmarshalText(text []byte) error {
 	}
 
 	switch strings.ToLower(string(unit)) {
-	case strings.ToLower(Ether.String()):
+	case strings.ToLower(ether.String()):
 		number.Mul(number, big.NewFloat(params.Ether))
 		e.Int, _ = number.Int(nil)
-	case strings.ToLower(Gwei.String()):
+	case strings.ToLower(gwei.String()):
 		number.Mul(number, big.NewFloat(params.GWei))
 		e.Int, _ = number.Int(nil)
-	case strings.ToLower(Wei.String()):
+	case strings.ToLower(wei.String()):
 		number.Mul(number, big.NewFloat(params.Wei))
 		e.Int, _ = number.Int(nil)
 	default:

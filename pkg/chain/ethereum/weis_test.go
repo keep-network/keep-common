@@ -24,6 +24,10 @@ func TestUnmarshalText(t *testing.T) {
 			value:          "1",
 			expectedResult: big.NewInt(1),
 		},
+		"missing unit": {
+			value:          "702",
+			expectedResult: big.NewInt(702),
+		},
 		"unit: wei": {
 			value:          "4 wei",
 			expectedResult: big.NewInt(4),
@@ -41,20 +45,24 @@ func TestUnmarshalText(t *testing.T) {
 			expectedResult: big.NewInt(5000000000),
 		},
 		"decimal wei": {
-			value:          "2.99 wei",
+			value:          "2.9 wei",
 			expectedResult: big.NewInt(2),
 		},
 		"decimal ether": {
 			value:          "0.8 ether",
 			expectedResult: big.NewInt(800000000000000000),
 		},
+		"multiple decimal digits": {
+			value:          "5.6789 Gwei",
+			expectedResult: big.NewInt(5678900000),
+		},
+		"missing decimal digit": {
+			value:          "6. Gwei",
+			expectedResult: big.NewInt(6000000000),
+		},
 		"no space": {
 			value:          "9ether",
 			expectedResult: big.NewInt(9000000000000000000),
-		},
-		"double space": {
-			value:          "100  Gwei",
-			expectedResult: big.NewInt(100000000000),
 		},
 		"int overflow amount": {
 			value:          "5000000000000000000000",
@@ -64,17 +72,70 @@ func TestUnmarshalText(t *testing.T) {
 			value:          "5000 ether",
 			expectedResult: int5000ether,
 		},
+		"double space": {
+			value:         "100  Gwei",
+			expectedError: fmt.Errorf("failed to parse value: [100  Gwei]"),
+		},
+		"leading space": {
+			value:         " 3 wei",
+			expectedError: fmt.Errorf("failed to parse value: [ 3 wei]"),
+		},
+		"trailing space": {
+			value:         "3 wei ",
+			expectedError: fmt.Errorf("failed to parse value: [3 wei ]"),
+		},
+
 		"invalid comma delimeter": {
 			value:         "3,5 ether",
 			expectedError: fmt.Errorf("failed to parse value: [3,5 ether]"),
+		},
+		"only decimal number": {
+			value:         ".7 Gwei",
+			expectedError: fmt.Errorf("failed to parse value: [.7 Gwei]"),
+		},
+		"duplicated delimeters": {
+			value:         "3..4 wei",
+			expectedError: fmt.Errorf("failed to parse value: [3..4 wei]"),
+		},
+		"multiple decimals": {
+			value:         "3.4.5 wei",
+			expectedError: fmt.Errorf("failed to parse value: [3.4.5 wei]"),
 		},
 		"invalid thousand separator": {
 			value:         "4 500 gwei",
 			expectedError: fmt.Errorf("failed to parse value: [4 500 gwei]"),
 		},
+		"two values": {
+			value:         "3 wei2wei",
+			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: wei, Gwei, ether"),
+		},
+		"two values separated with space": {
+			value:         "3 wei 2wei",
+			expectedError: fmt.Errorf("failed to parse value: [3 wei 2wei]"),
+		},
+		"two values separated with break line": {
+			value:         "3 wei\n2wei",
+			expectedError: fmt.Errorf("failed to parse value: [3 wei\n2wei]"),
+		},
 		"invalid unit: ETH": {
 			value:         "6 ETH",
 			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: wei, Gwei, ether"),
+		},
+		"invalid unit: weinot": {
+			value:         "100 weinot",
+			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: wei, Gwei, ether"),
+		},
+		"invalid unit: notawei": {
+			value:         "100 notawei",
+			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: wei, Gwei, ether"),
+		},
+		"only unit": {
+			value:         "wei",
+			expectedError: fmt.Errorf("failed to parse value: [wei]"),
+		},
+		"invalid number": {
+			value:         "one wei",
+			expectedError: fmt.Errorf("failed to parse value: [one wei]"),
 		},
 	}
 	for testName, test := range tests {

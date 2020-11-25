@@ -41,7 +41,13 @@ func (e *Weis) UnmarshalText(text []byte) error {
 		return fmt.Errorf("failed to parse value: [%s]", text)
 	}
 
-	number, _ := new(big.Float).SetString(string(matched[1]))
+	number, ok := new(big.Float).SetString(string(matched[1]))
+	if !ok {
+		return fmt.Errorf(
+			"failed to set float value from string [%s]",
+			string(matched[1]),
+		)
+	}
 
 	unit := matched[2]
 	if len(unit) == 0 {

@@ -34,7 +34,7 @@ func (u Unit) String() string {
 
 // UnmarshalText is a function used to parse a value of Ethers.
 func (e *Weis) UnmarshalText(text []byte) error {
-	re := regexp.MustCompile(`^(\d*[\.]?[\d]*)[ ]*([\w]*)$`)
+	re := regexp.MustCompile(`^(\d+[\.]?[\d]*)[ ]?([\w]*)$`)
 	matched := re.FindSubmatch(text)
 
 	if len(matched) < 1 {

@@ -20,15 +20,15 @@ type Weis struct {
 
 // The most common units for Ether values.
 const (
-	Wei Unit = iota
+	Wei unit = iota
 	Gwei
 	Ether
 )
 
-// Unit represents Ether value unit.
-type Unit int
+// unit represents Ether value unit.
+type unit int
 
-func (u Unit) String() string {
+func (u unit) String() string {
 	return [...]string{"wei", "Gwei", "ether"}[u]
 }
 

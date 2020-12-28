@@ -50,7 +50,7 @@ func (es *EthereumSigner) Sign(message []byte) ([]byte, error) {
 
 	if len(signature) == SignatureSize {
 		// go-ethereum/crypto produces signature with v={0, 1} and we need to add
-		// 27 to v-part (signature[64]) to conform wtih the on-chain signature
+		// 27 to v-part (signature[64]) to conform with the on-chain signature
 		// validation code that accepts v={27, 28} as specified in the
 		// Appendix F of the Ethereum Yellow Paper
 		// https://ethereum.github.io/yellowpaper/paper.pdf
@@ -79,7 +79,7 @@ func (es *EthereumSigner) VerifyWithPublicKey(
 		es.privateKey.Curve,
 	)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to unmarshal public key: [%v]", err)
 	}
 
 	return verifySignature(message, signature, unmarshalledPubKey)

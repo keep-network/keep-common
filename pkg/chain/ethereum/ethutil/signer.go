@@ -20,7 +20,7 @@ const SignatureSize = 65
 // using the Ethereum-specific signature format. It also provides functions for
 // conversion of a public key to an address.
 type EthereumSigner struct {
-	operatorKey *ecdsa.PrivateKey
+	privateKey *ecdsa.PrivateKey
 }
 
 // NewSigner creates a new EthereumSigner instance for the provided ECDSA
@@ -32,7 +32,7 @@ func NewSigner(privateKey *ecdsa.PrivateKey) *EthereumSigner {
 // PublicKey returns byte representation of a public key for the private key
 // signer was created with.
 func (es *EthereumSigner) PublicKey() []byte {
-	publicKey := es.operatorKey.PublicKey
+	publicKey := es.privateKey.PublicKey
 	return elliptic.Marshal(publicKey.Curve, publicKey.X, publicKey.Y)
 }
 
@@ -43,7 +43,7 @@ func (es *EthereumSigner) Sign(message []byte) ([]byte, error) {
 		message,
 	)
 
-	signature, err := crypto.Sign(prefixedHash, es.operatorKey)
+	signature, err := crypto.Sign(prefixedHash, es.privateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (es *EthereumSigner) Sign(message []byte) ([]byte, error) {
 // EthereumSigner was created with. The signature has to be provided in
 // Ethereum-specific format.
 func (es *EthereumSigner) Verify(message []byte, signature []byte) (bool, error) {
-	return verifySignature(message, signature, &es.operatorKey.PublicKey)
+	return verifySignature(message, signature, &es.privateKey.PublicKey)
 }
 
 // VerifyWithPublicKey verifies the provided message against a signature and
@@ -76,7 +76,7 @@ func (es *EthereumSigner) VerifyWithPublicKey(
 ) (bool, error) {
 	unmarshalledPubKey, err := unmarshalPublicKey(
 		publicKey,
-		es.operatorKey.Curve,
+		es.privateKey.Curve,
 	)
 	if err != nil {
 		return false, err

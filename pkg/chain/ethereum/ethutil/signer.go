@@ -102,7 +102,7 @@ func verifySignature(
 	// The signature should be now 64 bytes long.
 	if len(signature) != 64 {
 		return false, fmt.Errorf(
-			"signature should have 64 bytes; has: [%v]",
+			"signature should have 64 bytes; has: [%d]",
 			len(signature),
 		)
 	}

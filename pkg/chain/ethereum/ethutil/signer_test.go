@@ -7,7 +7,7 @@ import (
 )
 
 func TestSignAndVerify(t *testing.T) {
-	signing, err := newSigning()
+	signer, err := newSigner()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -15,7 +15,7 @@ func TestSignAndVerify(t *testing.T) {
 	message := []byte("He that breaks a thing to find out what it is, has " +
 		"left the path of wisdom.")
 
-	signature, err := signing.Sign(message)
+	signature, err := signer.Sign(message)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestSignAndVerify(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			ok, err := signing.Verify(test.message, test.signature)
+			ok, err := signer.Verify(test.message, test.signature)
 
 			if !ok && test.validSignatureExpected {
 				t.Errorf("expected valid signature but verification failed")
@@ -70,18 +70,18 @@ func TestSignAndVerify(t *testing.T) {
 func TestSignAndVerifyWithProvidedPublicKey(t *testing.T) {
 	message := []byte("I am looking for someone to share in an adventure")
 
-	signing1, err := newSigning()
+	signer1, err := newSigner()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	signing2, err := newSigning()
+	signer2, err := newSigner()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	publicKey := signing1.PublicKey()
-	signature, err := signing1.Sign(message)
+	publicKey := signer1.PublicKey()
+	signature, err := signer1.Sign(message)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestSignAndVerifyWithProvidedPublicKey(t *testing.T) {
 		"invalid remote public key": {
 			message:                 message,
 			signature:               signature,
-			publicKey:               signing2.PublicKey(),
+			publicKey:               signer2.PublicKey(),
 			validSignatureExpected:  false,
 			validationErrorExpected: false,
 		},
@@ -132,7 +132,7 @@ func TestSignAndVerifyWithProvidedPublicKey(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			ok, err := signing2.VerifyWithPublicKey(
+			ok, err := signer2.VerifyWithPublicKey(
 				test.message,
 				test.signature,
 				test.publicKey,
@@ -155,7 +155,7 @@ func TestSignAndVerifyWithProvidedPublicKey(t *testing.T) {
 	}
 }
 
-func newSigning() (*EthereumSigner, error) {
+func newSigner() (*EthereumSigner, error) {
 	key, err := crypto.GenerateKey()
 	if err != nil {
 		return nil, err

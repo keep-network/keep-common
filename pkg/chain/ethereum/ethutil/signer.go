@@ -38,12 +38,7 @@ func (es *EthereumSigner) PublicKey() []byte {
 
 // Sign signs the provided message using Ethereum-specific format.
 func (es *EthereumSigner) Sign(message []byte) ([]byte, error) {
-	prefixedHash := crypto.Keccak256(
-		[]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%v", len(message))),
-		message,
-	)
-
-	signature, err := crypto.Sign(prefixedHash, es.privateKey)
+	signature, err := crypto.Sign(ethereumPrefixedHash(message), es.privateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -107,16 +102,18 @@ func verifySignature(
 		)
 	}
 
-	prefixedHash := crypto.Keccak256(
+	return crypto.VerifySignature(
+		uncompressedPubKey,
+		ethereumPrefixedHash(message),
+		signature,
+	), nil
+}
+
+func ethereumPrefixedHash(message []byte) []byte {
+	return crypto.Keccak256(
 		[]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%v", len(message))),
 		message,
 	)
-
-	return crypto.VerifySignature(
-		uncompressedPubKey,
-		prefixedHash,
-		signature,
-	), nil
 }
 
 func unmarshalPublicKey(

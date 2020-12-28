@@ -63,7 +63,7 @@ func (ls *Signer) VerifyWithPublicKey(
 		ls.operatorKey.Curve,
 	)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to unmarshal public key: [%v]", err)
 	}
 
 	return verifySignature(message, signature, unmarshalledPubKey)
@@ -79,7 +79,7 @@ func verifySignature(
 	sig := &ecdsaSignature{}
 	_, err := asn1.Unmarshal(signature, sig)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to unmarshal signature: [%v]", err)
 	}
 
 	return ecdsa.Verify(publicKey, hash[:], sig.R, sig.S), nil

@@ -9,7 +9,7 @@ import (
 )
 
 // SignatureSize is a byte size of a signature calculated by Ethereum with
-// recovery-id, V, included. The signature consist of three values (R,V,S)
+// recovery-id, V, included. The signature consists of three values (R,S,V)
 // in the following order:
 // R = [0:31]
 // S = [32:63]
@@ -18,12 +18,13 @@ const SignatureSize = 65
 
 // EthereumSigner provides functions to sign a message and verify a signature
 // using the Ethereum-specific signature format. It also provides functions for
-// convertion of a public key to address.
+// conversion of a public key to an address.
 type EthereumSigner struct {
 	operatorKey *ecdsa.PrivateKey
 }
 
-// NewSigner creates a new EthereumSigner instance for the provided private key.
+// NewSigner creates a new EthereumSigner instance for the provided ECDSA
+// private key.
 func NewSigner(privateKey *ecdsa.PrivateKey) *EthereumSigner {
 	return &EthereumSigner{privateKey}
 }

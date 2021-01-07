@@ -66,10 +66,9 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 					violation,
 				)
 			case err := <-subscriptionFailed:
-				{{$logger}}.Warningf(
-					"subscription to event {{$event.CapsName}} failed "+
-						"with error: [%v]; resubscription attempt will be "+
-						"performed",
+				{{$logger}}.Errorf(
+					"subscription to event {{$event.CapsName}} failed: [%v]; "+
+						"resubscription attempt will be performed",
 					err,
 				)
 			}

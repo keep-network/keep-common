@@ -37,7 +37,7 @@ const (
     // subscription required before the subscription failure happens and
     // resubscription follows so that the resubscription does not emit an error
     // to the logs alerting about potential problems with Ethereum client.
-    {{.ShortVar}}SubscriptionAlertThreshold = 5 * time.Minute
+    {{.ShortVar}}SubscriptionAlertThreshold = 15 * time.Minute
 )
 
 type {{.Class}} struct {

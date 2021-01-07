@@ -40,119 +40,62 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Past{{$event.CapsName}}Events
 
 func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 	success {{$contract.FullVar}}{{$event.CapsName}}Func,
-	fail func(err error) error,
 	{{$event.IndexedFilterDeclarations -}}
-) (subscription.EventSubscription, error) {
-    errorChan := make(chan error)
-    unsubscribeChan := make(chan struct{})
+) (subscription.EventSubscription) {
+	eventOccurred := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
+	thresholdViolated := make(chan time.Duration)
+	subscriptionFailed := make(chan error)
 
-    // Delay which must be preserved before a new resubscription attempt.
-    // There is no sense to resubscribe immediately after the fail of current
-    // subscription because the publisher must have some time to recover.
-    retryDelay := 5 * time.Second
+	ctx, cancel := context.WithCancel(context.Background())
 
-    watch := func() {
-    	failCallback := func(err error) error {
-    		fail(err)
-    		errorChan <- err // trigger resubscription signal
-    		return err
-    	}
-
-    	subscription, err := {{$contract.ShortVar}}.subscribe{{$event.CapsName}}(
-    	    success,
-    	    failCallback,
-    	    {{$event.IndexedFilters}}
-    	)
-    	if err != nil {
-    		errorChan <- err // trigger resubscription signal
-    		return
-    	}
-
-    	// wait for unsubscription signal
-    	<-unsubscribeChan
-    	subscription.Unsubscribe()
-    }
-
-    // trigger the resubscriber goroutine
-    go func() {
-    	go watch() // trigger first subscription
-
-    	for {
-    		select {
-    		case <-errorChan:
-    		    {{$logger}}.Warning(
-                    "subscription to event {{$event.CapsName}} terminated with error; " +
-                        "resubscription attempt will be performed after the retry delay",
-                )
-    			time.Sleep(retryDelay)
-    			go watch()
-    		case <-unsubscribeChan:
-    			// shutdown the resubscriber goroutine on unsubscribe signal
-    			return
-    		}
-    	}
-    }()
-
-    // closing the unsubscribeChan will trigger a unsubscribe signal and
-    // run unsubscription for all subscription instances
-    unsubscribeCallback := func() {
-    	close(unsubscribeChan)
-    }
-
-    return subscription.NewEventSubscription(unsubscribeCallback), nil
-}
-
-func ({{$contract.ShortVar}} *{{$contract.Class}}) subscribe{{$event.CapsName}}(
-	success {{$contract.FullVar}}{{$event.CapsName}}Func,
-	fail func(err error) error,
-	{{$event.IndexedFilterDeclarations -}}
-) (subscription.EventSubscription, error) {
-	eventChan := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
-	eventSubscription, err := {{$contract.ShortVar}}.contract.Watch{{$event.CapsName}}(
-		nil,
-		eventChan,
-		{{$event.IndexedFilters}}
-	)
-	if err != nil {
-		close(eventChan)
-		return eventSubscription, fmt.Errorf(
-			"error creating watch for {{$event.CapsName}} events: [%v]",
-			err,
-		)
-	}
-
-	var subscriptionMutex = &sync.Mutex{}
 
 	go func() {
 		for {
 			select {
-			case event, subscribed := <-eventChan:
-				subscriptionMutex.Lock()
-				// if eventChan has been closed, it means we have unsubscribed
-				if !subscribed {
-					subscriptionMutex.Unlock()
-					return
-				}
+			case <-ctx.Done():
+				return
+			case event := <-eventOccurred:
 				success(
                     {{$event.ParamExtractors}}
 				)
-				subscriptionMutex.Unlock()
-			case ee := <-eventSubscription.Err():
-				fail(ee)
-				return
+			case violation := <-thresholdViolated:
+				{{$logger}}.Errorf(
+					"subscription to event {{$event.CapsName}} had to be "+
+						"retried [%v] since the last attempt; please inspect "+
+						"Ethereum client connectivity",
+					violation,
+				)
+			case err := <-subscriptionFailed:
+				{{$logger}}.Warningf(
+					"subscription to event {{$event.CapsName}} failed "+
+						"with error: [%v]; resubscription attempt will be "+
+						"performed",
+					err,
+				)
 			}
 		}
 	}()
 
-	unsubscribeCallback := func() {
-		subscriptionMutex.Lock()
-		defer subscriptionMutex.Unlock()
-
-		eventSubscription.Unsubscribe()
-		close(eventChan)
+	subscribeFn := func(ctx context.Context) (event.Subscription, error) {
+		return {{$contract.ShortVar}}.contract.Watch{{$event.CapsName}}(
+			&bind.WatchOpts{Context: ctx},
+			eventOccurred,
+			{{$event.IndexedFilters}}
+		)
 	}
 
-	return subscription.NewEventSubscription(unsubscribeCallback), nil
+	sub := ethutil.WithResubscription(
+		{{$contract.ShortVar}}SubscriptionBackoffMax,
+		subscribeFn,
+		{{$contract.ShortVar}}SubscriptionAlertThreshold,
+		thresholdViolated,
+		subscriptionFailed,
+	)
+
+	return subscription.NewEventSubscription(func() {
+		sub.Unsubscribe()
+		cancel()
+	})
 }
 
 {{- end -}}`

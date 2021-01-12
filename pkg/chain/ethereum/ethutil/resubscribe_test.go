@@ -31,8 +31,8 @@ func TestEmitOriginalError(t *testing.T) {
 		backoffMax,
 		resubscribeFn,
 		alertThreshold,
-		thresholdViolated,
-		subscriptionFailed,
+		func(elapsed time.Duration) { thresholdViolated <- elapsed },
+		func(err error) { subscriptionFailed <- err },
 	)
 	<-subscription.Err()
 
@@ -83,8 +83,8 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 		backoffMax,
 		resubscribeFn,
 		alertThreshold,
-		thresholdViolated,
-		subscriptionFailed,
+		func(elapsed time.Duration) { thresholdViolated <- elapsed },
+		func(err error) { subscriptionFailed <- err },
 	)
 	<-subscription.Err()
 
@@ -149,8 +149,8 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 		backoffMax,
 		resubscribeFn,
 		alertThreshold,
-		thresholdViolated,
-		subscriptionFailed,
+		func(elapsed time.Duration) { thresholdViolated <- elapsed },
+		func(err error) { subscriptionFailed <- err },
 	)
 	<-subscription.Err()
 
@@ -236,16 +236,31 @@ func TestDoNotBlockOnChannelWrites(t *testing.T) {
 		return delegate, nil
 	}
 
-	// Non-buffered channels with no receivers
+	// Non-buffered channels with no receivers, will block on write
 	thresholdViolated := make(chan time.Duration)
 	subscriptionFailed := make(chan error)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	subscription := WithResubscription(
 		backoffMax,
 		resubscribeFn,
 		alertThreshold,
-		thresholdViolated,
-		subscriptionFailed,
+		func(elapsed time.Duration) {
+			select {
+			case thresholdViolated <- elapsed:
+			case <-ctx.Done():
+				return
+			}
+		},
+		func(err error) {
+			select {
+			case subscriptionFailed <- err:
+			case <-ctx.Done():
+				return
+			}
+		},
 	)
 	<-subscription.Err()
 

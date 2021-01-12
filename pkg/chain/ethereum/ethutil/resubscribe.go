@@ -3,6 +3,7 @@ package ethutil
 import (
 	"context"
 	"time"
+
 	"github.com/ethereum/go-ethereum/event"
 )
 
@@ -16,45 +17,36 @@ import (
 // exceed backoffMax.
 //
 // The mechanism monitors the time elapsed between resubscription attempts and
-// if it is shorter than the specificed alertThreshold, it writes the time
-// elapsed between resubscription attempts to the thresholdViolated channel to
-// alarm about potential problems with the stability of the subscription.
+// if it is shorter than the specificed alertThreshold, it calls
+// thresholdViolatedFn passing the time elapsed between resubscription attempts.
+// This function alarms about potential problems with the stability of the
+// subscription.
 //
-// Every error returned by the wrapped subscription function, is written to
-// subscriptionFailed channel.
+// In case of an error returned by the wrapped subscription function,
+// subscriptionFailedFn is called with the underlying error.
 //
-// If the calling code is interested in reading from thresholdViolated and/or
-// subscriptionFailed channel, appropriate readers need to be set up *before*
-// WithResubscription is called.
-//
-// Writes to thresholdViolated and subscriptionFailed channels are non-blocking
-// and are not stopping resubscription attempts.
+// thresholdViolatedFn and subscriptionFailedFn calls are executed in a separate
+// goroutine and thus are non-blocking.
 func WithResubscription(
 	backoffMax time.Duration,
-	resubscribeFn event.ResubscribeFunc,	
+	resubscribeFn event.ResubscribeFunc,
 	alertThreshold time.Duration,
-	thresholdViolated chan<- time.Duration,
-	subscriptionFailed chan<- error,
+	thresholdViolatedFn func(time.Duration),
+	subscriptionFailedFn func(error),
 ) event.Subscription {
 	lastAttempt := time.Time{}
 	wrappedResubscribeFn := func(ctx context.Context) (event.Subscription, error) {
 		now := time.Now()
 		elapsed := now.Sub(lastAttempt)
 		if elapsed < alertThreshold {
-			select {
-			case thresholdViolated <- elapsed: 
-			default:
-			}
+			go thresholdViolatedFn(elapsed)
 		}
-		
+
 		lastAttempt = now
 
 		sub, err := resubscribeFn(ctx)
 		if err != nil {
-			select {
-			case subscriptionFailed <- err:
-			default:
-			}
+			go subscriptionFailedFn(err)
 		}
 		return sub, err
 	}

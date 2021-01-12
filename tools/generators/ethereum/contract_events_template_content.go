@@ -43,12 +43,11 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 	{{$event.IndexedFilterDeclarations -}}
 ) (subscription.EventSubscription) {
 	eventOccurred := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
-	thresholdViolated := make(chan time.Duration)
-	subscriptionFailed := make(chan error)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-
+	// TODO: Watch* function will soon accept channel as a parameter instead
+	// of the callback. This loop will be eliminated then.
 	go func() {
 		for {
 			select {
@@ -57,19 +56,6 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 			case event := <-eventOccurred:
 				success(
                     {{$event.ParamExtractors}}
-				)
-			case violation := <-thresholdViolated:
-				{{$logger}}.Errorf(
-					"subscription to event {{$event.CapsName}} had to be "+
-						"retried [%v] since the last attempt; please inspect "+
-						"Ethereum client connectivity",
-					violation,
-				)
-			case err := <-subscriptionFailed:
-				{{$logger}}.Errorf(
-					"subscription to event {{$event.CapsName}} failed: [%v]; "+
-						"resubscription attempt will be performed",
-					err,
 				)
 			}
 		}
@@ -87,8 +73,22 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 		{{$contract.ShortVar}}SubscriptionBackoffMax,
 		subscribeFn,
 		{{$contract.ShortVar}}SubscriptionAlertThreshold,
-		thresholdViolated,
-		subscriptionFailed,
+		func(elapsed time.Duration) {
+			{{$logger}}.Errorf(
+					"subscription to event {{$event.CapsName}} had to be "+
+						"retried [%v] since the last attempt; please inspect "+
+						"Ethereum client connectivity",
+					elapsed,
+				)
+		},
+		func(err error) {
+			{{$logger}}.Errorf(
+					"subscription to event {{$event.CapsName}} failed "+
+						"with error: [%v]; resubscription attempt will be "+
+						"performed",
+					err,
+				)
+		},
 	)
 
 	return subscription.NewEventSubscription(func() {

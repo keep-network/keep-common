@@ -80,10 +80,12 @@ type returnInfo struct {
 type eventInfo struct {
 	CapsName                  string
 	LowerName                 string
+	ShortVar                  string
 	IndexedFilters            string
 	ParamExtractors           string
 	ParamDeclarations         string
 	IndexedFilterDeclarations string
+	IndexedFilterFields       string
 }
 
 func buildContractInfo(
@@ -245,6 +247,7 @@ func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
 		paramDeclarations := ""
 		paramExtractors := ""
 		indexedFilterDeclarations := ""
+		indexedFilterFields := ""
 		indexedFilters := ""
 		for _, param := range event.Inputs {
 			upperParam := uppercaseFirst(param.Name)
@@ -254,6 +257,7 @@ func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
 			paramExtractors += fmt.Sprintf("event.%v,\n", upperParam)
 			if param.Indexed {
 				indexedFilterDeclarations += fmt.Sprintf("%vFilter []%v,\n", param.Name, goType)
+				indexedFilterFields += fmt.Sprintf("%vFilter []%v\n", param.Name, goType)
 				indexedFilters += fmt.Sprintf("%vFilter,\n", param.Name)
 			}
 		}
@@ -261,13 +265,20 @@ func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
 		paramDeclarations += "blockNumber uint64,\n"
 		paramExtractors += "event.Raw.BlockNumber,\n"
 
+		shortVar := strings.ToLower(string(shortVarRegexp.ReplaceAll(
+			[]byte(name),
+			[]byte("$1"),
+		)))
+
 		eventInfos = append(eventInfos, eventInfo{
 			uppercaseFirst(name),
 			lowercaseFirst(name),
+			shortVar,
 			indexedFilters,
 			paramExtractors,
 			paramDeclarations,
 			indexedFilterDeclarations,
+			indexedFilterFields,
 		})
 	}
 

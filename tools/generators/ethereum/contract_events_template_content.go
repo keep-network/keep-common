@@ -5,9 +5,36 @@ var contractEventsTemplateContent = `{{- $contract := . -}}
 {{- $logger := (print $contract.ShortVar "Logger") -}}
 {{- range $i, $event := .Events }}
 
+func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
+	opts *ethutil.SubscribeOpts,
+	{{$event.IndexedFilterDeclarations -}}
+) *{{$event.CapsName}}Subscription {
+	return &{{$event.CapsName}}Subscription{
+		opts,
+		{{$event.IndexedFilters}}
+	}
+}
+
+type {{$event.CapsName}}Subscription struct {
+	opts *ethutil.SubscribeOpts
+	{{$event.IndexedFilterFields -}}
+}
+
+func ({{$event.ShortVar}}s *{{$event.CapsName}}Subscription) Pipe(
+	chan *abi.{{$contract.AbiClass}}{{$event.CapsName}},
+) {
+
+}
+
 type {{$contract.FullVar}}{{$event.CapsName}}Func func(
-    {{$event.ParamDeclarations -}}
+	{{$event.ParamDeclarations -}}
 )
+
+func ({{$event.ShortVar}}s *{{$event.CapsName}}Subscription) OnEvent(
+	handler {{$contract.FullVar}}{{$event.CapsName}}Func,
+) {
+
+}
 
 func ({{$contract.ShortVar}} *{{$contract.Class}}) Past{{$event.CapsName}}Events(
 	startBlock uint64,

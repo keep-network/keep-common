@@ -19,6 +19,7 @@ import (
 
 	"github.com/ipfs/go-log"
 
+    "github.com/keep-network/keep-common/pkg/chain/ethereum/blockcounter"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 	"github.com/keep-network/keep-common/pkg/subscription"
 )
@@ -54,6 +55,7 @@ type {{.Class}} struct {
 	errorResolver      *ethutil.ErrorResolver
 	nonceManager       *ethutil.NonceManager
 	miningWaiter       *ethutil.MiningWaiter
+	blockCounter	   *blockcounter.EthereumBlockCounter
 
 	transactionMutex *sync.Mutex
 }
@@ -64,6 +66,7 @@ func New{{.Class}}(
     backend bind.ContractBackend,
     nonceManager *ethutil.NonceManager,
     miningWaiter *ethutil.MiningWaiter,
+	blockCounter *blockcounter.EthereumBlockCounter,
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{
@@ -102,6 +105,7 @@ func New{{.Class}}(
 		errorResolver:     ethutil.NewErrorResolver(backend, &contractABI, &contractAddress),
 		nonceManager:      nonceManager,
 		miningWaiter:      miningWaiter,
+		blockCounter: 	   blockCounter,
 		transactionMutex:  transactionMutex,
 	}, nil
 }

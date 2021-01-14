@@ -80,10 +80,13 @@ type returnInfo struct {
 type eventInfo struct {
 	CapsName                  string
 	LowerName                 string
+	SubscriptionCapsName      string
 	ShortVar                  string
+	SubscriptionShortVar      string
 	IndexedFilters            string
 	ParamExtractors           string
 	ParamDeclarations         string
+	IndexedFilterExtractors   string
 	IndexedFilterDeclarations string
 	IndexedFilterFields       string
 }
@@ -244,8 +247,20 @@ func buildMethodInfo(
 func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
 	eventInfos := make([]eventInfo, 0, len(eventsByName))
 	for name, event := range eventsByName {
+
+		capsName := uppercaseFirst(name)
+		lowerName := lowercaseFirst(name)
+		subscriptionCapsName := capsName + "Subscription"
+
+		shortVar := strings.ToLower(string(shortVarRegexp.ReplaceAll(
+			[]byte(name),
+			[]byte("$1"),
+		)))
+		subscriptionShortVar := shortVar + "s"
+
 		paramDeclarations := ""
 		paramExtractors := ""
+		indexedFilterExtractors := ""
 		indexedFilterDeclarations := ""
 		indexedFilterFields := ""
 		indexedFilters := ""
@@ -256,6 +271,7 @@ func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
 			paramDeclarations += fmt.Sprintf("%v %v,\n", upperParam, goType)
 			paramExtractors += fmt.Sprintf("event.%v,\n", upperParam)
 			if param.Indexed {
+				indexedFilterExtractors += fmt.Sprintf("%v.%vFilter,\n", subscriptionShortVar, param.Name)
 				indexedFilterDeclarations += fmt.Sprintf("%vFilter []%v,\n", param.Name, goType)
 				indexedFilterFields += fmt.Sprintf("%vFilter []%v\n", param.Name, goType)
 				indexedFilters += fmt.Sprintf("%vFilter,\n", param.Name)
@@ -265,18 +281,16 @@ func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
 		paramDeclarations += "blockNumber uint64,\n"
 		paramExtractors += "event.Raw.BlockNumber,\n"
 
-		shortVar := strings.ToLower(string(shortVarRegexp.ReplaceAll(
-			[]byte(name),
-			[]byte("$1"),
-		)))
-
 		eventInfos = append(eventInfos, eventInfo{
-			uppercaseFirst(name),
-			lowercaseFirst(name),
+			capsName,
+			lowerName,
+			subscriptionCapsName,
 			shortVar,
+			subscriptionShortVar,
 			indexedFilters,
 			paramExtractors,
 			paramDeclarations,
+			indexedFilterExtractors,
 			indexedFilterDeclarations,
 			indexedFilterFields,
 		})

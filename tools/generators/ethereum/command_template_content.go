@@ -13,7 +13,7 @@ import (
     "github.com/ethereum/go-ethereum/common/hexutil"
     "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/keep-network/keep-common/pkg/chain/ethereum/blockcounter"
+    "github.com/keep-network/keep-common/pkg/chain/ethereum/blockcounter"
     "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
     "github.com/keep-network/keep-common/pkg/cmd"
 

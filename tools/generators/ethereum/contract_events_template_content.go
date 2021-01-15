@@ -81,8 +81,15 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 						err,
 					)
 				}
+				fromBlock := lastBlock-{{$event.SubscriptionShortVar}}.opts.BlocksBack
+
+				{{$logger}}.Debugf(
+					"Subscription monitoring fetching past {{$event.CapsName}} events " +
+					    "starting from block [%v]",
+					fromBlock,
+				)
 				events, err := {{$event.SubscriptionShortVar}}.contract.Past{{$event.CapsName}}Events(
-					lastBlock-{{$event.SubscriptionShortVar}}.opts.BlocksBack,
+					fromBlock,
 					nil,
 					{{$event.IndexedFilterExtractors}}
 				)
@@ -93,6 +100,10 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 					)
 					continue
 				}
+				{{$logger}}.Debugf(
+					"Subscription monitoring fetched [%v] past {{$event.CapsName}} events",
+					len(events),
+				)
 
 				for _, event := range events {
 					sink <- event

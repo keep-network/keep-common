@@ -84,7 +84,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 				fromBlock := lastBlock-{{$event.SubscriptionShortVar}}.opts.BlocksBack
 
 				{{$logger}}.Infof(
-					"Subscription monitoring fetching past {{$event.CapsName}} events " +
+					"subscription monitoring fetching past {{$event.CapsName}} events " +
 					    "starting from block [%v]",
 					fromBlock,
 				)
@@ -101,7 +101,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 					continue
 				}
 				{{$logger}}.Infof(
-					"Subscription monitoring fetched [%v] past {{$event.CapsName}} events",
+					"subscription monitoring fetched [%v] past {{$event.CapsName}} events",
 					len(events),
 				)
 

@@ -9,8 +9,8 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
 	if opts == nil {
 		opts = new(ethutil.SubscribeOpts)
 	}
-	if opts.TickDuration == 0 {
-		opts.TickDuration = ethutil.DefaultSubscribeOptsTickDuration
+	if opts.Tick == 0 {
+		opts.Tick = ethutil.DefaultSubscribeOptsTick
 	}
 	if opts.BlocksBack == 0 {
 		opts.BlocksBack = ethutil.DefaultSubscribeOptsBlocksBack
@@ -64,7 +64,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 ) subscription.EventSubscription {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	go func() {
-		ticker := time.NewTicker({{$event.SubscriptionShortVar}}.opts.TickDuration)
+		ticker := time.NewTicker({{$event.SubscriptionShortVar}}.opts.Tick)
 		defer ticker.Stop()
 		for {
 			select {

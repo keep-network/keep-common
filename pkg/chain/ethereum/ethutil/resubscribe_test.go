@@ -14,10 +14,11 @@ func TestEmitOriginalError(t *testing.T) {
 	alertThreshold := 100 * time.Millisecond
 
 	failedOnce := false
+	expectedFailMessage := "wherever I go, he goes"
 	subscribeFn := func(ctx context.Context) (event.Subscription, error) {
 		if !failedOnce {
 			failedOnce = true
-			return nil, fmt.Errorf("wherever I go, he goes")
+			return nil, fmt.Errorf(expectedFailMessage)
 		}
 		delegate := event.NewSubscription(func(unsubscribed <-chan struct{}) error {
 			return nil
@@ -49,7 +50,6 @@ func TestEmitOriginalError(t *testing.T) {
 	}
 
 	// That failure should refer the original error.
-	expectedFailMessage := "wherever I go, he goes"
 	err := <-subscriptionFailed
 	if err.Error() != expectedFailMessage {
 		t.Fatalf(

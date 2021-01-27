@@ -40,7 +40,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) OnEvent(
 	handler {{$contract.FullVar}}{{$event.CapsName}}Func,
 ) subscription.EventSubscription {
 	eventChan := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancelCtx := context.WithCancel(context.Background())
 
 	go func() {
 		for {
@@ -58,14 +58,14 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) OnEvent(
 	sub := {{$event.SubscriptionShortVar}}.Pipe(eventChan)
 	return subscription.NewEventSubscription(func() {
 		sub.Unsubscribe()
-		cancel()
+		cancelCtx()
 	})
 }
 
 func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 	sink chan *abi.{{$contract.AbiClass}}{{$event.CapsName}},
 ) subscription.EventSubscription {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancelCtx := context.WithCancel(context.Background())
 	go func() {
 		ticker := time.NewTicker({{$event.SubscriptionShortVar}}.opts.TickDuration)
 		for {
@@ -119,7 +119,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 
 	return subscription.NewEventSubscription(func() {
 		sub.Unsubscribe()
-		cancel()
+		cancelCtx()
 	})
 }
 

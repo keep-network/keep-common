@@ -230,7 +230,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
 
 	miningWaiter := ethutil.NewMiningWaiter(client, checkInterval, maxGasPrice)
 
-    blockCounter, err := blockcounter.CreateBlockCounter(client)
+	blockCounter, err := blockcounter.CreateBlockCounter(client)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to create Ethereum blockcounter: [%v]",

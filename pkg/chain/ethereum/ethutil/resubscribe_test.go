@@ -52,7 +52,7 @@ func TestEmitOriginalError(t *testing.T) {
 	// That failure should refer the original error.
 	err := <-subscriptionFailed
 	if err.Error() != expectedFailMessage {
-		t.Fatalf(
+		t.Errorf(
 			"unexpected subscription error message\nexpected: [%v]\nactual:   [%v]",
 			expectedFailMessage,
 			err.Error(),
@@ -99,7 +99,7 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 	// in a time shorter than 150ms one after another.
 	violationCount := len(thresholdViolated)
 	if violationCount != 0 {
-		t.Fatalf(
+		t.Errorf(
 			"threshold violation reported [%v] times, expected none",
 			violationCount,
 		)
@@ -111,7 +111,7 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 	// successful and had not to be retried.
 	expectedResubscriptionCalls := plannedSubscriptionFailures + 1
 	if resubscribeFnCalls != expectedResubscriptionCalls {
-		t.Fatalf(
+		t.Errorf(
 			"resubscription called [%v] times, expected [%v]",
 			resubscribeFnCalls,
 			expectedResubscriptionCalls,
@@ -121,7 +121,7 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 	// Expect all subscription failures to be reported.
 	subscriptionFailCount := len(subscriptionFailed)
 	if subscriptionFailCount != plannedSubscriptionFailures {
-		t.Fatalf(
+		t.Errorf(
 			"subscription failure reported [%v] times, expected [%v]",
 			subscriptionFailCount,
 			plannedSubscriptionFailures,
@@ -171,7 +171,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	// resubscription attempts.
 	violationCount := len(thresholdViolated)
 	if violationCount != plannedSubscriptionFailures {
-		t.Fatalf(
+		t.Errorf(
 			"threshold violation reported [%v] times, expected [%v]",
 			violationCount,
 			plannedSubscriptionFailures,
@@ -184,7 +184,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	for i := 0; i < violationCount; i++ {
 		violation := <-thresholdViolated
 		if violation < elapsedBetweenFailures {
-			t.Fatalf(
+			t.Errorf(
 				"violation reported should be longer than the time elapsed "+
 					"between failures; is: [%v] and should be longer than [%v]",
 				violation,
@@ -192,7 +192,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 			)
 		}
 		if violation > alertThreshold {
-			t.Fatalf(
+			t.Errorf(
 				"violation reported should be shorter than the alert threshold; "+
 					"; is: [%v] and should be shorter than [%v]",
 				violation,
@@ -207,7 +207,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	// successful and had not to be retried.
 	expectedResubscriptionCalls := plannedSubscriptionFailures + 1
 	if resubscribeFnCalls != expectedResubscriptionCalls {
-		t.Fatalf(
+		t.Errorf(
 			"resubscription called [%v] times, expected [%v]",
 			resubscribeFnCalls,
 			expectedResubscriptionCalls,
@@ -217,7 +217,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	// Expect all subscription failures to be reported.
 	subscriptionFailCount := len(subscriptionFailed)
 	if subscriptionFailCount != plannedSubscriptionFailures {
-		t.Fatalf(
+		t.Errorf(
 			"subscription failure reported [%v] times, expected [%v]",
 			subscriptionFailCount,
 			plannedSubscriptionFailures,
@@ -280,7 +280,7 @@ func TestDoNotBlockOnChannelWrites(t *testing.T) {
 	// blocked by the lack of channel receivers on non-buffered channels.
 	expectedResubscriptionCalls := plannedSubscriptionFailures + 1
 	if resubscribeFnCalls != expectedResubscriptionCalls {
-		t.Fatalf(
+		t.Errorf(
 			"resubscription called [%v] times, expected [%v]",
 			resubscribeFnCalls,
 			expectedResubscriptionCalls,

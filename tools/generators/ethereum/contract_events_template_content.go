@@ -44,7 +44,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 ) (subscription.EventSubscription) {
 	eventOccurred := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancelCtx := context.WithCancel(context.Background())
 
 	// TODO: Watch* function will soon accept channel as a parameter instead
 	// of the callback. This loop will be eliminated then.
@@ -97,7 +97,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 
 	return subscription.NewEventSubscription(func() {
 		sub.Unsubscribe()
-		cancel()
+		cancelCtx()
 	})
 }
 

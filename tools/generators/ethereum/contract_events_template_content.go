@@ -15,8 +15,8 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
 	if opts.Tick == 0 {
 		opts.Tick = ethutil.DefaultSubscribeOptsTick
 	}
-	if opts.BlocksBack == 0 {
-		opts.BlocksBack = ethutil.DefaultSubscribeOptsBlocksBack
+	if opts.PastBlocks == 0 {
+		opts.PastBlocks = ethutil.DefaultSubscribeOptsPastBlocks
 	}
 
 	return &{{$event.SubscriptionCapsName}}{
@@ -81,7 +81,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 						err,
 					)
 				}
-				fromBlock := lastBlock-{{$event.SubscriptionShortVar}}.opts.BlocksBack
+				fromBlock := lastBlock-{{$event.SubscriptionShortVar}}.opts.PastBlocks
 
 				{{$logger}}.Infof(
 					"subscription monitoring fetching past {{$event.CapsName}} events " +

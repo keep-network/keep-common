@@ -69,26 +69,30 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 		)
 	}
 
+	thresholdViolatedFn := func(elapsed time.Duration) {
+		{{$logger}}.Errorf(
+			"subscription to event {{$event.CapsName}} had to be "+
+				"retried [%v] since the last attempt; please inspect "+
+				"Ethereum client connectivity",
+				elapsed,
+		)
+	}
+
+	subscriptionFailedFn := func(err error) {
+		{{$logger}}.Errorf(
+			"subscription to event {{$event.CapsName}} failed "+
+				"with error: [%v]; resubscription attempt will be "+
+				"performed",
+				err,
+		)
+	}
+
 	sub := ethutil.WithResubscription(
 		{{$contract.ShortVar}}SubscriptionBackoffMax,
 		subscribeFn,
 		{{$contract.ShortVar}}SubscriptionAlertThreshold,
-		func(elapsed time.Duration) {
-			{{$logger}}.Errorf(
-					"subscription to event {{$event.CapsName}} had to be "+
-						"retried [%v] since the last attempt; please inspect "+
-						"Ethereum client connectivity",
-					elapsed,
-				)
-		},
-		func(err error) {
-			{{$logger}}.Errorf(
-					"subscription to event {{$event.CapsName}} failed "+
-						"with error: [%v]; resubscription attempt will be "+
-						"performed",
-					err,
-				)
-		},
+		thresholdViolatedFn,
+		subscriptionFailedFn,
 	)
 
 	return subscription.NewEventSubscription(func() {

@@ -68,10 +68,10 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	go func() {
 		ticker := time.NewTicker({{$event.SubscriptionShortVar}}.opts.TickDuration)
+		defer ticker.Stop()
 		for {
 			select {
-			case <-ctx.Done():
-				ticker.Stop()
+			case <-ctx.Done():				
 				return
 			case <-ticker.C:
 				lastBlock, err := {{$event.SubscriptionShortVar}}.contract.blockCounter.CurrentBlock()

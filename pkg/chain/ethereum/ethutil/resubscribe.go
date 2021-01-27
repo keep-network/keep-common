@@ -29,7 +29,7 @@ import (
 // goroutine and thus are non-blocking.
 func WithResubscription(
 	backoffMax time.Duration,
-	resubscribeFn event.ResubscribeFunc,
+	subscribeFn event.ResubscribeFunc,
 	alertThreshold time.Duration,
 	thresholdViolatedFn func(time.Duration),
 	subscriptionFailedFn func(error),
@@ -44,7 +44,7 @@ func WithResubscription(
 
 		lastAttempt = now
 
-		sub, err := resubscribeFn(ctx)
+		sub, err := subscribeFn(ctx)
 		if err != nil {
 			go subscriptionFailedFn(err)
 		}

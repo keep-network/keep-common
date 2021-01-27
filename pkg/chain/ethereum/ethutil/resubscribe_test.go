@@ -14,10 +14,11 @@ func TestEmitOriginalError(t *testing.T) {
 	alertThreshold := 100 * time.Millisecond
 
 	failedOnce := false
-	resubscribeFn := func(ctx context.Context) (event.Subscription, error) {
+	expectedFailMessage := "wherever I go, he goes"
+	subscribeFn := func(ctx context.Context) (event.Subscription, error) {
 		if !failedOnce {
 			failedOnce = true
-			return nil, fmt.Errorf("wherever I go, he goes")
+			return nil, fmt.Errorf(expectedFailMessage)
 		}
 		delegate := event.NewSubscription(func(unsubscribed <-chan struct{}) error {
 			return nil
@@ -25,11 +26,14 @@ func TestEmitOriginalError(t *testing.T) {
 		return delegate, nil
 	}
 
+	// Using buffered channels to do not block writes.
+	// There should never be a need to write more to those channels if the code
+	// under the test works as expected.
 	thresholdViolated := make(chan time.Duration, 10)
 	subscriptionFailed := make(chan error, 10)
 	subscription := WithResubscription(
 		backoffMax,
-		resubscribeFn,
+		subscribeFn,
 		alertThreshold,
 		func(elapsed time.Duration) { thresholdViolated <- elapsed },
 		func(err error) { subscriptionFailed <- err },
@@ -46,10 +50,9 @@ func TestEmitOriginalError(t *testing.T) {
 	}
 
 	// That failure should refer the original error.
-	expectedFailMessage := "wherever I go, he goes"
 	err := <-subscriptionFailed
 	if err.Error() != expectedFailMessage {
-		t.Fatalf(
+		t.Errorf(
 			"unexpected subscription error message\nexpected: [%v]\nactual:   [%v]",
 			expectedFailMessage,
 			err.Error(),
@@ -65,7 +68,7 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 	elapsedBetweenFailures := 150 * time.Millisecond
 
 	resubscribeFnCalls := 0
-	resubscribeFn := func(ctx context.Context) (event.Subscription, error) {
+	subscribeFn := func(ctx context.Context) (event.Subscription, error) {
 		resubscribeFnCalls++
 		time.Sleep(elapsedBetweenFailures) // 150ms > 100ms, above alert threshold
 		if resubscribeFnCalls <= plannedSubscriptionFailures {
@@ -77,11 +80,14 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 		return delegate, nil
 	}
 
+	// Using buffered channels to do not block writes.
+	// There should never be a need to write more to those channels if the code
+	// under the test works as expected.
 	thresholdViolated := make(chan time.Duration, 10)
 	subscriptionFailed := make(chan error, 10)
 	subscription := WithResubscription(
 		backoffMax,
-		resubscribeFn,
+		subscribeFn,
 		alertThreshold,
 		func(elapsed time.Duration) { thresholdViolated <- elapsed },
 		func(err error) { subscriptionFailed <- err },
@@ -93,7 +99,7 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 	// in a time shorter than 150ms one after another.
 	violationCount := len(thresholdViolated)
 	if violationCount != 0 {
-		t.Fatalf(
+		t.Errorf(
 			"threshold violation reported [%v] times, expected none",
 			violationCount,
 		)
@@ -105,7 +111,7 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 	// successful and had not to be retried.
 	expectedResubscriptionCalls := plannedSubscriptionFailures + 1
 	if resubscribeFnCalls != expectedResubscriptionCalls {
-		t.Fatalf(
+		t.Errorf(
 			"resubscription called [%v] times, expected [%v]",
 			resubscribeFnCalls,
 			expectedResubscriptionCalls,
@@ -115,7 +121,7 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 	// Expect all subscription failures to be reported.
 	subscriptionFailCount := len(subscriptionFailed)
 	if subscriptionFailCount != plannedSubscriptionFailures {
-		t.Fatalf(
+		t.Errorf(
 			"subscription failure reported [%v] times, expected [%v]",
 			subscriptionFailCount,
 			plannedSubscriptionFailures,
@@ -131,7 +137,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	elapsedBetweenFailures := 50 * time.Millisecond
 
 	resubscribeFnCalls := 0
-	resubscribeFn := func(ctx context.Context) (event.Subscription, error) {
+	subscribeFn := func(ctx context.Context) (event.Subscription, error) {
 		resubscribeFnCalls++
 		time.Sleep(elapsedBetweenFailures) // 50ms < 100ms, below alert threshold
 		if resubscribeFnCalls <= plannedSubscriptionFailures {
@@ -143,11 +149,14 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 		return delegate, nil
 	}
 
+	// Using buffered channels to do not block writes.
+	// There should never be a need to write more to those channels if the code
+	// under the test works as expected.
 	thresholdViolated := make(chan time.Duration, 10)
 	subscriptionFailed := make(chan error, 10)
 	subscription := WithResubscription(
 		backoffMax,
-		resubscribeFn,
+		subscribeFn,
 		alertThreshold,
 		func(elapsed time.Duration) { thresholdViolated <- elapsed },
 		func(err error) { subscriptionFailed <- err },
@@ -162,7 +171,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	// resubscription attempts.
 	violationCount := len(thresholdViolated)
 	if violationCount != plannedSubscriptionFailures {
-		t.Fatalf(
+		t.Errorf(
 			"threshold violation reported [%v] times, expected [%v]",
 			violationCount,
 			plannedSubscriptionFailures,
@@ -175,7 +184,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	for i := 0; i < violationCount; i++ {
 		violation := <-thresholdViolated
 		if violation < elapsedBetweenFailures {
-			t.Fatalf(
+			t.Errorf(
 				"violation reported should be longer than the time elapsed "+
 					"between failures; is: [%v] and should be longer than [%v]",
 				violation,
@@ -183,7 +192,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 			)
 		}
 		if violation > alertThreshold {
-			t.Fatalf(
+			t.Errorf(
 				"violation reported should be shorter than the alert threshold; "+
 					"; is: [%v] and should be shorter than [%v]",
 				violation,
@@ -198,7 +207,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	// successful and had not to be retried.
 	expectedResubscriptionCalls := plannedSubscriptionFailures + 1
 	if resubscribeFnCalls != expectedResubscriptionCalls {
-		t.Fatalf(
+		t.Errorf(
 			"resubscription called [%v] times, expected [%v]",
 			resubscribeFnCalls,
 			expectedResubscriptionCalls,
@@ -208,7 +217,7 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 	// Expect all subscription failures to be reported.
 	subscriptionFailCount := len(subscriptionFailed)
 	if subscriptionFailCount != plannedSubscriptionFailures {
-		t.Fatalf(
+		t.Errorf(
 			"subscription failure reported [%v] times, expected [%v]",
 			subscriptionFailCount,
 			plannedSubscriptionFailures,
@@ -224,7 +233,7 @@ func TestDoNotBlockOnChannelWrites(t *testing.T) {
 	elapsedBetweenFailures := 10 * time.Millisecond
 
 	resubscribeFnCalls := 0
-	resubscribeFn := func(ctx context.Context) (event.Subscription, error) {
+	subscribeFn := func(ctx context.Context) (event.Subscription, error) {
 		resubscribeFnCalls++
 		time.Sleep(elapsedBetweenFailures) // 10ms < 100ms, below alert threshold
 		if resubscribeFnCalls <= plannedSubscriptionFailures {
@@ -245,7 +254,7 @@ func TestDoNotBlockOnChannelWrites(t *testing.T) {
 
 	subscription := WithResubscription(
 		backoffMax,
-		resubscribeFn,
+		subscribeFn,
 		alertThreshold,
 		func(elapsed time.Duration) {
 			select {
@@ -271,7 +280,7 @@ func TestDoNotBlockOnChannelWrites(t *testing.T) {
 	// blocked by the lack of channel receivers on non-buffered channels.
 	expectedResubscriptionCalls := plannedSubscriptionFailures + 1
 	if resubscribeFnCalls != expectedResubscriptionCalls {
-		t.Fatalf(
+		t.Errorf(
 			"resubscription called [%v] times, expected [%v]",
 			resubscribeFnCalls,
 			expectedResubscriptionCalls,

@@ -39,7 +39,7 @@ type {{$contract.FullVar}}{{$event.CapsName}}Func func(
 func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) OnEvent(
 	handler {{$contract.FullVar}}{{$event.CapsName}}Func,
 ) subscription.EventSubscription {
-	onEventChan := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
+	eventChan := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
@@ -47,7 +47,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) OnEvent(
 			select {
 			case <-ctx.Done():
 				return
-			case event := <- onEventChan:
+			case event := <- eventChan:
 			    handler(
 					{{$event.ParamExtractors}}
 				)
@@ -55,7 +55,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) OnEvent(
 		}
 	}()
 
-	sub := {{$event.SubscriptionShortVar}}.Pipe(onEventChan)
+	sub := {{$event.SubscriptionShortVar}}.Pipe(eventChan)
 	return subscription.NewEventSubscription(func() {
 		sub.Unsubscribe()
 		cancel()

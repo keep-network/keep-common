@@ -73,7 +73,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
 		{{$logger}}.Errorf(
 			"subscription to event {{$event.CapsName}} had to be "+
 				"retried [%v] since the last attempt; please inspect "+
-				"Ethereum client connectivity",
+				"Ethereum connectivity",
 				elapsed,
 		)
 	}

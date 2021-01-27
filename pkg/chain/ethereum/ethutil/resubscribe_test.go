@@ -25,6 +25,9 @@ func TestEmitOriginalError(t *testing.T) {
 		return delegate, nil
 	}
 
+	// Using buffered channels to do not block writes.
+	// There should never be a need to write more to those channels if the code
+	// under the test works as expected.
 	thresholdViolated := make(chan time.Duration, 10)
 	subscriptionFailed := make(chan error, 10)
 	subscription := WithResubscription(
@@ -77,6 +80,9 @@ func TestResubscribeAboveThreshold(t *testing.T) {
 		return delegate, nil
 	}
 
+	// Using buffered channels to do not block writes.
+	// There should never be a need to write more to those channels if the code
+	// under the test works as expected.
 	thresholdViolated := make(chan time.Duration, 10)
 	subscriptionFailed := make(chan error, 10)
 	subscription := WithResubscription(
@@ -143,6 +149,9 @@ func TestResubscribeBelowThreshold(t *testing.T) {
 		return delegate, nil
 	}
 
+	// Using buffered channels to do not block writes.
+	// There should never be a need to write more to those channels if the code
+	// under the test works as expected.
 	thresholdViolated := make(chan time.Duration, 10)
 	subscriptionFailed := make(chan error, 10)
 	subscription := WithResubscription(

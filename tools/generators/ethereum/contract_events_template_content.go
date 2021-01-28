@@ -153,10 +153,10 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) watch{{$event.CapsName}}(
 		)
 	}
 
-	sub := ethutil.WithResubscription(
-		{{$contract.ShortVar}}SubscriptionBackoffMax,
+	return ethutil.WithResubscription(
+		ethutil.SubscriptionBackoffMax,
 		subscribeFn,
-		{{$contract.ShortVar}}SubscriptionAlertThreshold,
+		ethutil.SubscriptionAlertThreshold,
 		thresholdViolatedFn,
 		subscriptionFailedFn,
 	)

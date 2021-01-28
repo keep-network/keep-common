@@ -5,9 +5,162 @@ var contractEventsTemplateContent = `{{- $contract := . -}}
 {{- $logger := (print $contract.ShortVar "Logger") -}}
 {{- range $i, $event := .Events }}
 
+func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
+	opts *ethutil.SubscribeOpts,
+	{{$event.IndexedFilterDeclarations -}}
+) *{{$event.SubscriptionCapsName}} {
+	if opts == nil {
+		opts = new(ethutil.SubscribeOpts)
+	}
+	if opts.Tick == 0 {
+		opts.Tick = ethutil.DefaultSubscribeOptsTick
+	}
+	if opts.PastBlocks == 0 {
+		opts.PastBlocks = ethutil.DefaultSubscribeOptsPastBlocks
+	}
+
+	return &{{$event.SubscriptionCapsName}}{
+		{{$contract.ShortVar}},
+		opts,
+		{{$event.IndexedFilters}}
+	}
+}
+
+type {{$event.SubscriptionCapsName}} struct {
+	contract *{{$contract.Class}}
+	opts *ethutil.SubscribeOpts
+	{{$event.IndexedFilterFields -}}
+}
+
 type {{$contract.FullVar}}{{$event.CapsName}}Func func(
-    {{$event.ParamDeclarations -}}
+	{{$event.ParamDeclarations -}}
 )
+
+func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) OnEvent(
+	handler {{$contract.FullVar}}{{$event.CapsName}}Func,
+) subscription.EventSubscription {
+	eventChan := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
+	ctx, cancelCtx := context.WithCancel(context.Background())
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case event := <- eventChan:
+			    handler(
+					{{$event.ParamExtractors}}
+				)
+			}
+		}
+	}()
+
+	sub := {{$event.SubscriptionShortVar}}.Pipe(eventChan)
+	return subscription.NewEventSubscription(func() {
+		sub.Unsubscribe()
+		cancelCtx()
+	})
+}
+
+func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
+	sink chan *abi.{{$contract.AbiClass}}{{$event.CapsName}},
+) subscription.EventSubscription {
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	go func() {
+		ticker := time.NewTicker({{$event.SubscriptionShortVar}}.opts.Tick)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():				
+				return
+			case <-ticker.C:
+				lastBlock, err := {{$event.SubscriptionShortVar}}.contract.blockCounter.CurrentBlock()
+				if err != nil {
+					{{$logger}}.Errorf(
+						"subscription failed to pull events: [%v]",
+						err,
+					)
+				}
+				fromBlock := lastBlock-{{$event.SubscriptionShortVar}}.opts.PastBlocks
+
+				{{$logger}}.Infof(
+					"subscription monitoring fetching past {{$event.CapsName}} events " +
+					    "starting from block [%v]",
+					fromBlock,
+				)
+				events, err := {{$event.SubscriptionShortVar}}.contract.Past{{$event.CapsName}}Events(
+					fromBlock,
+					nil,
+					{{$event.IndexedFilterExtractors}}
+				)
+				if err != nil {
+					{{$logger}}.Errorf(
+						"subscription failed to pull events: [%v]",
+						err,
+					)
+					continue
+				}
+				{{$logger}}.Infof(
+					"subscription monitoring fetched [%v] past {{$event.CapsName}} events",
+					len(events),
+				)
+
+				for _, event := range events {
+					sink <- event
+				}
+			}
+		}
+	}()
+
+	sub := {{$event.SubscriptionShortVar}}.contract.watch{{$event.CapsName}}(
+		sink,
+		{{$event.IndexedFilterExtractors}}
+	)
+
+	return subscription.NewEventSubscription(func() {
+		sub.Unsubscribe()
+		cancelCtx()
+	})
+}
+
+func ({{$contract.ShortVar}} *{{$contract.Class}}) watch{{$event.CapsName}}(
+	sink chan *abi.{{$contract.AbiClass}}{{$event.CapsName}},
+	{{$event.IndexedFilterDeclarations -}}
+) event.Subscription {
+	subscribeFn := func(ctx context.Context) (event.Subscription, error) {
+		return {{$contract.ShortVar}}.contract.Watch{{$event.CapsName}}(
+			&bind.WatchOpts{Context: ctx},
+			sink,
+			{{$event.IndexedFilters}}
+		)
+	}
+
+	thresholdViolatedFn := func(elapsed time.Duration) {
+		{{$logger}}.Errorf(
+			"subscription to event {{$event.CapsName}} had to be "+
+				"retried [%s] since the last attempt; please inspect "+
+				"Ethereum connectivity",
+				elapsed,
+		)
+	}
+
+	subscriptionFailedFn := func(err error) {
+		{{$logger}}.Errorf(
+			"subscription to event {{$event.CapsName}} failed "+
+				"with error: [%v]; resubscription attempt will be "+
+				"performed",
+				err,
+		)
+	}
+
+	return ethutil.WithResubscription(
+		ethutil.SubscriptionBackoffMax,
+		subscribeFn,
+		ethutil.SubscriptionAlertThreshold,
+		thresholdViolatedFn,
+		subscriptionFailedFn,
+	)
+}
 
 func ({{$contract.ShortVar}} *{{$contract.Class}}) Past{{$event.CapsName}}Events(
 	startBlock uint64,
@@ -36,69 +189,6 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Past{{$event.CapsName}}Events
 	}
 
 	return events, nil
-}
-
-func ({{$contract.ShortVar}} *{{$contract.Class}}) Watch{{$event.CapsName}}(
-	success {{$contract.FullVar}}{{$event.CapsName}}Func,
-	{{$event.IndexedFilterDeclarations -}}
-) (subscription.EventSubscription) {
-	eventOccurred := make(chan *abi.{{$contract.AbiClass}}{{$event.CapsName}})
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-
-	// TODO: Watch* function will soon accept channel as a parameter instead
-	// of the callback. This loop will be eliminated then.
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case event := <-eventOccurred:
-				success(
-                    {{$event.ParamExtractors}}
-				)
-			}
-		}
-	}()
-
-	subscribeFn := func(ctx context.Context) (event.Subscription, error) {
-		return {{$contract.ShortVar}}.contract.Watch{{$event.CapsName}}(
-			&bind.WatchOpts{Context: ctx},
-			eventOccurred,
-			{{$event.IndexedFilters}}
-		)
-	}
-
-	thresholdViolatedFn := func(elapsed time.Duration) {
-		{{$logger}}.Errorf(
-			"subscription to event {{$event.CapsName}} had to be "+
-				"retried [%s] since the last attempt; please inspect "+
-				"Ethereum connectivity",
-				elapsed,
-		)
-	}
-
-	subscriptionFailedFn := func(err error) {
-		{{$logger}}.Errorf(
-			"subscription to event {{$event.CapsName}} failed "+
-				"with error: [%v]; resubscription attempt will be "+
-				"performed",
-				err,
-		)
-	}
-
-	sub := ethutil.WithResubscription(
-		{{$contract.ShortVar}}SubscriptionBackoffMax,
-		subscribeFn,
-		{{$contract.ShortVar}}SubscriptionAlertThreshold,
-		thresholdViolatedFn,
-		subscriptionFailedFn,
-	)
-
-	return subscription.NewEventSubscription(func() {
-		sub.Unsubscribe()
-		cancelCtx()
-	})
 }
 
 {{- end -}}`

@@ -16,6 +16,7 @@ import (
 
 	"github.com/ipfs/go-log"
 
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/blockcounter"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 	"github.com/keep-network/keep-common/pkg/subscription"
 )
@@ -24,21 +25,6 @@ import (
 // package level so that the logger is registered at startup and can be
 // included or excluded from logging at startup by name.
 var {{.ShortVar}}Logger = log.Logger("keep-contract-{{.Class}}")
-
-const (
-    // Maximum backoff time between event resubscription attempts.
-    {{.ShortVar}}SubscriptionBackoffMax = 2 * time.Minute
-
-    // Threshold below which event resubscription emits an error to the logs.
-    // WS connection can be dropped at any moment and event resubscription will
-    // follow. However, if WS connection for event subscription is getting
-    // dropped too often, it may indicate something is wrong with Ethereum
-    // client. This constant defines the minimum lifetime of an event
-    // subscription required before the subscription failure happens and
-    // resubscription follows so that the resubscription does not emit an error
-    // to the logs alerting about potential problems with Ethereum client.
-    {{.ShortVar}}SubscriptionAlertThreshold = 15 * time.Minute
-)
 
 type {{.Class}} struct {
 	contract           *abi.{{.AbiClass}}
@@ -51,6 +37,7 @@ type {{.Class}} struct {
 	errorResolver      *ethutil.ErrorResolver
 	nonceManager       *ethutil.NonceManager
 	miningWaiter       *ethutil.MiningWaiter
+	blockCounter	   *blockcounter.EthereumBlockCounter
 
 	transactionMutex *sync.Mutex
 }
@@ -61,6 +48,7 @@ func New{{.Class}}(
     backend bind.ContractBackend,
     nonceManager *ethutil.NonceManager,
     miningWaiter *ethutil.MiningWaiter,
+    blockCounter *blockcounter.EthereumBlockCounter,
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{
@@ -99,6 +87,7 @@ func New{{.Class}}(
 		errorResolver:     ethutil.NewErrorResolver(backend, &contractABI, &contractAddress),
 		nonceManager:      nonceManager,
 		miningWaiter:      miningWaiter,
+		blockCounter: 	   blockCounter,
 		transactionMutex:  transactionMutex,
 	}, nil
 }

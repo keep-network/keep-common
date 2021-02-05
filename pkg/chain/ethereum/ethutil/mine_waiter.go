@@ -2,18 +2,16 @@ package ethutil
 
 import (
 	"context"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 	"time"
-
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 // MiningWaiter allows to block the execution until the given transaction is
 // mined as well as monitor the transaction and bump up the gas price in case
 // it is not mined in the given timeout.
 type MiningWaiter struct {
-	backend       bind.DeployBackend
+	backend       ethlike.DeployBackend
 	checkInterval time.Duration
 	maxGasPrice   *big.Int
 }
@@ -31,7 +29,7 @@ type MiningWaiter struct {
 // be higher than this value. If the maximum allowed gas price is reached, no
 // further resubmission attempts are performed.
 func NewMiningWaiter(
-	backend bind.DeployBackend,
+	backend ethlike.DeployBackend,
 	checkInterval time.Duration,
 	maxGasPrice *big.Int,
 ) *MiningWaiter {
@@ -47,8 +45,8 @@ func NewMiningWaiter(
 // the given timeout passes.
 func (mw *MiningWaiter) WaitMined(
 	timeout time.Duration,
-	tx *types.Transaction,
-) (*types.Receipt, error) {
+	tx ethlike.Transaction,
+) (ethlike.Receipt, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -72,14 +70,14 @@ func (mw *MiningWaiter) WaitMined(
 // ResubmitTransactionFn implements the code for resubmitting the transaction
 // with the higher gas price. It should guarantee the same nonce is used for
 // transaction resubmission.
-type ResubmitTransactionFn func(gasPrice *big.Int) (*types.Transaction, error)
+type ResubmitTransactionFn func(gasPrice *big.Int) (ethlike.Transaction, error)
 
 // ForceMining blocks until the transaction is mined and bumps up the gas price
 // by 20% in the intervals defined by MiningWaiter in case the transaction has
 // not been mined yet. It accepts the original transaction reference and the
 // function responsible for executing transaction resubmission.
 func (mw MiningWaiter) ForceMining(
-	originalTransaction *types.Transaction,
+	originalTransaction ethlike.Transaction,
 	resubmitFn ResubmitTransactionFn,
 ) {
 	// if the original transaction's gas price was higher or equal the max
@@ -108,8 +106,8 @@ func (mw MiningWaiter) ForceMining(
 			logger.Infof(
 				"transaction [%v] mined with status [%v] at block [%v]",
 				transaction.Hash().TerminalString(),
-				receipt.Status,
-				receipt.BlockNumber,
+				receipt.Status(),
+				receipt.BlockNumber(),
 			)
 			return
 		}

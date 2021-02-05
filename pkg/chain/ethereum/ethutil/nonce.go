@@ -2,10 +2,8 @@ package ethutil
 
 import (
 	"context"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"time"
-
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // The inactivity time after which the local nonce is refreshed with the value
@@ -30,8 +28,8 @@ const localNonceTrustDuration = 30 * time.Second
 // 4. Call IncrementNonce(),
 // 5. Release transaction lock.
 type NonceManager struct {
-	account        common.Address
-	transactor     bind.ContractTransactor
+	account        ethlike.Address
+	transactor     ethlike.ContractTransactor
 	localNonce     uint64
 	expirationDate time.Time
 }
@@ -41,8 +39,8 @@ type NonceManager struct {
 // CurrentNonce execution to check the pending nonce value as seen by the
 // Ethereum client.
 func NewNonceManager(
-	account common.Address,
-	transactor bind.ContractTransactor,
+	account ethlike.Address,
+	transactor ethlike.ContractTransactor,
 ) *NonceManager {
 	return &NonceManager{
 		account:    account,

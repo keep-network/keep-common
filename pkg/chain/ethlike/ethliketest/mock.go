@@ -64,10 +64,13 @@ func (mdb *MockDeployBackend) TransactionReceipt(
 	return mdb.Receipt, nil
 }
 
-func (mdb *MockDeployBackend) CodeAt(
+type MockContractTransactor struct {
+	NextNonce uint64
+}
+
+func (mct *MockContractTransactor) PendingNonceAt(
 	ctx context.Context,
 	account ethlike.Address,
-	blockNumber *big.Int,
-) ([]byte, error) {
-	panic("not implemented")
+) (uint64, error) {
+	return mct.NextNonce, nil
 }

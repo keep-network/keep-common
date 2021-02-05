@@ -1,14 +1,9 @@
 package ethutil
 
 import (
-	"context"
-	"math/big"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethliketest"
 	"testing"
 	"time"
-
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 func TestResolveAndIncrement(t *testing.T) {
@@ -51,7 +46,7 @@ func TestResolveAndIncrement(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			transactor := &mockTransactor{test.pendingNonce}
+			transactor := &ethliketest.MockContractTransactor{test.pendingNonce}
 			manager := &NonceManager{
 				transactor:     transactor,
 				localNonce:     test.localNonce,
@@ -82,42 +77,4 @@ func TestResolveAndIncrement(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockTransactor struct {
-	nextNonce uint64
-}
-
-func (mt *mockTransactor) PendingCodeAt(
-	ctx context.Context,
-	account common.Address,
-) ([]byte, error) {
-	panic("not implemented")
-}
-
-func (mt *mockTransactor) PendingNonceAt(
-	ctx context.Context,
-	account common.Address,
-) (uint64, error) {
-	return mt.nextNonce, nil
-}
-
-func (mt *mockTransactor) SuggestGasPrice(
-	ctx context.Context,
-) (*big.Int, error) {
-	panic("not implemented")
-}
-
-func (mt *mockTransactor) EstimateGas(
-	ctx context.Context,
-	call ethereum.CallMsg,
-) (gas uint64, err error) {
-	panic("not implemented")
-}
-
-func (mt *mockTransactor) SendTransaction(
-	ctx context.Context,
-	tx *types.Transaction,
-) error {
-	panic("not implemented")
 }

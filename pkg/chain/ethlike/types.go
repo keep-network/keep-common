@@ -42,33 +42,17 @@ type Subscription interface {
 
 type DeployBackend interface {
 	TransactionReceipt(ctx context.Context, txHash Hash) (Receipt, error)
-
-	CodeAt(
-		ctx context.Context,
-		account Address,
-		blockNumber *big.Int,
-	) ([]byte, error)
 }
 
 type ChainReader interface {
-	BlockByHash(ctx context.Context, hash Hash) (Block, error)
-
 	BlockByNumber(ctx context.Context, number *big.Int) (Block, error)
-
-	HeaderByHash(ctx context.Context, hash Hash) (Header, error)
-
-	HeaderByNumber(ctx context.Context, number *big.Int) (Header, error)
-
-	TransactionCount(ctx context.Context, blockHash Hash) (uint, error)
-
-	TransactionInBlock(
-		ctx context.Context,
-		blockHash Hash,
-		index uint,
-	) (Transaction, error)
 
 	SubscribeNewHead(
 		ctx context.Context,
 		ch chan<- Header,
 	) (Subscription, error)
+}
+
+type ContractTransactor interface {
+	PendingNonceAt(ctx context.Context, account Address) (uint64, error)
 }

@@ -3,9 +3,7 @@ package ethutil
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"math/big"
@@ -13,7 +11,7 @@ import (
 )
 
 type rateLimiter struct {
-	EthereumClient
+	ethlike.Client
 
 	limiter   *rate.Limiter
 	semaphore *semaphore.Weighted
@@ -42,10 +40,10 @@ type RateLimiterConfig struct {
 // All types of requests to the contract are rate-limited,
 // including view function calls.
 func WrapRateLimiting(
-	client EthereumClient,
+	client ethlike.Client,
 	config *RateLimiterConfig,
-) EthereumClient {
-	rateLimiter := &rateLimiter{EthereumClient: client}
+) ethlike.Client {
+	rateLimiter := &rateLimiter{Client: client}
 
 	if config.RequestsPerSecondLimit > 0 {
 		rateLimiter.limiter = rate.NewLimiter(
@@ -101,7 +99,7 @@ func (rl *rateLimiter) releasePermit() {
 
 func (rl *rateLimiter) CodeAt(
 	ctx context.Context,
-	contract common.Address,
+	contract ethlike.Address,
 	blockNumber *big.Int,
 ) ([]byte, error) {
 	err := rl.acquirePermit()
@@ -110,12 +108,12 @@ func (rl *rateLimiter) CodeAt(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.CodeAt(ctx, contract, blockNumber)
+	return rl.Client.CodeAt(ctx, contract, blockNumber)
 }
 
 func (rl *rateLimiter) CallContract(
 	ctx context.Context,
-	call ethereum.CallMsg,
+	call ethlike.CallMsg,
 	blockNumber *big.Int,
 ) ([]byte, error) {
 	err := rl.acquirePermit()
@@ -124,12 +122,12 @@ func (rl *rateLimiter) CallContract(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.CallContract(ctx, call, blockNumber)
+	return rl.Client.CallContract(ctx, call, blockNumber)
 }
 
 func (rl *rateLimiter) PendingCodeAt(
 	ctx context.Context,
-	account common.Address,
+	account ethlike.Address,
 ) ([]byte, error) {
 	err := rl.acquirePermit()
 	if err != nil {
@@ -137,12 +135,12 @@ func (rl *rateLimiter) PendingCodeAt(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.PendingCodeAt(ctx, account)
+	return rl.Client.PendingCodeAt(ctx, account)
 }
 
 func (rl *rateLimiter) PendingNonceAt(
 	ctx context.Context,
-	account common.Address,
+	account ethlike.Address,
 ) (uint64, error) {
 	err := rl.acquirePermit()
 	if err != nil {
@@ -150,7 +148,7 @@ func (rl *rateLimiter) PendingNonceAt(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.PendingNonceAt(ctx, account)
+	return rl.Client.PendingNonceAt(ctx, account)
 }
 
 func (rl *rateLimiter) SuggestGasPrice(
@@ -162,12 +160,12 @@ func (rl *rateLimiter) SuggestGasPrice(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.SuggestGasPrice(ctx)
+	return rl.Client.SuggestGasPrice(ctx)
 }
 
 func (rl *rateLimiter) EstimateGas(
 	ctx context.Context,
-	call ethereum.CallMsg,
+	call ethlike.CallMsg,
 ) (uint64, error) {
 	err := rl.acquirePermit()
 	if err != nil {
@@ -175,12 +173,12 @@ func (rl *rateLimiter) EstimateGas(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.EstimateGas(ctx, call)
+	return rl.Client.EstimateGas(ctx, call)
 }
 
 func (rl *rateLimiter) SendTransaction(
 	ctx context.Context,
-	tx *types.Transaction,
+	tx ethlike.Transaction,
 ) error {
 	err := rl.acquirePermit()
 	if err != nil {
@@ -188,91 +186,91 @@ func (rl *rateLimiter) SendTransaction(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.SendTransaction(ctx, tx)
+	return rl.Client.SendTransaction(ctx, tx)
 }
 
 func (rl *rateLimiter) FilterLogs(
 	ctx context.Context,
-	query ethereum.FilterQuery,
-) ([]types.Log, error) {
+	query ethlike.FilterQuery,
+) ([]ethlike.Log, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.FilterLogs(ctx, query)
+	return rl.Client.FilterLogs(ctx, query)
 }
 
 func (rl *rateLimiter) SubscribeFilterLogs(
 	ctx context.Context,
-	query ethereum.FilterQuery,
-	ch chan<- types.Log,
-) (ethereum.Subscription, error) {
+	query ethlike.FilterQuery,
+	ch chan<- ethlike.Log,
+) (ethlike.Subscription, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.SubscribeFilterLogs(ctx, query, ch)
+	return rl.Client.SubscribeFilterLogs(ctx, query, ch)
 }
 
 func (rl *rateLimiter) BlockByHash(
 	ctx context.Context,
-	hash common.Hash,
-) (*types.Block, error) {
+	hash ethlike.Hash,
+) (ethlike.Block, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.BlockByHash(ctx, hash)
+	return rl.Client.BlockByHash(ctx, hash)
 }
 
 func (rl *rateLimiter) BlockByNumber(
 	ctx context.Context,
 	number *big.Int,
-) (*types.Block, error) {
+) (ethlike.Block, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.BlockByNumber(ctx, number)
+	return rl.Client.BlockByNumber(ctx, number)
 }
 
 func (rl *rateLimiter) HeaderByHash(
 	ctx context.Context,
-	hash common.Hash,
-) (*types.Header, error) {
+	hash ethlike.Hash,
+) (ethlike.Header, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.HeaderByHash(ctx, hash)
+	return rl.Client.HeaderByHash(ctx, hash)
 }
 
 func (rl *rateLimiter) HeaderByNumber(
 	ctx context.Context,
 	number *big.Int,
-) (*types.Header, error) {
+) (ethlike.Header, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.HeaderByNumber(ctx, number)
+	return rl.Client.HeaderByNumber(ctx, number)
 }
 
 func (rl *rateLimiter) TransactionCount(
 	ctx context.Context,
-	blockHash common.Hash,
+	blockHash ethlike.Hash,
 ) (uint, error) {
 	err := rl.acquirePermit()
 	if err != nil {
@@ -280,65 +278,65 @@ func (rl *rateLimiter) TransactionCount(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.TransactionCount(ctx, blockHash)
+	return rl.Client.TransactionCount(ctx, blockHash)
 }
 
 func (rl *rateLimiter) TransactionInBlock(
 	ctx context.Context,
-	blockHash common.Hash,
+	blockHash ethlike.Hash,
 	index uint,
-) (*types.Transaction, error) {
+) (ethlike.Transaction, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.TransactionInBlock(ctx, blockHash, index)
+	return rl.Client.TransactionInBlock(ctx, blockHash, index)
 }
 
 func (rl *rateLimiter) SubscribeNewHead(
 	ctx context.Context,
-	ch chan<- *types.Header,
-) (ethereum.Subscription, error) {
+	ch chan<- ethlike.Header,
+) (ethlike.Subscription, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.SubscribeNewHead(ctx, ch)
+	return rl.Client.SubscribeNewHead(ctx, ch)
 }
 
 func (rl *rateLimiter) TransactionByHash(
 	ctx context.Context,
-	txHash common.Hash,
-) (*types.Transaction, bool, error) {
+	txHash ethlike.Hash,
+) (ethlike.Transaction, bool, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, false, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.TransactionByHash(ctx, txHash)
+	return rl.Client.TransactionByHash(ctx, txHash)
 }
 
 func (rl *rateLimiter) TransactionReceipt(
 	ctx context.Context,
-	txHash common.Hash,
-) (*types.Receipt, error) {
+	txHash ethlike.Hash,
+) (ethlike.Receipt, error) {
 	err := rl.acquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.TransactionReceipt(ctx, txHash)
+	return rl.Client.TransactionReceipt(ctx, txHash)
 }
 
 func (rl *rateLimiter) BalanceAt(
 	ctx context.Context,
-	account common.Address,
+	account ethlike.Address,
 	blockNumber *big.Int,
 ) (*big.Int, error) {
 	err := rl.acquirePermit()
@@ -347,5 +345,5 @@ func (rl *rateLimiter) BalanceAt(
 	}
 	defer rl.releasePermit()
 
-	return rl.EthereumClient.BalanceAt(ctx, account, blockNumber)
+	return rl.Client.BalanceAt(ctx, account, blockNumber)
 }

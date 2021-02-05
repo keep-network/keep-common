@@ -1,4 +1,4 @@
-package ethutil
+package ethlikeutil
 
 import (
 	"context"
@@ -15,8 +15,9 @@ const localNonceTrustDuration = 30 * time.Second
 // NonceManager tracks the nonce for the account and allows to update it after
 // each successfully submitted transaction. Tracking the nonce locally is
 // required when transactions are submitted from multiple goroutines or when
-// multiple Ethereum clients are deployed behind a load balancer, there are no
-// sticky sessions and mempool synchronization between them takes some time.
+// multiple Ethereum-like clients are deployed behind a load balancer,
+// there are no sticky sessions and mempool synchronization between them
+// takes some time.
 //
 // NonceManager provides no synchronization and is NOT safe for concurrent use.
 // It is up to the client code to implement the required synchronization.
@@ -37,7 +38,7 @@ type NonceManager struct {
 // NewNonceManager creates NonceManager instance for the provided account using
 // the provided contract transactor. Contract transactor is used for every
 // CurrentNonce execution to check the pending nonce value as seen by the
-// Ethereum client.
+// Ethereum-like client.
 func NewNonceManager(
 	account ethlike.Address,
 	transactor ethlike.ContractTransactor,
@@ -51,7 +52,7 @@ func NewNonceManager(
 
 // CurrentNonce returns the nonce value that should be used for the next
 // transaction. The nonce is evaluated as the higher value from the local
-// nonce and pending nonce fetched from the Ethereum client. The local nonce
+// nonce and pending nonce fetched from the Ethereum-like client. The local nonce
 // is cached for the specific duration. If the local nonce expired, the pending
 // nonce returned from the chain is used.
 //

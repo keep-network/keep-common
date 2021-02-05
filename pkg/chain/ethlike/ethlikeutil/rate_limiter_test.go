@@ -1,4 +1,4 @@
-package ethutil
+package ethlikeutil
 
 import (
 	"context"

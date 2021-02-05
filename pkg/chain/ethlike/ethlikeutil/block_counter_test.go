@@ -1,4 +1,4 @@
-package blockcounter
+package ethlikeutil
 
 import (
 	"context"
@@ -11,7 +11,7 @@ func TestWaitForNewMinedBlock(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	blockCounter := &EthereumBlockCounter{
+	blockCounter := &BlockCounter{
 		latestBlockHeight:   uint64(1),
 		waiters:             make(map[uint64][]chan uint64),
 		subscriptionChannel: make(chan block),
@@ -47,7 +47,7 @@ func TestExecuteBlockHandlerOnlyOnce(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	blockCounter := &EthereumBlockCounter{
+	blockCounter := &BlockCounter{
 		latestBlockHeight:   uint64(1),
 		waiters:             make(map[uint64][]chan uint64),
 		subscriptionChannel: make(chan block),
@@ -104,7 +104,7 @@ func TestExecuteBlockHandlerOnlyOnce(t *testing.T) {
 }
 
 func TestWatchBlocks(t *testing.T) {
-	blockCounter := &EthereumBlockCounter{
+	blockCounter := &BlockCounter{
 		latestBlockHeight:   uint64(1),
 		waiters:             make(map[uint64][]chan uint64),
 		subscriptionChannel: make(chan block),
@@ -156,7 +156,7 @@ func TestWatchBlocksIsNonBlocking(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	blockCounter := &EthereumBlockCounter{
+	blockCounter := &BlockCounter{
 		latestBlockHeight:   uint64(1),
 		waiters:             make(map[uint64][]chan uint64),
 		subscriptionChannel: make(chan block),

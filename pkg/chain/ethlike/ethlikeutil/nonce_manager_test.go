@@ -1,4 +1,4 @@
-package ethutil
+package ethlikeutil
 
 import (
 	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethliketest"

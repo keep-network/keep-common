@@ -3,14 +3,12 @@ package blockcounter
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/ipfs/go-log"
-
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 var logger = log.Logger("keep-block-counter")
@@ -155,9 +153,9 @@ func (ebc *EthereumBlockCounter) receiveBlocks() {
 }
 
 // subscribeBlocks creates a subscription to Geth to get each block.
-func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client ethereum.ChainReader) error {
+func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client ethlike.ChainReader) error {
 	errorChan := make(chan error)
-	newBlockChan := make(chan *types.Header)
+	newBlockChan := make(chan ethlike.Header)
 
 	subscribe := func() {
 		logger.Debugf("subscribing to new blocks")
@@ -181,7 +179,7 @@ func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client eth
 		for {
 			select {
 			case header := <-newBlockChan:
-				ebc.subscriptionChannel <- block{header.Number.String()}
+				ebc.subscriptionChannel <- block{header.Number().String()}
 			case err = <-subscription.Err():
 				logger.Warningf("subscription to new blocks interrupted: [%v]", err)
 				subscription.Unsubscribe()
@@ -213,7 +211,7 @@ func (ebc *EthereumBlockCounter) subscribeBlocks(ctx context.Context, client eth
 	return nil
 }
 
-func CreateBlockCounter(client ethereum.ChainReader) (*EthereumBlockCounter, error) {
+func CreateBlockCounter(client ethlike.ChainReader) (*EthereumBlockCounter, error) {
 	ctx := context.Background()
 
 	startupBlock, err := client.BlockByNumber(

@@ -15,10 +15,10 @@ func TxHashExtractor(tx ethlike.Transaction) ethlike.Hash {
 }
 
 type ClientAdapter struct {
-	delegate ethclient.Client
+	delegate *ethclient.Client
 }
 
-func NewClientAdapter(delegate ethclient.Client) *ClientAdapter {
+func NewClientAdapter(delegate *ethclient.Client) *ClientAdapter {
 	return &ClientAdapter{delegate: delegate}
 }
 

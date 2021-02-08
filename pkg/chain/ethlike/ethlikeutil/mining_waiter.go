@@ -11,9 +11,10 @@ import (
 // mined as well as monitor the transaction and bump up the gas price in case
 // it is not mined in the given timeout.
 type MiningWaiter struct {
-	backend       ethlike.DeployBackend
-	checkInterval time.Duration
-	maxGasPrice   *big.Int
+	backend         ethlike.DeployBackend
+	checkInterval   time.Duration
+	maxGasPrice     *big.Int
+	txHashExtractor ethlike.TxHashExtractor
 }
 
 // NewMiningWaiter creates a new MiningWaiter instance for the provided
@@ -32,11 +33,13 @@ func NewMiningWaiter(
 	backend ethlike.DeployBackend,
 	checkInterval time.Duration,
 	maxGasPrice *big.Int,
+	txHashExtractor ethlike.TxHashExtractor,
 ) *MiningWaiter {
 	return &MiningWaiter{
 		backend,
 		checkInterval,
 		maxGasPrice,
+		txHashExtractor,
 	}
 }
 
@@ -54,7 +57,10 @@ func (mw *MiningWaiter) WaitMined(
 	defer queryTicker.Stop()
 
 	for {
-		receipt, _ := mw.backend.TransactionReceipt(context.TODO(), tx.Hash())
+		receipt, _ := mw.backend.TransactionReceipt(
+			context.TODO(),
+			mw.txHashExtractor(tx),
+		)
 		if receipt != nil {
 			return receipt, nil
 		}
@@ -96,7 +102,7 @@ func (mw MiningWaiter) ForceMining(
 		if err != nil {
 			logger.Infof(
 				"transaction [%v] not yet mined: [%v]",
-				transaction.Hash().TerminalString(),
+				mw.txHashExtractor(transaction).TerminalString(),
 				err,
 			)
 		}
@@ -105,7 +111,7 @@ func (mw MiningWaiter) ForceMining(
 		if receipt != nil {
 			logger.Infof(
 				"transaction [%v] mined with status [%v] at block [%v]",
-				transaction.Hash().TerminalString(),
+				mw.txHashExtractor(transaction).TerminalString(),
 				receipt.Status(),
 				receipt.BlockNumber(),
 			)
@@ -135,7 +141,7 @@ func (mw MiningWaiter) ForceMining(
 		// evaluated earlier
 		logger.Infof(
 			"resubmitting previous transaction [%v] with a higher gas price [%v]",
-			transaction.Hash().TerminalString(),
+			mw.txHashExtractor(transaction).TerminalString(),
 			gasPrice,
 		)
 		transaction, err = resubmitFn(gasPrice)

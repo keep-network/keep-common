@@ -9,9 +9,7 @@ type Hash interface {
 	TerminalString() string
 }
 
-type Address interface {
-	Hex() string
-}
+type Address interface{}
 
 type Header interface {
 	Number() *big.Int
@@ -29,28 +27,23 @@ type Receipt interface {
 	BlockNumber() *big.Int
 }
 
-type Transaction interface {
-	Hash() Hash
+type TxHashExtractor func(Transaction) Hash
 
+type Transaction interface {
 	GasPrice() *big.Int
 }
 
 type Subscription interface {
 	Unsubscribe()
+
 	Err() <-chan error
 }
 
-type Log interface {
-	// TODO: methods
-}
+type Log interface{}
 
-type CallMsg interface {
-	// TODO: methods
-}
+type CallMsg interface{}
 
-type FilterQuery interface {
-	// TODO: methods
-}
+type FilterQuery interface{}
 
 type DeployBackend interface {
 	TransactionReceipt(ctx context.Context, txHash Hash) (Receipt, error)
@@ -75,7 +68,7 @@ type ChainReader interface {
 
 	SubscribeNewHead(
 		ctx context.Context,
-		ch chan<- Header,
+		headerChan chan<- Header,
 	) (Subscription, error)
 }
 
@@ -120,7 +113,7 @@ type ContractFilterer interface {
 	SubscribeFilterLogs(
 		ctx context.Context,
 		query FilterQuery,
-		ch chan<- Log,
+		logChan chan<- Log,
 	) (Subscription, error)
 }
 

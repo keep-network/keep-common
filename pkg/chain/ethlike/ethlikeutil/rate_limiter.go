@@ -205,7 +205,7 @@ func (rl *rateLimiter) FilterLogs(
 func (rl *rateLimiter) SubscribeFilterLogs(
 	ctx context.Context,
 	query ethlike.FilterQuery,
-	ch chan<- ethlike.Log,
+	logChan chan<- ethlike.Log,
 ) (ethlike.Subscription, error) {
 	err := rl.acquirePermit()
 	if err != nil {
@@ -213,7 +213,7 @@ func (rl *rateLimiter) SubscribeFilterLogs(
 	}
 	defer rl.releasePermit()
 
-	return rl.Client.SubscribeFilterLogs(ctx, query, ch)
+	return rl.Client.SubscribeFilterLogs(ctx, query, logChan)
 }
 
 func (rl *rateLimiter) BlockByHash(
@@ -297,7 +297,7 @@ func (rl *rateLimiter) TransactionInBlock(
 
 func (rl *rateLimiter) SubscribeNewHead(
 	ctx context.Context,
-	ch chan<- ethlike.Header,
+	headerChan chan<- ethlike.Header,
 ) (ethlike.Subscription, error) {
 	err := rl.acquirePermit()
 	if err != nil {
@@ -305,7 +305,7 @@ func (rl *rateLimiter) SubscribeNewHead(
 	}
 	defer rl.releasePermit()
 
-	return rl.Client.SubscribeNewHead(ctx, ch)
+	return rl.Client.SubscribeNewHead(ctx, headerChan)
 }
 
 func (rl *rateLimiter) TransactionByHash(

@@ -19,8 +19,8 @@ import (
 
 	"github.com/ipfs/go-log"
 
-	"github.com/keep-network/keep-common/pkg/chain/ethereum/blockcounter"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethlikeutil"
 	"github.com/keep-network/keep-common/pkg/subscription"
 )
 
@@ -38,9 +38,9 @@ type {{.Class}} struct {
 	callerOptions      *bind.CallOpts
 	transactorOptions  *bind.TransactOpts
 	errorResolver      *ethutil.ErrorResolver
-	nonceManager       *ethutil.NonceManager
-	miningWaiter       *ethutil.MiningWaiter
-	blockCounter	   *blockcounter.EthereumBlockCounter
+	nonceManager       *ethlikeutil.NonceManager
+	miningWaiter       *ethlikeutil.MiningWaiter
+	blockCounter	   *ethlikeutil.BlockCounter
 
 	transactionMutex *sync.Mutex
 }
@@ -49,9 +49,9 @@ func New{{.Class}}(
     contractAddress common.Address,
     accountKey *keystore.Key,
     backend bind.ContractBackend,
-    nonceManager *ethutil.NonceManager,
-    miningWaiter *ethutil.MiningWaiter,
-    blockCounter *blockcounter.EthereumBlockCounter,
+    nonceManager *ethlikeutil.NonceManager,
+    miningWaiter *ethlikeutil.MiningWaiter,
+    blockCounter *ethlikeutil.BlockCounter,
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{
@@ -62,7 +62,7 @@ func New{{.Class}}(
 		accountKey.PrivateKey,
 	)
 
-	randomBeaconContract, err := abi.New{{.AbiClass}}(
+	contract, err := abi.New{{.AbiClass}}(
 		contractAddress,
 		backend,
 	)
@@ -80,7 +80,7 @@ func New{{.Class}}(
 	}
 
 	return &{{.Class}}{
-		contract:          randomBeaconContract,
+		contract:          contract,
 		contractAddress:   contractAddress,
 		contractABI: 	   &contractABI,
 		caller:     	   backend,

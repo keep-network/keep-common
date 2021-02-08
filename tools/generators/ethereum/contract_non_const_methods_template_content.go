@@ -77,8 +77,11 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	)
 
 	go {{$contract.ShortVar}}.miningWaiter.ForceMining(
-		transaction,
-		func(newGasPrice *big.Int) (*types.Transaction, error) {
+		&ethlikeutil.Transaction{
+			Hash:     transaction.Hash().Hex(),
+			GasPrice: transaction.GasPrice(),
+		},
+		func(newGasPrice *big.Int) (*ethlikeutil.Transaction, error) {
 			transactorOptions.GasLimit = transaction.Gas()
 			transactorOptions.GasPrice = newGasPrice
 
@@ -87,7 +90,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 		        {{$method.Params}}
 	        )
 	        if err != nil {
-	        	return transaction, {{$contract.ShortVar}}.errorResolver.ResolveError(
+	        	return nil, {{$contract.ShortVar}}.errorResolver.ResolveError(
 	        		err,
 	        		{{$contract.ShortVar}}.transactorOptions.From,
 	        		{{if $method.Payable -}}
@@ -106,7 +109,10 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 				transaction.Nonce(),
 			)
 
-			return transaction, nil
+			return &ethlikeutil.Transaction{
+				Hash:     transaction.Hash().Hex(),
+				GasPrice: transaction.GasPrice(),
+            }, nil
 		},
 	)
 

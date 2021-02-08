@@ -18,6 +18,10 @@ type ClientAdapter struct {
 	delegate ethclient.Client
 }
 
+func NewClientAdapter(delegate ethclient.Client) *ClientAdapter {
+	return &ClientAdapter{delegate: delegate}
+}
+
 func (ca *ClientAdapter) CodeAt(
 	ctx context.Context,
 	contract ethlike.Address,

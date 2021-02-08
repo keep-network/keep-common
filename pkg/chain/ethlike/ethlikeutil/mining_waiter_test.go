@@ -1,8 +1,7 @@
 package ethlikeutil
 
 import (
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethliketest"
+	"context"
 	"math/big"
 	"testing"
 	"time"
@@ -15,23 +14,22 @@ var maxGasPrice = big.NewInt(45000000000) // 45 Gwei
 func TestForceMining_FirstMined(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	mockBackend := &ethliketest.MockDeployBackend{}
+	source := &mockTransactionSource{}
 
 	var resubmissionGasPrices []*big.Int
 
-	resubmitFn := func(gasPrice *big.Int) (ethlike.Transaction, error) {
+	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		return createTransaction(gasPrice), nil
 	}
 
 	// receipt is already there
-	mockBackend.Receipt = &ethliketest.MockReceipt{}
+	source.receipt = &TransactionReceipt{}
 
 	waiter := NewMiningWaiter(
-		mockBackend,
+		source,
 		checkInterval,
 		maxGasPrice,
-		ethliketest.TxHashExtractor,
 	)
 	waiter.ForceMining(
 		originalTransaction,
@@ -47,22 +45,21 @@ func TestForceMining_FirstMined(t *testing.T) {
 func TestForceMining_SecondMined(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	mockBackend := &ethliketest.MockDeployBackend{}
+	source := &mockTransactionSource{}
 
 	var resubmissionGasPrices []*big.Int
 
-	resubmitFn := func(gasPrice *big.Int) (ethlike.Transaction, error) {
+	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		// first resubmission succeeded
-		mockBackend.Receipt = &ethliketest.MockReceipt{}
+		source.receipt = &TransactionReceipt{}
 		return createTransaction(gasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
-		mockBackend,
+		source,
 		checkInterval,
 		maxGasPrice,
-		ethliketest.TxHashExtractor,
 	)
 	waiter.ForceMining(
 		originalTransaction,
@@ -78,7 +75,7 @@ func TestForceMining_SecondMined(t *testing.T) {
 func TestForceMining_MultipleAttempts(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	mockBackend := &ethliketest.MockDeployBackend{}
+	source := &mockTransactionSource{}
 
 	var resubmissionGasPrices []*big.Int
 
@@ -90,10 +87,10 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 	}
 
 	attemptsSoFar := 1
-	resubmitFn := func(gasPrice *big.Int) (ethlike.Transaction, error) {
+	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		if attemptsSoFar == expectedAttempts {
-			mockBackend.Receipt = &ethliketest.MockReceipt{}
+			source.receipt = &TransactionReceipt{}
 		} else {
 			attemptsSoFar++
 		}
@@ -101,10 +98,9 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 	}
 
 	waiter := NewMiningWaiter(
-		mockBackend,
+		source,
 		checkInterval,
 		maxGasPrice,
-		ethliketest.TxHashExtractor,
 	)
 	waiter.ForceMining(
 		originalTransaction,
@@ -135,7 +131,7 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	mockBackend := &ethliketest.MockDeployBackend{}
+	source := &mockTransactionSource{}
 
 	var resubmissionGasPrices []*big.Int
 
@@ -148,17 +144,16 @@ func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 		big.NewInt(45000000000), // max allowed
 	}
 
-	resubmitFn := func(gasPrice *big.Int) (ethlike.Transaction, error) {
+	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		// not setting mockBackend.receipt, mining takes a very long time
 		return createTransaction(gasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
-		mockBackend,
+		source,
 		checkInterval,
 		maxGasPrice,
-		ethliketest.TxHashExtractor,
 	)
 	waiter.ForceMining(
 		originalTransaction,
@@ -191,21 +186,20 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	// is 45 Gwei
 	originalTransaction := createTransaction(big.NewInt(46000000000))
 
-	mockBackend := &ethliketest.MockDeployBackend{}
+	source := &mockTransactionSource{}
 
 	var resubmissionGasPrices []*big.Int
 
-	resubmitFn := func(gasPrice *big.Int) (ethlike.Transaction, error) {
+	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		// not setting mockBackend.receipt, mining takes a very long time
 		return createTransaction(gasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
-		mockBackend,
+		source,
 		checkInterval,
 		maxGasPrice,
-		ethliketest.TxHashExtractor,
 	)
 	waiter.ForceMining(
 		originalTransaction,
@@ -218,17 +212,20 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	}
 }
 
-func createTransaction(gasPrice *big.Int) ethlike.Transaction {
-	hash := "0x121D387731bBbC988B312206c74F77D004D6B84b"
-	to := "0x131D387731bBbC988B312206c74F77D004D6B84b"
-
-	return &ethliketest.MockTransaction{
-		TxHash:     &ethliketest.MockHash{hash},
-		TxNonce:    10,
-		TxGasLimit: 200000,
-		TxGasPrice: gasPrice,
-		TxTo:       &ethliketest.MockAddress{to},
-		TxAmount:   big.NewInt(0),
-		TxData:     []byte{},
+func createTransaction(gasPrice *big.Int) *Transaction {
+	return &Transaction{
+		Hash:     "0x121D387731bBbC988B312206c74F77D004D6B84b",
+		GasPrice: gasPrice,
 	}
+}
+
+type mockTransactionSource struct {
+	receipt *TransactionReceipt
+}
+
+func (mts *mockTransactionSource) TransactionReceipt(
+	ctx context.Context,
+	txHash string,
+) (*TransactionReceipt, error) {
+	return mts.receipt, nil
 }

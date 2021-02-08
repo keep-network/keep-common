@@ -1,7 +1,7 @@
 package ethlikeutil
 
 import (
-	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethliketest"
+	"context"
 	"testing"
 	"time"
 )
@@ -46,9 +46,9 @@ func TestResolveAndIncrement(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			transactor := &ethliketest.MockContractTransactor{test.pendingNonce}
+			source := &mockNonceSource{test.pendingNonce}
 			manager := &NonceManager{
-				transactor:     transactor,
+				source:         source,
 				localNonce:     test.localNonce,
 				expirationDate: test.expirationDate,
 			}
@@ -77,4 +77,15 @@ func TestResolveAndIncrement(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockNonceSource struct {
+	nextNonce uint64
+}
+
+func (mns *mockNonceSource) PendingNonceAt(
+	ctx context.Context,
+	account string,
+) (uint64, error) {
+	return mns.nextNonce, nil
 }

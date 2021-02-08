@@ -2,19 +2,34 @@ package ethlikeutil
 
 import (
 	"context"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 	"time"
 )
+
+type Transaction struct {
+	Hash     string
+	GasPrice *big.Int
+}
+
+type TransactionReceipt struct {
+	Status      uint64
+	BlockNumber *big.Int
+}
+
+type TransactionSource interface {
+	TransactionReceipt(
+		ctx context.Context,
+		txHash string,
+	) (*TransactionReceipt, error)
+}
 
 // MiningWaiter allows to block the execution until the given transaction is
 // mined as well as monitor the transaction and bump up the gas price in case
 // it is not mined in the given timeout.
 type MiningWaiter struct {
-	backend         ethlike.DeployBackend
-	checkInterval   time.Duration
-	maxGasPrice     *big.Int
-	txHashExtractor ethlike.TxHashExtractor
+	source        TransactionSource
+	checkInterval time.Duration
+	maxGasPrice   *big.Int
 }
 
 // NewMiningWaiter creates a new MiningWaiter instance for the provided
@@ -30,26 +45,24 @@ type MiningWaiter struct {
 // be higher than this value. If the maximum allowed gas price is reached, no
 // further resubmission attempts are performed.
 func NewMiningWaiter(
-	backend ethlike.DeployBackend,
+	source TransactionSource,
 	checkInterval time.Duration,
 	maxGasPrice *big.Int,
-	txHashExtractor ethlike.TxHashExtractor,
 ) *MiningWaiter {
 	return &MiningWaiter{
-		backend,
+		source,
 		checkInterval,
 		maxGasPrice,
-		txHashExtractor,
 	}
 }
 
-// WaitMined blocks the current execution until the transaction with the given
+// waitMined blocks the current execution until the transaction with the given
 // hash is mined. Execution is blocked until the transaction is mined or until
 // the given timeout passes.
-func (mw *MiningWaiter) WaitMined(
+func (mw *MiningWaiter) waitMined(
 	timeout time.Duration,
-	tx ethlike.Transaction,
-) (ethlike.Receipt, error) {
+	transaction *Transaction,
+) (*TransactionReceipt, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -57,9 +70,9 @@ func (mw *MiningWaiter) WaitMined(
 	defer queryTicker.Stop()
 
 	for {
-		receipt, _ := mw.backend.TransactionReceipt(
+		receipt, _ := mw.source.TransactionReceipt(
 			context.TODO(),
-			mw.txHashExtractor(tx),
+			transaction.Hash,
 		)
 		if receipt != nil {
 			return receipt, nil
@@ -76,19 +89,19 @@ func (mw *MiningWaiter) WaitMined(
 // ResubmitTransactionFn implements the code for resubmitting the transaction
 // with the higher gas price. It should guarantee the same nonce is used for
 // transaction resubmission.
-type ResubmitTransactionFn func(gasPrice *big.Int) (ethlike.Transaction, error)
+type ResubmitTransactionFn func(gasPrice *big.Int) (*Transaction, error)
 
 // ForceMining blocks until the transaction is mined and bumps up the gas price
 // by 20% in the intervals defined by MiningWaiter in case the transaction has
 // not been mined yet. It accepts the original transaction reference and the
 // function responsible for executing transaction resubmission.
 func (mw MiningWaiter) ForceMining(
-	originalTransaction ethlike.Transaction,
+	originalTransaction *Transaction,
 	resubmitFn ResubmitTransactionFn,
 ) {
 	// if the original transaction's gas price was higher or equal the max
 	// allowed we do nothing; we need to wait for it to be mined
-	if originalTransaction.GasPrice().Cmp(mw.maxGasPrice) >= 0 {
+	if originalTransaction.GasPrice.Cmp(mw.maxGasPrice) >= 0 {
 		logger.Infof(
 			"original transaction gas price is higher than the max allowed; " +
 				"skipping resubmissions",
@@ -98,11 +111,11 @@ func (mw MiningWaiter) ForceMining(
 
 	transaction := originalTransaction
 	for {
-		receipt, err := mw.WaitMined(mw.checkInterval, transaction)
+		receipt, err := mw.waitMined(mw.checkInterval, transaction)
 		if err != nil {
 			logger.Infof(
 				"transaction [%v] not yet mined: [%v]",
-				mw.txHashExtractor(transaction).TerminalString(),
+				transaction.Hash,
 				err,
 			)
 		}
@@ -111,16 +124,16 @@ func (mw MiningWaiter) ForceMining(
 		if receipt != nil {
 			logger.Infof(
 				"transaction [%v] mined with status [%v] at block [%v]",
-				mw.txHashExtractor(transaction).TerminalString(),
-				receipt.Status(),
-				receipt.BlockNumber(),
+				transaction.Hash,
+				receipt.Status,
+				receipt.BlockNumber,
 			)
 			return
 		}
 
 		// transaction not yet mined, if the previous gas price was the maximum
 		// one, we no longer resubmit
-		gasPrice := transaction.GasPrice()
+		gasPrice := transaction.GasPrice
 		if gasPrice.Cmp(mw.maxGasPrice) == 0 {
 			logger.Infof("reached the maximum allowed gas price; stopping resubmissions")
 			return
@@ -141,7 +154,7 @@ func (mw MiningWaiter) ForceMining(
 		// evaluated earlier
 		logger.Infof(
 			"resubmitting previous transaction [%v] with a higher gas price [%v]",
-			mw.txHashExtractor(transaction).TerminalString(),
+			transaction.Hash,
 			gasPrice,
 		)
 		transaction, err = resubmitFn(gasPrice)

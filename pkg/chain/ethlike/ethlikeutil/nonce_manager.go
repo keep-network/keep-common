@@ -2,7 +2,6 @@ package ethlikeutil
 
 import (
 	"context"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"time"
 )
 
@@ -11,6 +10,10 @@ import (
 // let the nonce recover in case the mempool crashed before propagating the last
 // transaction sent.
 const localNonceTrustDuration = 30 * time.Second
+
+type NonceSource interface {
+	PendingNonceAt(ctx context.Context, account string) (uint64, error)
+}
 
 // NonceManager tracks the nonce for the account and allows to update it after
 // each successfully submitted transaction. Tracking the nonce locally is
@@ -29,8 +32,8 @@ const localNonceTrustDuration = 30 * time.Second
 // 4. Call IncrementNonce(),
 // 5. Release transaction lock.
 type NonceManager struct {
-	account        ethlike.Address
-	transactor     ethlike.ContractTransactor
+	account        string
+	source         NonceSource
 	localNonce     uint64
 	expirationDate time.Time
 }
@@ -40,12 +43,12 @@ type NonceManager struct {
 // CurrentNonce execution to check the pending nonce value as seen by the
 // Ethereum-like client.
 func NewNonceManager(
-	account ethlike.Address,
-	transactor ethlike.ContractTransactor,
+	account string,
+	source NonceSource,
 ) *NonceManager {
 	return &NonceManager{
 		account:    account,
-		transactor: transactor,
+		source:     source,
 		localNonce: 0,
 	}
 }
@@ -60,7 +63,7 @@ func NewNonceManager(
 // function to provide the required synchronization, optionally including
 // IncrementNonce call as well.
 func (nm *NonceManager) CurrentNonce() (uint64, error) {
-	pendingNonce, err := nm.transactor.PendingNonceAt(
+	pendingNonce, err := nm.source.PendingNonceAt(
 		context.TODO(),
 		nm.account,
 	)

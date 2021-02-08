@@ -3,11 +3,26 @@ package ethlikeutil
 import (
 	"context"
 	"fmt"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
+	"math/big"
 	"strconv"
 	"sync"
 	"time"
 )
+
+type Subscription interface {
+	Unsubscribe()
+
+	Err() <-chan error
+}
+
+type BlockSource interface {
+	LatestBlock(ctx context.Context) (*big.Int, error)
+
+	SubscribeNewBlocks(
+		ctx context.Context,
+		blocksChan chan<- *big.Int,
+	) (Subscription, error)
+}
 
 type BlockCounter struct {
 	structMutex         sync.Mutex
@@ -149,9 +164,9 @@ func (bc *BlockCounter) receiveBlocks() {
 }
 
 // subscribeBlocks creates a subscription to Geth to get each block.
-func (bc *BlockCounter) subscribeBlocks(ctx context.Context, client ethlike.ChainReader) error {
+func (bc *BlockCounter) subscribeBlocks(ctx context.Context, source BlockSource) error {
 	errorChan := make(chan error)
-	newBlockChan := make(chan ethlike.Header)
+	newBlockChan := make(chan *big.Int)
 
 	subscribe := func() {
 		logger.Debugf("subscribing to new blocks")
@@ -162,7 +177,7 @@ func (bc *BlockCounter) subscribeBlocks(ctx context.Context, client ethlike.Chai
 		)
 		defer cancel()
 
-		subscription, err := client.SubscribeNewHead(
+		subscription, err := source.SubscribeNewBlocks(
 			subscribeContext,
 			newBlockChan,
 		)
@@ -174,8 +189,8 @@ func (bc *BlockCounter) subscribeBlocks(ctx context.Context, client ethlike.Chai
 
 		for {
 			select {
-			case header := <-newBlockChan:
-				bc.subscriptionChannel <- block{header.Number().String()}
+			case blockNumber := <-newBlockChan:
+				bc.subscriptionChannel <- block{blockNumber.String()}
 			case err = <-subscription.Err():
 				logger.Warningf("subscription to new blocks interrupted: [%v]", err)
 				subscription.Unsubscribe()
@@ -194,26 +209,20 @@ func (bc *BlockCounter) subscribeBlocks(ctx context.Context, client ethlike.Chai
 		}
 	}()
 
-	lastBlock, err := client.BlockByNumber(
-		ctx,
-		nil, // if `nil` then latest known block is returned
-	)
+	lastBlock, err := source.LatestBlock(ctx)
 	if err != nil {
 		return err
 	}
 
-	bc.subscriptionChannel <- block{lastBlock.Number().String()}
+	bc.subscriptionChannel <- block{lastBlock.String()}
 
 	return nil
 }
 
-func CreateBlockCounter(client ethlike.ChainReader) (*BlockCounter, error) {
+func CreateBlockCounter(source BlockSource) (*BlockCounter, error) {
 	ctx := context.Background()
 
-	startupBlock, err := client.BlockByNumber(
-		ctx,
-		nil, // if `nil` then latest known block is returned
-	)
+	startupBlock, err := source.LatestBlock(ctx)
 	if err != nil {
 		return nil,
 			fmt.Errorf(
@@ -223,13 +232,13 @@ func CreateBlockCounter(client ethlike.ChainReader) (*BlockCounter, error) {
 	}
 
 	blockCounter := &BlockCounter{
-		latestBlockHeight:   startupBlock.NumberU64(),
+		latestBlockHeight:   startupBlock.Uint64(),
 		waiters:             make(map[uint64][]chan uint64),
 		subscriptionChannel: make(chan block),
 	}
 
 	go blockCounter.receiveBlocks()
-	err = blockCounter.subscribeBlocks(ctx, client)
+	err = blockCounter.subscribeBlocks(ctx, source)
 	if err != nil {
 		return nil, fmt.Errorf("failed to subscribe to new blocks: [%v]", err)
 	}

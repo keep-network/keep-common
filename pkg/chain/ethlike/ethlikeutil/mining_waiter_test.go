@@ -27,7 +27,12 @@ func TestForceMining_FirstMined(t *testing.T) {
 	// receipt is already there
 	mockBackend.Receipt = &ethliketest.MockReceipt{}
 
-	waiter := NewMiningWaiter(mockBackend, checkInterval, maxGasPrice)
+	waiter := NewMiningWaiter(
+		mockBackend,
+		checkInterval,
+		maxGasPrice,
+		ethliketest.TxHashExtractor,
+	)
 	waiter.ForceMining(
 		originalTransaction,
 		resubmitFn,
@@ -53,7 +58,12 @@ func TestForceMining_SecondMined(t *testing.T) {
 		return createTransaction(gasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(mockBackend, checkInterval, maxGasPrice)
+	waiter := NewMiningWaiter(
+		mockBackend,
+		checkInterval,
+		maxGasPrice,
+		ethliketest.TxHashExtractor,
+	)
 	waiter.ForceMining(
 		originalTransaction,
 		resubmitFn,
@@ -90,7 +100,12 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 		return createTransaction(gasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(mockBackend, checkInterval, maxGasPrice)
+	waiter := NewMiningWaiter(
+		mockBackend,
+		checkInterval,
+		maxGasPrice,
+		ethliketest.TxHashExtractor,
+	)
 	waiter.ForceMining(
 		originalTransaction,
 		resubmitFn,
@@ -139,7 +154,12 @@ func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 		return createTransaction(gasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(mockBackend, checkInterval, maxGasPrice)
+	waiter := NewMiningWaiter(
+		mockBackend,
+		checkInterval,
+		maxGasPrice,
+		ethliketest.TxHashExtractor,
+	)
 	waiter.ForceMining(
 		originalTransaction,
 		resubmitFn,
@@ -181,7 +201,12 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 		return createTransaction(gasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(mockBackend, checkInterval, maxGasPrice)
+	waiter := NewMiningWaiter(
+		mockBackend,
+		checkInterval,
+		maxGasPrice,
+		ethliketest.TxHashExtractor,
+	)
 	waiter.ForceMining(
 		originalTransaction,
 		resubmitFn,

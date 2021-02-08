@@ -37,6 +37,10 @@ func (mr *MockReceipt) BlockNumber() *big.Int {
 	return mr.ReceiptBlockNumber
 }
 
+func TxHashExtractor(tx ethlike.Transaction) ethlike.Hash {
+	return tx.(*MockTransaction).TxHash
+}
+
 type MockTransaction struct {
 	TxHash     ethlike.Hash
 	TxNonce    uint64

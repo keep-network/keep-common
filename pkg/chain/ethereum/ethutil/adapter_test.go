@@ -6,7 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethlikeutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 	"reflect"
 	"testing"
@@ -112,7 +112,7 @@ func TestTransactionSourceAdapter_TransactionReceipt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectedReceipt := &ethlikeutil.TransactionReceipt{
+	expectedReceipt := &ethlike.TransactionReceipt{
 		Status:      1,
 		BlockNumber: big.NewInt(100),
 	}

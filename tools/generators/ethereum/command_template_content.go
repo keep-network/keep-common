@@ -14,7 +14,7 @@ import (
     "github.com/ethereum/go-ethereum/core/types"
 
     "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
-    "github.com/keep-network/keep-common/pkg/chain/ethlike/ethlikeutil"
+    "github.com/keep-network/keep-common/pkg/chain/ethlike"
     "github.com/keep-network/keep-common/pkg/cmd"
 
     "github.com/urfave/cli"
@@ -228,13 +228,13 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
 		maxGasPrice = config.MaxGasPrice.Int
 	}
 
-	miningWaiter := ethlikeutil.NewMiningWaiter(
+	miningWaiter := ethlike.NewMiningWaiter(
 		ethutil.NewTransactionSourceAdapter(client),
 		checkInterval,
 		maxGasPrice,
 	)
 
-	blockCounter, err := ethlikeutil.CreateBlockCounter(
+	blockCounter, err := ethlike.CreateBlockCounter(
 		ethutil.NewBlockSourceAdapter(client),
 	)
 	if err != nil {
@@ -250,7 +250,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         address,
         key,
         client,
-        ethlikeutil.NewNonceManager(
+        ethlike.NewNonceManager(
         	key.Address.Hex(),
         	ethutil.NewNonceSourceAdapter(client),
         ),

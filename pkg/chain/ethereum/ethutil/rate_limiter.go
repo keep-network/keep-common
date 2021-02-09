@@ -6,14 +6,14 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethlikeutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 )
 
 type rateLimiter struct {
 	EthereumClient
 
-	*ethlikeutil.RateLimiter
+	*ethlike.RateLimiter
 }
 
 // WrapRateLimiting wraps the given contract backend with rate limiting
@@ -22,11 +22,11 @@ type rateLimiter struct {
 // including view function calls.
 func WrapRateLimiting(
 	client EthereumClient,
-	config *ethlikeutil.RateLimiterConfig,
+	config *ethlike.RateLimiterConfig,
 ) EthereumClient {
 	return &rateLimiter{
 		EthereumClient: client,
-		RateLimiter:    ethlikeutil.NewRateLimiter(config),
+		RateLimiter:    ethlike.NewRateLimiter(config),
 	}
 }
 

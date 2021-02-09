@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethlikeutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 )
 
@@ -30,7 +30,7 @@ func (bsa *BlockSourceAdapter) LatestBlock(
 func (bsa *BlockSourceAdapter) SubscribeNewBlocks(
 	ctx context.Context,
 	blocksChan chan<- *big.Int,
-) (ethlikeutil.Subscription, error) {
+) (ethlike.Subscription, error) {
 	headersChan := make(chan *types.Header)
 
 	go func() {
@@ -60,7 +60,7 @@ func NewTransactionSourceAdapter(
 func (tsa *TransactionSourceAdapter) TransactionReceipt(
 	ctx context.Context,
 	txHash string,
-) (*ethlikeutil.TransactionReceipt, error) {
+) (*ethlike.TransactionReceipt, error) {
 	receipt, err := tsa.delegate.TransactionReceipt(
 		ctx,
 		common.HexToHash(txHash),
@@ -69,7 +69,7 @@ func (tsa *TransactionSourceAdapter) TransactionReceipt(
 		return nil, err
 	}
 
-	return &ethlikeutil.TransactionReceipt{
+	return &ethlike.TransactionReceipt{
 		Status:      receipt.Status,
 		BlockNumber: receipt.BlockNumber,
 	}, nil

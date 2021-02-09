@@ -20,7 +20,7 @@ import (
 	"github.com/ipfs/go-log"
 
 	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike/ethlikeutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"github.com/keep-network/keep-common/pkg/subscription"
 )
 
@@ -38,9 +38,9 @@ type {{.Class}} struct {
 	callerOptions      *bind.CallOpts
 	transactorOptions  *bind.TransactOpts
 	errorResolver      *ethutil.ErrorResolver
-	nonceManager       *ethlikeutil.NonceManager
-	miningWaiter       *ethlikeutil.MiningWaiter
-	blockCounter	   *ethlikeutil.BlockCounter
+	nonceManager       *ethlike.NonceManager
+	miningWaiter       *ethlike.MiningWaiter
+	blockCounter	   *ethlike.BlockCounter
 
 	transactionMutex *sync.Mutex
 }
@@ -49,9 +49,9 @@ func New{{.Class}}(
     contractAddress common.Address,
     accountKey *keystore.Key,
     backend bind.ContractBackend,
-    nonceManager *ethlikeutil.NonceManager,
-    miningWaiter *ethlikeutil.MiningWaiter,
-    blockCounter *ethlikeutil.BlockCounter,
+    nonceManager *ethlike.NonceManager,
+    miningWaiter *ethlike.MiningWaiter,
+    blockCounter *ethlike.BlockCounter,
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{

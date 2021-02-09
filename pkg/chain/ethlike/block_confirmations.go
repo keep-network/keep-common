@@ -1,4 +1,4 @@
-package ethlikeutil
+package ethlike
 
 import (
 	"fmt"

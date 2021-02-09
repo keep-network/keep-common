@@ -120,7 +120,7 @@ func buildContractInfo(
 		[]byte("-$0"),
 	)))
 	constMethods, nonConstMethods := buildMethodInfo(payableMethods, abi.Methods)
-	events := buildEventInfo(abi.Events)
+	events := buildEventInfo(shortVar, abi.Events)
 
 	return contractInfo{
 		configReader,
@@ -244,13 +244,18 @@ func buildMethodInfo(
 	return constMethods, nonConstMethods
 }
 
-func buildEventInfo(eventsByName map[string]abi.Event) []eventInfo {
+func buildEventInfo(
+	contractShortVar string,
+	eventsByName map[string]abi.Event,
+) []eventInfo {
 	eventInfos := make([]eventInfo, 0, len(eventsByName))
 	for name, event := range eventsByName {
 
 		capsName := uppercaseFirst(name)
 		lowerName := lowercaseFirst(name)
-		subscriptionCapsName := capsName + "Subscription"
+		subscriptionCapsName := uppercaseFirst(contractShortVar) +
+			capsName +
+			"Subscription"
 
 		shortVar := strings.ToLower(string(shortVarRegexp.ReplaceAll(
 			[]byte(name),

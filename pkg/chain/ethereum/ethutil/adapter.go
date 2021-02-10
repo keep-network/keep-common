@@ -33,18 +33,44 @@ func (bsa *BlockSourceAdapter) SubscribeNewBlocks(
 ) (ethlike.Subscription, error) {
 	headersChan := make(chan *types.Header)
 
+	subscription, err := bsa.delegate.SubscribeNewHead(ctx, headersChan)
+	if err != nil {
+		return nil, err
+	}
+
+	stop := make(chan struct{})
+
 	go func() {
 		for {
 			select {
 			case header := <-headersChan:
 				blocksChan <- header.Number
-			case <-ctx.Done():
+			case <-stop:
 				return
 			}
 		}
 	}()
 
-	return bsa.delegate.SubscribeNewHead(ctx, headersChan)
+	return &subscriptionWrapper{
+		unsubscribeFn: func() {
+			close(stop)
+			subscription.Unsubscribe()
+		},
+		errChan: subscription.Err(),
+	}, nil
+}
+
+type subscriptionWrapper struct {
+	unsubscribeFn func()
+	errChan       <-chan error
+}
+
+func (sw *subscriptionWrapper) Unsubscribe() {
+	sw.unsubscribeFn()
+}
+
+func (sw *subscriptionWrapper) Err() <-chan error {
+	return sw.errChan
 }
 
 type TransactionSourceAdapter struct {

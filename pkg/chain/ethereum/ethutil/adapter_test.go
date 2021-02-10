@@ -186,7 +186,10 @@ func (maec *mockAdaptedEthereumClient) SubscribeNewHead(
 		}
 	}()
 
-	return nil, nil
+	return &subscriptionWrapper{
+		unsubscribeFn: func() {},
+		errChan:       make(chan error),
+	}, nil
 }
 
 func (maec *mockAdaptedEthereumClient) TransactionReceipt(

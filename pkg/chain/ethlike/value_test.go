@@ -1,4 +1,4 @@
-package ethereum
+package ethlike
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestUnmarshalText(t *testing.T) {
+func TestUnmarshalTextValue(t *testing.T) {
 	int5000ether, _ := new(big.Int).SetString("5000000000000000000000", 10)
 
 	var tests = map[string]struct {
@@ -39,6 +39,10 @@ func TestUnmarshalText(t *testing.T) {
 			value:          "2 ether",
 			expectedResult: big.NewInt(2000000000000000000),
 		},
+		"unit: CELO": {
+			value:          "7 CELO",
+			expectedResult: big.NewInt(7000000000000000000),
+		},
 		"unit: mixed case": {
 			value:          "5 GWei",
 			expectedResult: big.NewInt(5000000000),
@@ -50,6 +54,10 @@ func TestUnmarshalText(t *testing.T) {
 		"decimal ether": {
 			value:          "0.8 ether",
 			expectedResult: big.NewInt(800000000000000000),
+		},
+		"decimal CELO": {
+			value:          "0.9 CELO",
+			expectedResult: big.NewInt(900000000000000000),
 		},
 		"multiple decimal digits": {
 			value:          "5.6789 Gwei",
@@ -106,7 +114,7 @@ func TestUnmarshalText(t *testing.T) {
 		},
 		"two values": {
 			value:         "3 wei2wei",
-			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: wei, Gwei, ether"),
+			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: ether, gwei, wei"),
 		},
 		"two values separated with space": {
 			value:         "3 wei 2wei",
@@ -118,15 +126,15 @@ func TestUnmarshalText(t *testing.T) {
 		},
 		"invalid unit: ETH": {
 			value:         "6 ETH",
-			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: wei, Gwei, ether"),
+			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: ether, gwei, wei"),
 		},
 		"invalid unit: weinot": {
 			value:         "100 weinot",
-			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: wei, Gwei, ether"),
+			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: ether, gwei, wei"),
 		},
 		"invalid unit: notawei": {
 			value:         "100 notawei",
-			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: wei, Gwei, ether"),
+			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: ether, gwei, wei"),
 		},
 		"only unit": {
 			value:         "wei",
@@ -139,9 +147,8 @@ func TestUnmarshalText(t *testing.T) {
 	}
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-
-			e := &Wei{}
-			err := e.UnmarshalText([]byte(test.value))
+			v := Value{}
+			err := v.UnmarshalText([]byte(test.value))
 			if test.expectedError != nil {
 				if !reflect.DeepEqual(test.expectedError, err) {
 					t.Errorf(
@@ -154,11 +161,11 @@ func TestUnmarshalText(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			}
 
-			if test.expectedResult != nil && test.expectedResult.Cmp(e.Int) != 0 {
+			if test.expectedResult != nil && test.expectedResult.Cmp(v.Int) != 0 {
 				t.Errorf(
 					"invalid value\nexpected: %v\nactual:   %v",
 					test.expectedResult.String(),
-					e.Int.String(),
+					v.Int.String(),
 				)
 			}
 		})

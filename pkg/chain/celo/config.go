@@ -1,19 +1,19 @@
-package ethereum
+package celo
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/celo-org/celo-blockchain/common"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 )
 
 // Config is a struct that contains the configuration needed to connect to an
-// Ethereum node. This information will give access to an Ethereum network.
+// Celo node. This information will give access to a Celo network.
 type Config struct {
 	ethlike.CommonConfig
 }
 
 // ContractAddress finds a given contract's address configuration and returns it
-// as Ethereum ddress.
+// as Celo address.
 func (c Config) ContractAddress(contractName string) (*common.Address, error) {
 	addressString, exists := c.ContractAddresses[contractName]
 	if !exists {

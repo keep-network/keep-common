@@ -9,11 +9,11 @@ package cmd
 import (
     "sync"
 
-    "github.com/ethereum/go-ethereum/common"
-    "github.com/ethereum/go-ethereum/common/hexutil"
-    "github.com/ethereum/go-ethereum/core/types"
+    "{{.BackendModule}}/common"
+    "{{.BackendModule}}/common/hexutil"
+    "{{.BackendModule}}/core/types"
 
-    "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
+    chainutil "{{.ChainUtilPackage}}"
     "github.com/keep-network/keep-common/pkg/chain/ethlike"
     "github.com/keep-network/keep-common/pkg/cmd"
 
@@ -23,7 +23,7 @@ import (
 var {{.Class}}Command cli.Command
 
 var {{.FullVar}}Description = ` + "`" + `The {{.DashedName}} command allows calling the {{.Class}} contract on an
-	Ethereum network. It has subcommands corresponding to each contract method,
+	ETH-like network. It has subcommands corresponding to each contract method,
 	which respectively each take parameters based on the contract method's
 	parameters.
 
@@ -197,17 +197,17 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cli.Context) error {
 /// ------------------- Initialization -------------------
 
 func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
-    config, err := {{.EthereumConfigReader}}(c.GlobalString("config"))
+    config, err := {{.ConfigReader}}(c.GlobalString("config"))
     if err != nil {
-        return nil, fmt.Errorf("error reading Ethereum config from file: [%v]", err)
+        return nil, fmt.Errorf("error reading config from file: [%v]", err)
     }
 
-    client, _, _, err := ethutil.ConnectClients(config.URL, config.URLRPC)
+    client, _, _, err := chainutil.ConnectClients(config.URL, config.URLRPC)
     if err != nil {
-        return nil, fmt.Errorf("error connecting to Ethereum node: [%v]", err)
+        return nil, fmt.Errorf("error connecting to chan node: [%v]", err)
     }
 
-    key, err := ethutil.DecryptKeyFile(
+    key, err := chainutil.DecryptKeyFile(
         config.Account.KeyFile,
         config.Account.KeyFilePassword,
     )
@@ -229,17 +229,17 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
 	}
 
 	miningWaiter := ethlike.NewMiningWaiter(
-		ethutil.NewTransactionSourceAdapter(client),
+		chainutil.NewTransactionSourceAdapter(client),
 		checkInterval,
 		maxGasPrice,
 	)
 
 	blockCounter, err := ethlike.CreateBlockCounter(
-		ethutil.NewBlockSourceAdapter(client),
+		chainutil.NewBlockSourceAdapter(client),
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to create Ethereum blockcounter: [%v]",
+			"failed to create block counter: [%v]",
 			err,
 		)
 	}
@@ -252,7 +252,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         client,
         ethlike.NewNonceManager(
         	key.Address.Hex(),
-        	ethutil.NewNonceSourceAdapter(client),
+        	chainutil.NewNonceSourceAdapter(client),
         ),
         miningWaiter,
         blockCounter,

@@ -40,15 +40,17 @@ func init() {
 
 // The following structs are sent into the templates for compilation.
 type contractInfo struct {
-	EthereumConfigReader string
-	Class                string
-	AbiClass             string
-	FullVar              string
-	ShortVar             string
-	DashedName           string
-	ConstMethods         []methodInfo
-	NonConstMethods      []methodInfo
-	Events               []eventInfo
+	BackendModule    string
+	ChainUtilPackage string
+	ConfigReader     string
+	Class            string
+	AbiClass         string
+	FullVar          string
+	ShortVar         string
+	DashedName       string
+	ConstMethods     []methodInfo
+	NonConstMethods  []methodInfo
+	Events           []eventInfo
 }
 
 type paramInfo struct {
@@ -92,6 +94,8 @@ type eventInfo struct {
 }
 
 func buildContractInfo(
+	backendModule string,
+	chainUtilPackage string,
 	configReader string,
 	abiClassName string,
 	abi *abi.ABI,
@@ -123,6 +127,8 @@ func buildContractInfo(
 	events := buildEventInfo(shortVar, abi.Events)
 
 	return contractInfo{
+		backendModule,
+		chainUtilPackage,
 		configReader,
 		string(goClassName),
 		abiClassName,
@@ -183,7 +189,7 @@ func buildMethodInfo(
 			case "bytes":
 				parsingFn = "hexutil.Decode"
 			case "address":
-				parsingFn = "ethutil.AddressFromHex"
+				parsingFn = "chainutil.AddressFromHex"
 			case "uint256":
 				parsingFn = "hexutil.DecodeBig"
 			default:

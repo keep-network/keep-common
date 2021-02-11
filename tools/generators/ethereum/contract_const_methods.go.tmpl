@@ -37,7 +37,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}AtBlock(
 ) ({{$method.Return.Type}}, error) {
 	var result {{$method.Return.Type}}
 
-	err := ethutil.CallAtBlock(
+	err := chainutil.CallAtBlock(
 		{{$contract.ShortVar}}.callerOptions.From,
 		blockNumber,
 		nil,

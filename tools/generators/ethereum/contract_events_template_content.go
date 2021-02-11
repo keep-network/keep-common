@@ -6,17 +6,17 @@ var contractEventsTemplateContent = `{{- $contract := . -}}
 {{- range $i, $event := .Events }}
 
 func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
-	opts *ethutil.SubscribeOpts,
+	opts *chainutil.SubscribeOpts,
 	{{$event.IndexedFilterDeclarations -}}
 ) *{{$event.SubscriptionCapsName}} {
 	if opts == nil {
-		opts = new(ethutil.SubscribeOpts)
+		opts = new(chainutil.SubscribeOpts)
 	}
 	if opts.Tick == 0 {
-		opts.Tick = ethutil.DefaultSubscribeOptsTick
+		opts.Tick = chainutil.DefaultSubscribeOptsTick
 	}
 	if opts.PastBlocks == 0 {
-		opts.PastBlocks = ethutil.DefaultSubscribeOptsPastBlocks
+		opts.PastBlocks = chainutil.DefaultSubscribeOptsPastBlocks
 	}
 
 	return &{{$event.SubscriptionCapsName}}{
@@ -28,7 +28,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
 
 type {{$event.SubscriptionCapsName}} struct {
 	contract *{{$contract.Class}}
-	opts *ethutil.SubscribeOpts
+	opts *chainutil.SubscribeOpts
 	{{$event.IndexedFilterFields -}}
 }
 
@@ -139,7 +139,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) watch{{$event.CapsName}}(
 		{{$logger}}.Errorf(
 			"subscription to event {{$event.CapsName}} had to be "+
 				"retried [%s] since the last attempt; please inspect "+
-				"Ethereum connectivity",
+				"chain connectivity",
 				elapsed,
 		)
 	}
@@ -153,10 +153,10 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) watch{{$event.CapsName}}(
 		)
 	}
 
-	return ethutil.WithResubscription(
-		ethutil.SubscriptionBackoffMax,
+	return chainutil.WithResubscription(
+		chainutil.SubscriptionBackoffMax,
 		subscribeFn,
-		ethutil.SubscriptionAlertThreshold,
+		chainutil.SubscriptionAlertThreshold,
 		thresholdViolatedFn,
 		subscriptionFailedFn,
 	)

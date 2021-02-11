@@ -41,6 +41,18 @@ import (
 // Note that currently the packages for contract and command are hardcoded to
 // contract and cmd, respectively.
 func main() {
+	backendModule := flag.String(
+		"backend-module",
+		"github.com/ethereum/go-ethereum",
+		"Backend module which should be imported by generated types",
+	)
+
+	chainUtilPackage := flag.String(
+		"chain-util-package",
+		"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil",
+		"Package providing auxiliary chain utils",
+	)
+
 	configReader := flag.String(
 		"config-func",
 		"config.ReadEthereumConfig",
@@ -104,7 +116,14 @@ func main() {
 	// ABI file, minus the extension.
 	abiClassName := path.Base(abiPath)
 	abiClassName = abiClassName[0 : len(abiClassName)-4] // strip .abi
-	contractInfo := buildContractInfo(*configReader, abiClassName, &abi, payableInfo)
+	contractInfo := buildContractInfo(
+		*backendModule,
+		*chainUtilPackage,
+		*configReader,
+		abiClassName,
+		&abi,
+		payableInfo,
+	)
 
 	contractBuf, err := generateCode(
 		contractOutputPath,

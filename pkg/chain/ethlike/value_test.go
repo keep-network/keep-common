@@ -114,7 +114,7 @@ func TestUnmarshalTextValue(t *testing.T) {
 		},
 		"two values": {
 			value:         "3 wei2wei",
-			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: ether, gwei, wei"),
+			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: wei, Gwei, ether, CELO"),
 		},
 		"two values separated with space": {
 			value:         "3 wei 2wei",
@@ -126,15 +126,15 @@ func TestUnmarshalTextValue(t *testing.T) {
 		},
 		"invalid unit: ETH": {
 			value:         "6 ETH",
-			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: ether, gwei, wei"),
+			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: wei, Gwei, ether, CELO"),
 		},
 		"invalid unit: weinot": {
 			value:         "100 weinot",
-			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: ether, gwei, wei"),
+			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: wei, Gwei, ether, CELO"),
 		},
 		"invalid unit: notawei": {
 			value:         "100 notawei",
-			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: ether, gwei, wei"),
+			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: wei, Gwei, ether, CELO"),
 		},
 		"only unit": {
 			value:         "wei",

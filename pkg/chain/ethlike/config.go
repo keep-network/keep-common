@@ -1,5 +1,7 @@
 package ethlike
 
+import "math/big"
+
 // Account is a struct that contains the configuration for accessing an
 // ETH-like network and a contract on the network.
 type Account struct {
@@ -55,4 +57,13 @@ type CommonConfig struct {
 	// BalanceAlertThreshold defines a minimum value of the operator's
 	// account balance below which an alert will be triggered.
 	BalanceAlertThreshold *Value
+}
+
+// BalanceAlertThresholdValue returns the `BalanceAlertThreshold` integer value.
+func (cg *CommonConfig) BalanceAlertThresholdValue() *big.Int {
+	if cg.BalanceAlertThreshold != nil {
+		return cg.BalanceAlertThreshold.Int
+	}
+
+	return nil
 }

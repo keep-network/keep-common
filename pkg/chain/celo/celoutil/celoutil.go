@@ -5,8 +5,11 @@ import (
 	celo "github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/accounts/abi/bind"
 	"github.com/celo-org/celo-blockchain/common"
+	"github.com/ipfs/go-log"
 	"math/big"
 )
+
+var logger = log.Logger("keep-celoutil")
 
 // CeloClient wraps the core `bind.ContractBackend` interface with
 // some other interfaces allowing to expose additional methods provided

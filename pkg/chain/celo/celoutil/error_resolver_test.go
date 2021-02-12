@@ -10,7 +10,7 @@ import (
 
 	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil"
 
-	"github.com/celo-org/celo-blockchain"
+	celo "github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/accounts/abi"
 	"github.com/celo-org/celo-blockchain/common"
 )
@@ -55,7 +55,7 @@ func assertErrorContains(t *testing.T, err error, substrings ...string) {
 // Helper caller type that always returns errCall.
 type erroringCaller struct{}
 
-func (*erroringCaller) CallContract(_ context.Context, _ ethereum.CallMsg, _ *big.Int) ([]byte, error) {
+func (*erroringCaller) CallContract(_ context.Context, _ celo.CallMsg, _ *big.Int) ([]byte, error) {
 	return nil, errCall
 }
 
@@ -65,7 +65,7 @@ type fixedReturnCaller struct {
 	returnedBytes []byte
 }
 
-func (frc *fixedReturnCaller) CallContract(_ context.Context, _ ethereum.CallMsg, _ *big.Int) ([]byte, error) {
+func (frc *fixedReturnCaller) CallContract(_ context.Context, _ celo.CallMsg, _ *big.Int) ([]byte, error) {
 	return frc.returnedBytes, nil
 }
 
@@ -76,13 +76,13 @@ type callbackCaller struct {
 	callback       contractCallFn
 }
 
-type contractCallFn func(ctx context.Context, call ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
+type contractCallFn func(ctx context.Context, call celo.CallMsg, blockNumber *big.Int) ([]byte, error)
 
 func callbackCallerWith(fn contractCallFn) *callbackCaller {
 	return &callbackCaller{false, fn}
 }
 
-func (cc *callbackCaller) CallContract(ctx context.Context, call ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+func (cc *callbackCaller) CallContract(ctx context.Context, call celo.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	cc.callbackCalled = true
 	return cc.callback(ctx, call, blockNumber)
 }
@@ -223,7 +223,7 @@ func TestErrorResolverPropagateFromAddress(t *testing.T) {
 
 	assertingCaller := callbackCallerWith(func(
 		ctx context.Context,
-		msg ethereum.CallMsg,
+		msg celo.CallMsg,
 		blockNumber *big.Int,
 	) ([]byte, error) {
 		if fromAddress.Hex() != msg.From.Hex() {
@@ -250,7 +250,7 @@ func TestErrorResolverPropagateToAddress(t *testing.T) {
 
 	assertingCaller := callbackCallerWith(func(
 		ctx context.Context,
-		msg ethereum.CallMsg,
+		msg celo.CallMsg,
 		blockNumber *big.Int,
 	) ([]byte, error) {
 		if toAddress.Hex() != msg.To.Hex() {
@@ -277,7 +277,7 @@ func TestErrorResolverPropagateValue(t *testing.T) {
 
 	assertingCaller := callbackCallerWith(func(
 		ctx context.Context,
-		msg ethereum.CallMsg,
+		msg celo.CallMsg,
 		blockNumber *big.Int,
 	) ([]byte, error) {
 		if value.Cmp(msg.Value) != 0 {
@@ -305,7 +305,7 @@ func TestErrorResolverPropagateData(t *testing.T) {
 
 	assertingCaller := callbackCallerWith(func(
 		ctx context.Context,
-		msg ethereum.CallMsg,
+		msg celo.CallMsg,
 		blockNumber *big.Int,
 	) ([]byte, error) {
 		expectedData, err := (&testABI).Pack(methodName, parameters...)

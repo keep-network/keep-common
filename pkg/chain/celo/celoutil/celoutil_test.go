@@ -78,30 +78,30 @@ func TestAddressFromHex(t *testing.T) {
 		},
 		"short address": {
 			hex:          "0x1234",
-			errorMessage: "[0x1234] is not a valid Ethereum address",
+			errorMessage: "[0x1234] is not a valid Celo address",
 			address:      common.Address{},
 		},
 		"long address": {
 			hex: "0x000000000000000000000000000000000000001234",
 			errorMessage: "[0x000000000000000000000000000000000000001234] " +
-				"is not a valid Ethereum address",
+				"is not a valid Celo address",
 			address: common.Address{},
 		},
 		"decimal number": {
 			hex: "000000000000000000000000000000000000001234",
 			errorMessage: "[000000000000000000000000000000000000001234] " +
-				"is not a valid Ethereum address",
+				"is not a valid Celo address",
 			address: common.Address{},
 		},
 		"blank string": {
 			hex:          "",
-			errorMessage: "[] is not a valid Ethereum address",
+			errorMessage: "[] is not a valid Celo address",
 			address:      common.Address{},
 		},
 		"arbitrary string": {
 			hex: "I am a booyan with booyans",
 			errorMessage: "[I am a booyan with booyans] " +
-				"is not a valid Ethereum address",
+				"is not a valid Celo address",
 			address: common.Address{},
 		},
 	}

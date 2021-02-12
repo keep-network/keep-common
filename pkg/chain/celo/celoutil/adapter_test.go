@@ -179,7 +179,7 @@ func (macc *mockAdaptedCeloClient) BlockByNumber(
 func (macc *mockAdaptedCeloClient) SubscribeNewHead(
 	ctx context.Context,
 	ch chan<- *types.Header,
-) (ethereum.Subscription, error) {
+) (celo.Subscription, error) {
 	go func() {
 		for _, block := range macc.blocks {
 			ch <- &types.Header{Number: block}

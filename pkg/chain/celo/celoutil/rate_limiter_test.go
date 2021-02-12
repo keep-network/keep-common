@@ -2,7 +2,7 @@ package celoutil
 
 import (
 	"context"
-	celo "github.com/celo-org/celo-blockchain"
+	"github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/celo-org/celo-blockchain/core/types"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"

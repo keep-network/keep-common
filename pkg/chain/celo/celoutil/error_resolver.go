@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	celo "github.com/celo-org/celo-blockchain"
+	"github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/accounts/abi"
 	"github.com/celo-org/celo-blockchain/common"
 )

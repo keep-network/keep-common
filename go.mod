@@ -4,13 +4,11 @@ go 1.12
 
 replace github.com/urfave/cli => github.com/keep-network/cli v1.20.0
 
-replace github.com/celo-org/celo-blockchain => ../../celo-org/celo-blockchain
-
 require (
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20190924011532-60b7b74727fd // indirect
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
-	github.com/celo-org/celo-blockchain v1.2.2 // TODO: determine correct version
+	github.com/celo-org/celo-blockchain v0.0.0-20210211195335-cbc4f555cf87
 	github.com/cespare/cp v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
@@ -31,8 +29,8 @@ require (
 	github.com/status-im/keycard-go v0.0.0-20191119114148-6dd40a46baa0 // indirect
 	github.com/tyler-smith/go-bip39 v1.0.2 // indirect
 	github.com/urfave/cli v1.22.1
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	golang.org/x/tools v0.0.0-20200117012304-6edc0a871e69
 )

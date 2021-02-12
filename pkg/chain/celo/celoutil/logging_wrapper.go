@@ -2,7 +2,7 @@ package celoutil
 
 import (
 	"context"
-	celo "github.com/celo-org/celo-blockchain"
+	"github.com/celo-org/celo-blockchain"
 	"github.com/ipfs/go-log"
 	"math/big"
 )

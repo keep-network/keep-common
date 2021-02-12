@@ -10,7 +10,7 @@ import (
 
 	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil"
 
-	celo "github.com/celo-org/celo-blockchain"
+	"github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/accounts/abi"
 	"github.com/celo-org/celo-blockchain/common"
 )

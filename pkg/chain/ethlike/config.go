@@ -19,9 +19,6 @@ type Account struct {
 // CommonConfig is a struct that contains the configuration needed to connect
 // to an ETH-like node. This information will give access to an ETH-like network.
 type CommonConfig struct {
-	// Enabled determines whether the given ETH-like chain should be used.
-	Enabled bool
-
 	// Example: "ws://192.168.0.157:8546".
 	URL string
 
@@ -69,4 +66,9 @@ func (cg *CommonConfig) BalanceAlertThresholdValue() *big.Int {
 	}
 
 	return nil
+}
+
+// GetAccount returns the account configuration.
+func (cg *CommonConfig) GetAccount() Account {
+	return cg.Account
 }

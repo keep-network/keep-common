@@ -78,7 +78,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 
 	go {{$contract.ShortVar}}.miningWaiter.ForceMining(
 		&ethlike.Transaction{
-			Hash:     transaction.Hash().Hex(),
+			Hash:     ethlike.Hash(transaction.Hash()),
 			GasPrice: transaction.GasPrice(),
 		},
 		func(newGasPrice *big.Int) (*ethlike.Transaction, error) {
@@ -110,7 +110,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 			)
 
 			return &ethlike.Transaction{
-				Hash:     transaction.Hash().Hex(),
+				Hash:     ethlike.Hash(transaction.Hash()),
 				GasPrice: transaction.GasPrice(),
             }, nil
 		},

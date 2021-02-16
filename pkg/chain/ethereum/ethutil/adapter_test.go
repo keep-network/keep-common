@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestBlockSourceAdapter_LatestBlock(t *testing.T) {
+func TestEthlikeAdapter_LatestBlock(t *testing.T) {
 	client := &mockAdaptedEthereumClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
@@ -22,15 +22,15 @@ func TestBlockSourceAdapter_LatestBlock(t *testing.T) {
 		},
 	}
 
-	adapter := NewBlockSourceAdapter(client)
+	adapter := &ethlikeAdapter{client}
 
-	block, err := adapter.LatestBlock(context.Background())
+	block, err := adapter.BlockByNumber(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	expectedBlockNumber := big.NewInt(2)
-	if expectedBlockNumber.Cmp(block) != 0 {
+	if expectedBlockNumber.Cmp(block.Number) != 0 {
 		t.Errorf(
 			"unexpected last block number\n"+
 				"expected: [%v]\n"+
@@ -41,7 +41,7 @@ func TestBlockSourceAdapter_LatestBlock(t *testing.T) {
 	}
 }
 
-func TestBlockSourceAdapter_SubscribeNewBlocks(t *testing.T) {
+func TestEthlikeAdapter_SubscribeNewBlocks(t *testing.T) {
 	ctx, cancelCtx := context.WithTimeout(
 		context.Background(),
 		10*time.Millisecond,
@@ -55,10 +55,11 @@ func TestBlockSourceAdapter_SubscribeNewBlocks(t *testing.T) {
 			big.NewInt(2),
 		},
 	}
-	adapter := NewBlockSourceAdapter(client)
 
-	blocksChan := make(chan *big.Int)
-	_, err := adapter.SubscribeNewBlocks(ctx, blocksChan)
+	adapter := &ethlikeAdapter{client}
+
+	headerChan := make(chan *ethlike.Header)
+	_, err := adapter.SubscribeNewHead(ctx, headerChan)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,8 +69,8 @@ func TestBlockSourceAdapter_SubscribeNewBlocks(t *testing.T) {
 loop:
 	for {
 		select {
-		case block := <-blocksChan:
-			blocks = append(blocks, block)
+		case header := <-headerChan:
+			blocks = append(blocks, header.Number)
 
 			if len(blocks) == 3 {
 				break loop
@@ -95,7 +96,7 @@ loop:
 	}
 }
 
-func TestTransactionSourceAdapter_TransactionReceipt(t *testing.T) {
+func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
 	client := &mockAdaptedEthereumClient{
 		transactions: map[common.Hash]*types.Receipt{
 			common.HexToHash("0xFF"): {
@@ -105,14 +106,20 @@ func TestTransactionSourceAdapter_TransactionReceipt(t *testing.T) {
 		},
 	}
 
-	adapter := NewTransactionSourceAdapter(client)
+	adapter := &ethlikeAdapter{client}
 
-	receipt, err := adapter.TransactionReceipt(context.Background(), "0xFF")
+	var hash [32]byte
+	hash[31] = 255
+
+	receipt, err := adapter.TransactionReceipt(
+		context.Background(),
+		hash,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedReceipt := &ethlike.TransactionReceipt{
+	expectedReceipt := &ethlike.Receipt{
 		Status:      1,
 		BlockNumber: big.NewInt(100),
 	}
@@ -127,16 +134,19 @@ func TestTransactionSourceAdapter_TransactionReceipt(t *testing.T) {
 	}
 }
 
-func TestNonceSourceAdapter_PendingNonceAt(t *testing.T) {
+func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	client := &mockAdaptedEthereumClient{
 		nonces: map[common.Address]uint64{
 			common.HexToAddress("0xFF"): 100,
 		},
 	}
 
-	adapter := NewNonceSourceAdapter(client)
+	adapter := &ethlikeAdapter{client}
 
-	nonce, err := adapter.PendingNonceAt(context.Background(), "0xFF")
+	var address [20]byte
+	address[19] = 255
+
+	nonce, err := adapter.PendingNonceAt(context.Background(), address)
 	if err != nil {
 		t.Fatal(err)
 	}

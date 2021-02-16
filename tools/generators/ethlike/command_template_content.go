@@ -14,7 +14,6 @@ import (
     "{{.BackendModule}}/core/types"
 
     chainutil "{{.ChainUtilPackage}}"
-    "github.com/keep-network/keep-common/pkg/chain/ethlike"
     "github.com/keep-network/keep-common/pkg/cmd"
 
     "github.com/urfave/cli"
@@ -228,15 +227,13 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
 		maxGasPrice = config.MaxGasPrice.Int
 	}
 
-	miningWaiter := ethlike.NewMiningWaiter(
-		chainutil.NewTransactionSourceAdapter(client),
+	miningWaiter := chainutil.NewMiningWaiter(
+		client,
 		checkInterval,
 		maxGasPrice,
 	)
 
-	blockCounter, err := ethlike.CreateBlockCounter(
-		chainutil.NewBlockSourceAdapter(client),
-	)
+	blockCounter, err := chainutil.NewBlockCounter(client)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to create block counter: [%v]",
@@ -250,10 +247,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         address,
         key,
         client,
-        ethlike.NewNonceManager(
-        	key.Address.Hex(),
-        	chainutil.NewNonceSourceAdapter(client),
-        ),
+        chainutil.NewNonceManager(client, key.Address),
         miningWaiter,
         blockCounter,
         &sync.Mutex{},

@@ -6,28 +6,11 @@ import (
 	"time"
 )
 
-type Transaction struct {
-	Hash     string
-	GasPrice *big.Int
-}
-
-type TransactionReceipt struct {
-	Status      uint64
-	BlockNumber *big.Int
-}
-
-type TransactionSource interface {
-	TransactionReceipt(
-		ctx context.Context,
-		txHash string,
-	) (*TransactionReceipt, error)
-}
-
 // MiningWaiter allows to block the execution until the given transaction is
 // mined as well as monitor the transaction and bump up the gas price in case
 // it is not mined in the given timeout.
 type MiningWaiter struct {
-	source        TransactionSource
+	txReader      TransactionReader
 	checkInterval time.Duration
 	maxGasPrice   *big.Int
 }
@@ -45,12 +28,12 @@ type MiningWaiter struct {
 // be higher than this value. If the maximum allowed gas price is reached, no
 // further resubmission attempts are performed.
 func NewMiningWaiter(
-	source TransactionSource,
+	txReader TransactionReader,
 	checkInterval time.Duration,
 	maxGasPrice *big.Int,
 ) *MiningWaiter {
 	return &MiningWaiter{
-		source,
+		txReader,
 		checkInterval,
 		maxGasPrice,
 	}
@@ -62,7 +45,7 @@ func NewMiningWaiter(
 func (mw *MiningWaiter) waitMined(
 	timeout time.Duration,
 	transaction *Transaction,
-) (*TransactionReceipt, error) {
+) (*Receipt, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -70,7 +53,7 @@ func (mw *MiningWaiter) waitMined(
 	defer queryTicker.Stop()
 
 	for {
-		receipt, _ := mw.source.TransactionReceipt(
+		receipt, _ := mw.txReader.TransactionReceipt(
 			context.TODO(),
 			transaction.Hash,
 		)

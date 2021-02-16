@@ -2,6 +2,7 @@ package ethlike
 
 import (
 	"context"
+	"encoding/hex"
 	"math/big"
 	"testing"
 	"time"
@@ -14,7 +15,7 @@ var maxGasPrice = big.NewInt(45000000000) // 45 Gwei
 func TestForceMining_FirstMined(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	source := &mockTransactionSource{}
+	txReader := &mockTransactionReader{}
 
 	var resubmissionGasPrices []*big.Int
 
@@ -24,10 +25,10 @@ func TestForceMining_FirstMined(t *testing.T) {
 	}
 
 	// receipt is already there
-	source.receipt = &TransactionReceipt{}
+	txReader.receipt = &Receipt{}
 
 	waiter := NewMiningWaiter(
-		source,
+		txReader,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -45,19 +46,19 @@ func TestForceMining_FirstMined(t *testing.T) {
 func TestForceMining_SecondMined(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	source := &mockTransactionSource{}
+	txReader := &mockTransactionReader{}
 
 	var resubmissionGasPrices []*big.Int
 
 	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		// first resubmission succeeded
-		source.receipt = &TransactionReceipt{}
+		txReader.receipt = &Receipt{}
 		return createTransaction(gasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
-		source,
+		txReader,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -75,7 +76,7 @@ func TestForceMining_SecondMined(t *testing.T) {
 func TestForceMining_MultipleAttempts(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	source := &mockTransactionSource{}
+	txReader := &mockTransactionReader{}
 
 	var resubmissionGasPrices []*big.Int
 
@@ -90,7 +91,7 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		if attemptsSoFar == expectedAttempts {
-			source.receipt = &TransactionReceipt{}
+			txReader.receipt = &Receipt{}
 		} else {
 			attemptsSoFar++
 		}
@@ -98,7 +99,7 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 	}
 
 	waiter := NewMiningWaiter(
-		source,
+		txReader,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -131,7 +132,7 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	source := &mockTransactionSource{}
+	source := &mockTransactionReader{}
 
 	var resubmissionGasPrices []*big.Int
 
@@ -186,7 +187,7 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	// is 45 Gwei
 	originalTransaction := createTransaction(big.NewInt(46000000000))
 
-	source := &mockTransactionSource{}
+	txReader := &mockTransactionReader{}
 
 	var resubmissionGasPrices []*big.Int
 
@@ -197,7 +198,7 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	}
 
 	waiter := NewMiningWaiter(
-		source,
+		txReader,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -213,19 +214,29 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 }
 
 func createTransaction(gasPrice *big.Int) *Transaction {
+	hashSlice, err := hex.DecodeString(
+		"121D387731bBbC988B312206c74F77D004D6B84b",
+	)
+	if err != nil {
+		return nil
+	}
+
+	var hash [32]byte
+	copy(hash[:], hashSlice)
+
 	return &Transaction{
-		Hash:     "0x121D387731bBbC988B312206c74F77D004D6B84b",
+		Hash:     hash,
 		GasPrice: gasPrice,
 	}
 }
 
-type mockTransactionSource struct {
-	receipt *TransactionReceipt
+type mockTransactionReader struct {
+	receipt *Receipt
 }
 
-func (mts *mockTransactionSource) TransactionReceipt(
+func (mtr *mockTransactionReader) TransactionReceipt(
 	ctx context.Context,
-	txHash string,
-) (*TransactionReceipt, error) {
-	return mts.receipt, nil
+	txHash Hash,
+) (*Receipt, error) {
+	return mtr.receipt, nil
 }

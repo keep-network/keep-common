@@ -6,34 +6,36 @@ import (
 	"github.com/celo-org/celo-blockchain/core/types"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
+	"time"
 )
 
-type BlockSourceAdapter struct {
+type ethlikeAdapter struct {
 	delegate CeloClient
 }
 
-func NewBlockSourceAdapter(delegate CeloClient) *BlockSourceAdapter {
-	return &BlockSourceAdapter{delegate}
-}
-
-func (bsa *BlockSourceAdapter) LatestBlock(
+func (ea *ethlikeAdapter) BlockByNumber(
 	ctx context.Context,
-) (*big.Int, error) {
-	block, err := bsa.delegate.BlockByNumber(ctx, nil)
+	number *big.Int,
+) (*ethlike.Block, error) {
+	block, err := ea.delegate.BlockByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return block.Number(), err
+	return &ethlike.Block{
+		Header: &ethlike.Header{
+			Number: block.Number(),
+		},
+	}, nil
 }
 
-func (bsa *BlockSourceAdapter) SubscribeNewBlocks(
+func (ea *ethlikeAdapter) SubscribeNewHead(
 	ctx context.Context,
-	blocksChan chan<- *big.Int,
+	headersChan chan<- *ethlike.Header,
 ) (ethlike.Subscription, error) {
-	headersChan := make(chan *types.Header)
+	internalHeadersChan := make(chan *types.Header)
 
-	subscription, err := bsa.delegate.SubscribeNewHead(ctx, headersChan)
+	subscription, err := ea.delegate.SubscribeNewHead(ctx, internalHeadersChan)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +45,10 @@ func (bsa *BlockSourceAdapter) SubscribeNewBlocks(
 	go func() {
 		for {
 			select {
-			case header := <-headersChan:
-				blocksChan <- header.Number
+			case header := <-internalHeadersChan:
+				headersChan <- &ethlike.Header{
+					Number: header.Number,
+				}
 			case <-stop:
 				return
 			}
@@ -73,45 +77,60 @@ func (sw *subscriptionWrapper) Err() <-chan error {
 	return sw.errChan
 }
 
-type TransactionSourceAdapter struct {
-	delegate CeloClient
-}
-
-func NewTransactionSourceAdapter(
-	delegate CeloClient,
-) *TransactionSourceAdapter {
-	return &TransactionSourceAdapter{delegate}
-}
-
-func (tsa *TransactionSourceAdapter) TransactionReceipt(
+func (ea *ethlikeAdapter) TransactionReceipt(
 	ctx context.Context,
-	txHash string,
-) (*ethlike.TransactionReceipt, error) {
-	receipt, err := tsa.delegate.TransactionReceipt(
+	txHash ethlike.Hash,
+) (*ethlike.Receipt, error) {
+	receipt, err := ea.delegate.TransactionReceipt(
 		ctx,
-		common.HexToHash(txHash),
+		common.Hash(txHash),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ethlike.TransactionReceipt{
+	return &ethlike.Receipt{
 		Status:      receipt.Status,
 		BlockNumber: receipt.BlockNumber,
 	}, nil
 }
 
-type NonceSourceAdapter struct {
-	delegate CeloClient
-}
-
-func NewNonceSourceAdapter(delegate CeloClient) *NonceSourceAdapter {
-	return &NonceSourceAdapter{delegate}
-}
-
-func (nsa *NonceSourceAdapter) PendingNonceAt(
+func (ea *ethlikeAdapter) PendingNonceAt(
 	ctx context.Context,
-	account string,
+	account ethlike.Address,
 ) (uint64, error) {
-	return nsa.delegate.PendingNonceAt(ctx, common.HexToAddress(account))
+	return ea.delegate.PendingNonceAt(ctx, common.Address(account))
+}
+
+// NewBlockCounter creates a new BlockCounter instance for the provided
+// Celo client.
+func NewBlockCounter(client CeloClient) (*ethlike.BlockCounter, error) {
+	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
+}
+
+// NewMiningWaiter creates a new MiningWaiter instance for the provided
+// Celo client. It accepts two parameters setting up monitoring rules
+// of the transaction mining status.
+func NewMiningWaiter(
+	client CeloClient,
+	checkInterval time.Duration,
+	maxGasPrice *big.Int,
+) *ethlike.MiningWaiter {
+	return ethlike.NewMiningWaiter(
+		&ethlikeAdapter{client},
+		checkInterval,
+		maxGasPrice,
+	)
+}
+
+// NewNonceManager creates NonceManager instance for the provided account
+// using the provided Celo client.
+func NewNonceManager(
+	client CeloClient,
+	account common.Address,
+) *ethlike.NonceManager {
+	return ethlike.NewNonceManager(
+		ethlike.Address(account),
+		&ethlikeAdapter{client},
+	)
 }

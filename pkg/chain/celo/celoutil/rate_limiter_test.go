@@ -5,7 +5,7 @@ import (
 	"github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/celo-org/celo-blockchain/core/types"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
+	"github.com/keep-network/keep-common/pkg/rate"
 	"math/big"
 	"strings"
 	"sync"
@@ -28,7 +28,7 @@ func TestRateLimiter(t *testing.T) {
 
 	rateLimitingClient := WrapRateLimiting(
 		client,
-		&ethlike.RateLimiterConfig{
+		&rate.LimiterConfig{
 			RequestsPerSecondLimit: requestsPerSecondLimit,
 			ConcurrencyLimit:       concurrencyLimit,
 			AcquirePermitTimeout:   acquirePermitTimeout,
@@ -117,7 +117,7 @@ func TestRateLimiter_RequestsPerSecondLimitOnly(t *testing.T) {
 
 	rateLimitingClient := WrapRateLimiting(
 		client,
-		&ethlike.RateLimiterConfig{
+		&rate.LimiterConfig{
 			RequestsPerSecondLimit: requestsPerSecondLimit,
 			ConcurrencyLimit:       concurrencyLimit,
 			AcquirePermitTimeout:   acquirePermitTimeout,
@@ -184,7 +184,7 @@ func TestRateLimiter_ConcurrencyLimitOnly(t *testing.T) {
 
 	rateLimitingClient := WrapRateLimiting(
 		client,
-		&ethlike.RateLimiterConfig{
+		&rate.LimiterConfig{
 			RequestsPerSecondLimit: requestsPerSecondLimit,
 			ConcurrencyLimit:       concurrencyLimit,
 			AcquirePermitTimeout:   acquirePermitTimeout,
@@ -259,7 +259,7 @@ func TestRateLimiter_AcquirePermitTimout(t *testing.T) {
 
 	rateLimitingClient := WrapRateLimiting(
 		client,
-		&ethlike.RateLimiterConfig{
+		&rate.LimiterConfig{
 			RequestsPerSecondLimit: requestsPerSecondLimit,
 			ConcurrencyLimit:       concurrencyLimit,
 			AcquirePermitTimeout:   acquirePermitTimeout,

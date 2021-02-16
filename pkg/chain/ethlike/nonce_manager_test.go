@@ -46,9 +46,9 @@ func TestResolveAndIncrement(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			source := &mockNonceSource{test.pendingNonce}
+			transactor := &mockContractTransactor{test.pendingNonce}
 			manager := &NonceManager{
-				source:         source,
+				transactor:     transactor,
 				localNonce:     test.localNonce,
 				expirationDate: test.expirationDate,
 			}
@@ -79,13 +79,13 @@ func TestResolveAndIncrement(t *testing.T) {
 	}
 }
 
-type mockNonceSource struct {
+type mockContractTransactor struct {
 	nextNonce uint64
 }
 
-func (mns *mockNonceSource) PendingNonceAt(
+func (mct *mockContractTransactor) PendingNonceAt(
 	ctx context.Context,
-	account string,
+	account Address,
 ) (uint64, error) {
-	return mns.nextNonce, nil
+	return mct.nextNonce, nil
 }

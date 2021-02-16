@@ -11,10 +11,6 @@ import (
 // transaction sent.
 const localNonceTrustDuration = 30 * time.Second
 
-type NonceSource interface {
-	PendingNonceAt(ctx context.Context, account string) (uint64, error)
-}
-
 // NonceManager tracks the nonce for the account and allows to update it after
 // each successfully submitted transaction. Tracking the nonce locally is
 // required when transactions are submitted from multiple goroutines or when
@@ -32,8 +28,8 @@ type NonceSource interface {
 // 4. Call IncrementNonce(),
 // 5. Release transaction lock.
 type NonceManager struct {
-	account        string
-	source         NonceSource
+	account        Address
+	transactor     ContractTransactor
 	localNonce     uint64
 	expirationDate time.Time
 }
@@ -43,12 +39,12 @@ type NonceManager struct {
 // CurrentNonce execution to check the pending nonce value as seen by the
 // Ethereum-like client.
 func NewNonceManager(
-	account string,
-	source NonceSource,
+	account Address,
+	transactor ContractTransactor,
 ) *NonceManager {
 	return &NonceManager{
 		account:    account,
-		source:     source,
+		transactor: transactor,
 		localNonce: 0,
 	}
 }
@@ -63,7 +59,7 @@ func NewNonceManager(
 // function to provide the required synchronization, optionally including
 // IncrementNonce call as well.
 func (nm *NonceManager) CurrentNonce() (uint64, error) {
-	pendingNonce, err := nm.source.PendingNonceAt(
+	pendingNonce, err := nm.transactor.PendingNonceAt(
 		context.TODO(),
 		nm.account,
 	)

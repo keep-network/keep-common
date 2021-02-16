@@ -1,4 +1,4 @@
-package ethlike
+package rate
 
 import (
 	"context"
@@ -7,16 +7,16 @@ import (
 	"time"
 )
 
-// RateLimiter is a helper tool which allows controlling the number and
+// Limiter is a helper tool which allows controlling the number and
 // concurrency of requests made against a generic target.
-type RateLimiter struct {
+type Limiter struct {
 	limiter              *rate.Limiter
 	semaphore            *semaphore.Weighted
 	acquirePermitTimeout time.Duration
 }
 
-// RateLimiterConfig represents the configuration of the rate limiter.
-type RateLimiterConfig struct {
+// LimiterConfig represents the configuration of the rate limiter.
+type LimiterConfig struct {
 	// RequestsPerSecondLimit sets the maximum average number of requests
 	// per second. It's important to note that in short periods of time
 	// the actual average may exceed this limit slightly.
@@ -31,50 +31,50 @@ type RateLimiterConfig struct {
 	AcquirePermitTimeout time.Duration
 }
 
-// NewRateLimiter creates a new rate limiter instance basing on given config.
-func NewRateLimiter(
-	config *RateLimiterConfig,
-) *RateLimiter {
-	rateLimiter := &RateLimiter{}
+// NewLimiter creates a new rate limiter instance basing on given config.
+func NewLimiter(
+	config *LimiterConfig,
+) *Limiter {
+	l := &Limiter{}
 
 	if config.RequestsPerSecondLimit > 0 {
-		rateLimiter.limiter = rate.NewLimiter(
+		l.limiter = rate.NewLimiter(
 			rate.Limit(config.RequestsPerSecondLimit),
 			1,
 		)
 	}
 
 	if config.ConcurrencyLimit > 0 {
-		rateLimiter.semaphore = semaphore.NewWeighted(
+		l.semaphore = semaphore.NewWeighted(
 			int64(config.ConcurrencyLimit),
 		)
 	}
 
 	if config.AcquirePermitTimeout > 0 {
-		rateLimiter.acquirePermitTimeout = config.AcquirePermitTimeout
+		l.acquirePermitTimeout = config.AcquirePermitTimeout
 	} else {
-		rateLimiter.acquirePermitTimeout = 5 * time.Minute
+		l.acquirePermitTimeout = 5 * time.Minute
 	}
 
-	return rateLimiter
+	return l
 }
 
-func (rl *RateLimiter) AcquirePermit() error {
+func (l *Limiter) AcquirePermit() error {
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		rl.acquirePermitTimeout,
+		l.acquirePermitTimeout,
 	)
 	defer cancel()
 
-	if rl.limiter != nil {
-		err := rl.limiter.Wait(ctx)
+	if l.limiter != nil {
+		err := l.limiter.Wait(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	if rl.semaphore != nil {
-		err := rl.semaphore.Acquire(ctx, 1)
+	if l.semaphore != nil {
+		err := l.semaphore.Acquire(ctx, 1)
 		if err != nil {
 			return err
 		}
@@ -83,8 +83,8 @@ func (rl *RateLimiter) AcquirePermit() error {
 	return nil
 }
 
-func (rl *RateLimiter) ReleasePermit() {
-	if rl.semaphore != nil {
-		rl.semaphore.Release(1)
+func (l *Limiter) ReleasePermit() {
+	if l.semaphore != nil {
+		l.semaphore.Release(1)
 	}
 }

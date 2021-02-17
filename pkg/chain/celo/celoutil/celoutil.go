@@ -11,8 +11,10 @@ import (
 	celoclient "github.com/celo-org/celo-blockchain/ethclient"
 	"github.com/celo-org/celo-blockchain/rpc"
 	"github.com/ipfs/go-log"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"io/ioutil"
 	"math/big"
+	"time"
 )
 
 var logger = log.Logger("keep-celoutil")
@@ -191,4 +193,37 @@ func EstimateGas(
 	}
 
 	return gas, nil
+}
+
+// NewBlockCounter creates a new BlockCounter instance for the provided
+// Celo client.
+func NewBlockCounter(client CeloClient) (*ethlike.BlockCounter, error) {
+	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
+}
+
+// NewMiningWaiter creates a new MiningWaiter instance for the provided
+// Celo client. It accepts two parameters setting up monitoring rules
+// of the transaction mining status.
+func NewMiningWaiter(
+	client CeloClient,
+	checkInterval time.Duration,
+	maxGasPrice *big.Int,
+) *ethlike.MiningWaiter {
+	return ethlike.NewMiningWaiter(
+		&ethlikeAdapter{client},
+		checkInterval,
+		maxGasPrice,
+	)
+}
+
+// NewNonceManager creates NonceManager instance for the provided account
+// using the provided Celo client.
+func NewNonceManager(
+	client CeloClient,
+	account common.Address,
+) *ethlike.NonceManager {
+	return ethlike.NewNonceManager(
+		&ethlikeAdapter{client},
+		ethlike.Address(account),
+	)
 }

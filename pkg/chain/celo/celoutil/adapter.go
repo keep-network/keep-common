@@ -6,7 +6,6 @@ import (
 	"github.com/celo-org/celo-blockchain/core/types"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
-	"time"
 )
 
 type ethlikeAdapter struct {
@@ -100,37 +99,4 @@ func (ea *ethlikeAdapter) PendingNonceAt(
 	account ethlike.Address,
 ) (uint64, error) {
 	return ea.delegate.PendingNonceAt(ctx, common.Address(account))
-}
-
-// NewBlockCounter creates a new BlockCounter instance for the provided
-// Celo client.
-func NewBlockCounter(client CeloClient) (*ethlike.BlockCounter, error) {
-	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
-}
-
-// NewMiningWaiter creates a new MiningWaiter instance for the provided
-// Celo client. It accepts two parameters setting up monitoring rules
-// of the transaction mining status.
-func NewMiningWaiter(
-	client CeloClient,
-	checkInterval time.Duration,
-	maxGasPrice *big.Int,
-) *ethlike.MiningWaiter {
-	return ethlike.NewMiningWaiter(
-		&ethlikeAdapter{client},
-		checkInterval,
-		maxGasPrice,
-	)
-}
-
-// NewNonceManager creates NonceManager instance for the provided account
-// using the provided Celo client.
-func NewNonceManager(
-	client CeloClient,
-	account common.Address,
-) *ethlike.NonceManager {
-	return ethlike.NewNonceManager(
-		&ethlikeAdapter{client},
-		ethlike.Address(account),
-	)
 }

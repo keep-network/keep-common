@@ -17,7 +17,7 @@ func (ea *ethlikeAdapter) BlockByNumber(
 	ctx context.Context,
 	number *big.Int,
 ) (*ethlike.Block, error) {
-	block, err := ea.delegate.BlockByNumber(ctx, nil)
+	block, err := ea.delegate.BlockByNumber(ctx, number)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func NewNonceManager(
 	account common.Address,
 ) *ethlike.NonceManager {
 	return ethlike.NewNonceManager(
-		ethlike.Address(account),
 		&ethlikeAdapter{client},
+		ethlike.Address(account),
 	)
 }

@@ -57,7 +57,7 @@ func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
 	}
 }
 
-func TestEthlikeAdapter_SubscribeNewBlocks(t *testing.T) {
+func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	ctx, cancelCtx := context.WithTimeout(
 		context.Background(),
 		10*time.Millisecond,
@@ -74,25 +74,35 @@ func TestEthlikeAdapter_SubscribeNewBlocks(t *testing.T) {
 
 	adapter := &ethlikeAdapter{client}
 
-	headerChan := make(chan *ethlike.Header)
+	// no more than 3 elements should be put into this
+	// channel by SubscribeNewHead
+	headerChan := make(chan *ethlike.Header, 100)
 	_, err := adapter.SubscribeNewHead(ctx, headerChan)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	<-ctx.Done()
+
+	expectedHeaderChanLen := 3
+	headerChanLen := len(headerChan)
+	if expectedHeaderChanLen != headerChanLen {
+		t.Errorf(
+			"unexpected blocks number\n"+
+				"expected: [%v]\n"+
+				"actual:   [%v]",
+			expectedHeaderChanLen,
+			headerChanLen,
+		)
+	}
+
 	blocks := make([]*big.Int, 0)
+	for header := range headerChan {
+		blocks = append(blocks, header.Number)
 
-loop:
-	for {
-		select {
-		case header := <-headerChan:
-			blocks = append(blocks, header.Number)
-
-			if len(blocks) == 3 {
-				break loop
-			}
-		case <-ctx.Done():
-			t.Fatal("timeout has been exceeded")
+		// headerChan is not closed so we have to break manually
+		if len(blocks) == 3 {
+			break
 		}
 	}
 

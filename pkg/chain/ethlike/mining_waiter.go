@@ -98,7 +98,7 @@ func (mw MiningWaiter) ForceMining(
 		if err != nil {
 			logger.Infof(
 				"transaction [%v] not yet mined: [%v]",
-				transaction.Hash,
+				transaction.Hash.TerminalString(),
 				err,
 			)
 		}
@@ -107,7 +107,7 @@ func (mw MiningWaiter) ForceMining(
 		if receipt != nil {
 			logger.Infof(
 				"transaction [%v] mined with status [%v] at block [%v]",
-				transaction.Hash,
+				transaction.Hash.TerminalString(),
 				receipt.Status,
 				receipt.BlockNumber,
 			)
@@ -137,7 +137,7 @@ func (mw MiningWaiter) ForceMining(
 		// evaluated earlier
 		logger.Infof(
 			"resubmitting previous transaction [%v] with a higher gas price [%v]",
-			transaction.Hash,
+			transaction.Hash.TerminalString(),
 			gasPrice,
 		)
 		transaction, err = resubmitFn(gasPrice)

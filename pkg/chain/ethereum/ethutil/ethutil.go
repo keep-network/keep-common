@@ -214,7 +214,7 @@ func NewNonceManager(
 	account common.Address,
 ) *ethlike.NonceManager {
 	return ethlike.NewNonceManager(
-		ethlike.Address(account),
 		&ethlikeAdapter{client},
+		ethlike.Address(account),
 	)
 }

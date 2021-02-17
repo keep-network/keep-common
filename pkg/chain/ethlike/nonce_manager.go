@@ -39,8 +39,8 @@ type NonceManager struct {
 // CurrentNonce execution to check the pending nonce value as seen by the
 // Ethereum-like client.
 func NewNonceManager(
-	account Address,
 	transactor ContractTransactor,
+	account Address,
 ) *NonceManager {
 	return &NonceManager{
 		account:    account,

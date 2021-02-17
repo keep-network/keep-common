@@ -1,12 +1,8 @@
-package chainutil
+package ethlike
 
 import (
 	"fmt"
-
-	"github.com/ipfs/go-log"
 )
-
-var logger = log.Logger("keep-chainutil")
 
 // BlockHeightWaiter provides the ability to wait for a given block height.
 type BlockHeightWaiter interface {

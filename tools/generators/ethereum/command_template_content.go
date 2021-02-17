@@ -13,7 +13,6 @@ import (
     "github.com/ethereum/go-ethereum/common/hexutil"
     "github.com/ethereum/go-ethereum/core/types"
 
-    "github.com/keep-network/keep-common/pkg/chain/ethereum/blockcounter"
     "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
     "github.com/keep-network/keep-common/pkg/cmd"
 
@@ -228,12 +227,16 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
 		maxGasPrice = config.MaxGasPrice.Int
 	}
 
-	miningWaiter := ethutil.NewMiningWaiter(client, checkInterval, maxGasPrice)
+	miningWaiter := ethutil.NewMiningWaiter(
+		client,
+		checkInterval,
+		maxGasPrice,
+	)
 
-	blockCounter, err := blockcounter.CreateBlockCounter(client)
+	blockCounter, err := ethutil.NewBlockCounter(client)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to create Ethereum blockcounter: [%v]",
+			"failed to create block counter: [%v]",
 			err,
 		)
 	}
@@ -244,7 +247,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         address,
         key,
         client,
-        ethutil.NewNonceManager(key.Address, client),
+        ethutil.NewNonceManager(client, key.Address),
         miningWaiter,
         blockCounter,
         &sync.Mutex{},

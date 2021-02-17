@@ -5,8 +5,10 @@ package ethutil
 import (
 	"context"
 	"fmt"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"io/ioutil"
 	"math/big"
+	"time"
 
 	"github.com/ipfs/go-log"
 
@@ -184,38 +186,35 @@ func EstimateGas(
 	return gas, nil
 }
 
-type loggingWrapper struct {
-	EthereumClient
-
-	logger log.EventLogger
+// NewBlockCounter creates a new BlockCounter instance for the provided
+// Ethereum client.
+func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
+	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
 }
 
-func (lw *loggingWrapper) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
-	price, err := lw.EthereumClient.SuggestGasPrice(ctx)
-
-	if err != nil {
-		lw.logger.Debugf("error requesting gas price suggestion: [%v]", err)
-		return nil, err
-	}
-
-	lw.logger.Debugf("received gas price suggestion: [%v]", price)
-	return price, nil
+// NewMiningWaiter creates a new MiningWaiter instance for the provided
+// Ethereum client. It accepts two parameters setting up monitoring rules
+// of the transaction mining status.
+func NewMiningWaiter(
+	client EthereumClient,
+	checkInterval time.Duration,
+	maxGasPrice *big.Int,
+) *ethlike.MiningWaiter {
+	return ethlike.NewMiningWaiter(
+		&ethlikeAdapter{client},
+		checkInterval,
+		maxGasPrice,
+	)
 }
 
-func (lw *loggingWrapper) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-	gas, err := lw.EthereumClient.EstimateGas(ctx, msg)
-
-	if err != nil {
-		return 0, err
-	}
-
-	lw.logger.Debugf("received gas estimate: [%v]", gas)
-	return gas, nil
-}
-
-// WrapCallLogging wraps certain call-related methods on the given `client`
-// with debug logging sent to the given `logger`. Actual functionality is
-// delegated to the passed client.
-func WrapCallLogging(logger log.EventLogger, client EthereumClient) EthereumClient {
-	return &loggingWrapper{client, logger}
+// NewNonceManager creates NonceManager instance for the provided account
+// using the provided Ethereum client.
+func NewNonceManager(
+	client EthereumClient,
+	account common.Address,
+) *ethlike.NonceManager {
+	return ethlike.NewNonceManager(
+		&ethlikeAdapter{client},
+		ethlike.Address(account),
+	)
 }

@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestEthlikeAdapter_LatestBlock(t *testing.T) {
+func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
 	client := &mockAdaptedEthereumClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
@@ -24,24 +24,40 @@ func TestEthlikeAdapter_LatestBlock(t *testing.T) {
 
 	adapter := &ethlikeAdapter{client}
 
-	block, err := adapter.BlockByNumber(context.Background(), nil)
+	blockOne, err := adapter.BlockByNumber(context.Background(), big.NewInt(1))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedBlockNumber := big.NewInt(2)
-	if expectedBlockNumber.Cmp(block.Number) != 0 {
+	lastBlock, err := adapter.BlockByNumber(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedBlockOneNumber := big.NewInt(1)
+	if expectedBlockOneNumber.Cmp(blockOne.Number) != 0 {
+		t.Errorf(
+			"unexpected block number\n"+
+				"expected: [%v]\n"+
+				"actual:   [%v]",
+			expectedBlockOneNumber,
+			blockOne.Number,
+		)
+	}
+
+	expectedLastBlockNumber := big.NewInt(2)
+	if expectedLastBlockNumber.Cmp(lastBlock.Number) != 0 {
 		t.Errorf(
 			"unexpected last block number\n"+
 				"expected: [%v]\n"+
 				"actual:   [%v]",
-			expectedBlockNumber,
-			block,
+			expectedLastBlockNumber,
+			lastBlock.Number,
 		)
 	}
 }
 
-func TestEthlikeAdapter_SubscribeNewBlocks(t *testing.T) {
+func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	ctx, cancelCtx := context.WithTimeout(
 		context.Background(),
 		10*time.Millisecond,
@@ -58,25 +74,35 @@ func TestEthlikeAdapter_SubscribeNewBlocks(t *testing.T) {
 
 	adapter := &ethlikeAdapter{client}
 
-	headerChan := make(chan *ethlike.Header)
+	// no more than 3 elements should be put into this
+	// channel by SubscribeNewHead
+	headerChan := make(chan *ethlike.Header, 100)
 	_, err := adapter.SubscribeNewHead(ctx, headerChan)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	<-ctx.Done()
+
+	expectedHeaderChanLen := 3
+	headerChanLen := len(headerChan)
+	if expectedHeaderChanLen != headerChanLen {
+		t.Errorf(
+			"unexpected blocks number\n"+
+				"expected: [%v]\n"+
+				"actual:   [%v]",
+			expectedHeaderChanLen,
+			headerChanLen,
+		)
+	}
+
 	blocks := make([]*big.Int, 0)
+	for header := range headerChan {
+		blocks = append(blocks, header.Number)
 
-loop:
-	for {
-		select {
-		case header := <-headerChan:
-			blocks = append(blocks, header.Number)
-
-			if len(blocks) == 3 {
-				break loop
-			}
-		case <-ctx.Done():
-			t.Fatal("timeout has been exceeded")
+		// headerChan is not closed so we have to break manually
+		if len(blocks) == 3 {
+			break
 		}
 	}
 
@@ -97,9 +123,12 @@ loop:
 }
 
 func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
+	var hash [32]byte
+	copy(hash[:], []byte{255})
+
 	client := &mockAdaptedEthereumClient{
 		transactions: map[common.Hash]*types.Receipt{
-			common.HexToHash("0xFF"): {
+			common.BytesToHash(hash[:]): {
 				Status:      1,
 				BlockNumber: big.NewInt(100),
 			},
@@ -107,9 +136,6 @@ func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
 	}
 
 	adapter := &ethlikeAdapter{client}
-
-	var hash [32]byte
-	hash[31] = 255
 
 	receipt, err := adapter.TransactionReceipt(
 		context.Background(),
@@ -135,16 +161,16 @@ func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
 }
 
 func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
+	var address [20]byte
+	copy(address[:], []byte{255})
+
 	client := &mockAdaptedEthereumClient{
 		nonces: map[common.Address]uint64{
-			common.HexToAddress("0xFF"): 100,
+			common.BytesToAddress(address[:]): 100,
 		},
 	}
 
 	adapter := &ethlikeAdapter{client}
-
-	var address [20]byte
-	address[19] = 255
 
 	nonce, err := adapter.PendingNonceAt(context.Background(), address)
 	if err != nil {

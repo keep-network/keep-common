@@ -5,8 +5,10 @@ package ethutil
 import (
 	"context"
 	"fmt"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"io/ioutil"
 	"math/big"
+	"time"
 
 	"github.com/ipfs/go-log"
 
@@ -182,4 +184,37 @@ func EstimateGas(
 	}
 
 	return gas, nil
+}
+
+// NewBlockCounter creates a new BlockCounter instance for the provided
+// Ethereum client.
+func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
+	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
+}
+
+// NewMiningWaiter creates a new MiningWaiter instance for the provided
+// Ethereum client. It accepts two parameters setting up monitoring rules
+// of the transaction mining status.
+func NewMiningWaiter(
+	client EthereumClient,
+	checkInterval time.Duration,
+	maxGasPrice *big.Int,
+) *ethlike.MiningWaiter {
+	return ethlike.NewMiningWaiter(
+		&ethlikeAdapter{client},
+		checkInterval,
+		maxGasPrice,
+	)
+}
+
+// NewNonceManager creates NonceManager instance for the provided account
+// using the provided Ethereum client.
+func NewNonceManager(
+	client EthereumClient,
+	account common.Address,
+) *ethlike.NonceManager {
+	return ethlike.NewNonceManager(
+		&ethlikeAdapter{client},
+		ethlike.Address(account),
+	)
 }

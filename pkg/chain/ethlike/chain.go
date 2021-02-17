@@ -2,22 +2,24 @@ package ethlike
 
 import (
 	"context"
-	"encoding/hex"
+	"fmt"
 	"math/big"
 )
 
 // Hash represents the 32 byte Keccak256 hash of arbitrary data.
 type Hash [32]byte
 
-func (h Hash) String() string {
-	return hex.EncodeToString(h[:])
+// TerminalString returns the hash as a console string.
+func (h Hash) TerminalString() string {
+	return fmt.Sprintf("%x…%x", h[:3], h[29:])
 }
 
 // Address represents the 20 byte address of an ETH-like account.
 type Address [20]byte
 
-func (a Address) String() string {
-	return hex.EncodeToString(a[:])
+// TerminalString returns the address as a console string.
+func (a Address) TerminalString() string {
+	return fmt.Sprintf("%x…%x", a[:3], a[17:])
 }
 
 // Header represents a block header in the ETH-like blockchain.

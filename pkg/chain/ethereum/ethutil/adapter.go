@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
-	"time"
 )
 
 type ethlikeAdapter struct {
@@ -100,37 +99,4 @@ func (ea *ethlikeAdapter) PendingNonceAt(
 	account ethlike.Address,
 ) (uint64, error) {
 	return ea.delegate.PendingNonceAt(ctx, common.Address(account))
-}
-
-// NewBlockCounter creates a new BlockCounter instance for the provided
-// Ethereum client.
-func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
-	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
-}
-
-// NewMiningWaiter creates a new MiningWaiter instance for the provided
-// Ethereum client. It accepts two parameters setting up monitoring rules
-// of the transaction mining status.
-func NewMiningWaiter(
-	client EthereumClient,
-	checkInterval time.Duration,
-	maxGasPrice *big.Int,
-) *ethlike.MiningWaiter {
-	return ethlike.NewMiningWaiter(
-		&ethlikeAdapter{client},
-		checkInterval,
-		maxGasPrice,
-	)
-}
-
-// NewNonceManager creates NonceManager instance for the provided account
-// using the provided Ethereum client.
-func NewNonceManager(
-	client EthereumClient,
-	account common.Address,
-) *ethlike.NonceManager {
-	return ethlike.NewNonceManager(
-		ethlike.Address(account),
-		&ethlikeAdapter{client},
-	)
 }

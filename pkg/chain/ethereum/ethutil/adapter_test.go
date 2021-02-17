@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestEthlikeAdapter_LatestBlock(t *testing.T) {
+func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
 	client := &mockAdaptedEthereumClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
@@ -24,19 +24,35 @@ func TestEthlikeAdapter_LatestBlock(t *testing.T) {
 
 	adapter := &ethlikeAdapter{client}
 
-	block, err := adapter.BlockByNumber(context.Background(), nil)
+	blockOne, err := adapter.BlockByNumber(context.Background(), big.NewInt(1))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedBlockNumber := big.NewInt(2)
-	if expectedBlockNumber.Cmp(block.Number) != 0 {
+	lastBlock, err := adapter.BlockByNumber(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedBlockOneNumber := big.NewInt(1)
+	if expectedBlockOneNumber.Cmp(blockOne.Number) != 0 {
+		t.Errorf(
+			"unexpected block number\n"+
+				"expected: [%v]\n"+
+				"actual:   [%v]",
+			expectedBlockOneNumber,
+			blockOne.Number,
+		)
+	}
+
+	expectedLastBlockNumber := big.NewInt(2)
+	if expectedLastBlockNumber.Cmp(lastBlock.Number) != 0 {
 		t.Errorf(
 			"unexpected last block number\n"+
 				"expected: [%v]\n"+
 				"actual:   [%v]",
-			expectedBlockNumber,
-			block,
+			expectedLastBlockNumber,
+			lastBlock.Number,
 		)
 	}
 }

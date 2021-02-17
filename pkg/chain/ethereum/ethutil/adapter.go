@@ -17,7 +17,7 @@ func (ea *ethlikeAdapter) BlockByNumber(
 	ctx context.Context,
 	number *big.Int,
 ) (*ethlike.Block, error) {
-	block, err := ea.delegate.BlockByNumber(ctx, nil)
+	block, err := ea.delegate.BlockByNumber(ctx, number)
 	if err != nil {
 		return nil, err
 	}

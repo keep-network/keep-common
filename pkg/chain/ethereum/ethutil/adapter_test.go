@@ -123,9 +123,12 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 }
 
 func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
+	var hash [32]byte
+	copy(hash[:], []byte{255})
+
 	client := &mockAdaptedEthereumClient{
 		transactions: map[common.Hash]*types.Receipt{
-			common.HexToHash("0xFF"): {
+			common.BytesToHash(hash[:]): {
 				Status:      1,
 				BlockNumber: big.NewInt(100),
 			},
@@ -133,9 +136,6 @@ func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
 	}
 
 	adapter := &ethlikeAdapter{client}
-
-	var hash [32]byte
-	hash[31] = 255
 
 	receipt, err := adapter.TransactionReceipt(
 		context.Background(),
@@ -161,16 +161,16 @@ func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
 }
 
 func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
+	var address [20]byte
+	copy(address[:], []byte{255})
+
 	client := &mockAdaptedEthereumClient{
 		nonces: map[common.Address]uint64{
-			common.HexToAddress("0xFF"): 100,
+			common.BytesToAddress(address[:]): 100,
 		},
 	}
 
 	adapter := &ethlikeAdapter{client}
-
-	var address [20]byte
-	address[19] = 255
 
 	nonce, err := adapter.PendingNonceAt(context.Background(), address)
 	if err != nil {

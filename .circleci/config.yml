@@ -6,6 +6,8 @@ executors:
       - image: circleci/golang:1.13
 
 jobs:
+# GitHub Actions equivalent of this job (.github/workflows/client.yml)
+# has been created as part of work on RFC-18
   test-go:
     executor: docker-go
     steps:

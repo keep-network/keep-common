@@ -10,12 +10,12 @@ import (
 	"strings"
 	"sync"
 
-	backendabi "{{.BackendModule}}/accounts/abi"
-	"{{.BackendModule}}/accounts/abi/bind"
-	"{{.BackendModule}}/accounts/keystore"
-	"{{.BackendModule}}/common"
-	"{{.BackendModule}}/core/types"
-	"{{.BackendModule}}/event"
+	hostchainabi "{{.HostChainModule}}/accounts/abi"
+	"{{.HostChainModule}}/accounts/abi/bind"
+	"{{.HostChainModule}}/accounts/keystore"
+	"{{.HostChainModule}}/common"
+	"{{.HostChainModule}}/core/types"
+	"{{.HostChainModule}}/event"
 
 	"github.com/ipfs/go-log"
 
@@ -32,7 +32,7 @@ var {{.ShortVar}}Logger = log.Logger("keep-contract-{{.Class}}")
 type {{.Class}} struct {
 	contract           *abi.{{.AbiClass}}
 	contractAddress    common.Address
-	contractABI        *backendabi.ABI
+	contractABI        *hostchainabi.ABI
 	caller             bind.ContractCaller
 	transactor         bind.ContractTransactor
 	callerOptions      *bind.CallOpts
@@ -74,7 +74,7 @@ func New{{.Class}}(
 		)
 	}
 
-	contractABI, err := backendabi.JSON(strings.NewReader(abi.{{.AbiClass}}ABI))
+	contractABI, err := hostchainabi.JSON(strings.NewReader(abi.{{.AbiClass}}ABI))
 	if err != nil {
 		return nil, fmt.Errorf("failed to instantiate ABI: [%v]", err)
 	}

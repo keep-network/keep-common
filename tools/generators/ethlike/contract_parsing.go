@@ -40,7 +40,7 @@ func init() {
 
 // The following structs are sent into the templates for compilation.
 type contractInfo struct {
-	BackendModule    string
+	HostChainModule  string
 	ChainUtilPackage string
 	ConfigReader     string
 	Class            string
@@ -94,7 +94,7 @@ type eventInfo struct {
 }
 
 func buildContractInfo(
-	backendModule string,
+	hostChainModule string,
 	chainUtilPackage string,
 	configReader string,
 	abiClassName string,
@@ -127,7 +127,7 @@ func buildContractInfo(
 	events := buildEventInfo(shortVar, abi.Events)
 
 	return contractInfo{
-		backendModule,
+		hostChainModule,
 		chainUtilPackage,
 		configReader,
 		string(goClassName),

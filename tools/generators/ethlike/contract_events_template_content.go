@@ -139,7 +139,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) watch{{$event.CapsName}}(
 		{{$logger}}.Errorf(
 			"subscription to event {{$event.CapsName}} had to be "+
 				"retried [%s] since the last attempt; please inspect "+
-				"chain connectivity",
+				"host chain connectivity",
 				elapsed,
 		)
 	}

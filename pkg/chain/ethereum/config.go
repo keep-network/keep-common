@@ -25,7 +25,7 @@ type Config struct {
 }
 
 // ContractAddress finds a given contract's address configuration and returns it
-// as Ethereum ddress.
+// as Ethereum address.
 func (c *Config) ContractAddress(contractName string) (*common.Address, error) {
 	addressString, exists := c.ContractAddresses[contractName]
 	if !exists {

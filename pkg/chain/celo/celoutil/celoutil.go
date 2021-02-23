@@ -75,7 +75,7 @@ func ConnectClients(url string, urlRPC string) (
 	client, err := celoclient.Dial(url)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf(
-			"error Connecting to Geth Server: %s [%v]",
+			"error Connecting to Celo node: %s [%v]",
 			url,
 			err,
 		)
@@ -84,7 +84,7 @@ func ConnectClients(url string, urlRPC string) (
 	clientWS, err := rpc.Dial(url)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf(
-			"error Connecting to Geth Server: %s [%v]",
+			"error Connecting to Celo node: %s [%v]",
 			url,
 			err,
 		)
@@ -93,7 +93,7 @@ func ConnectClients(url string, urlRPC string) (
 	clientRPC, err := rpc.Dial(urlRPC)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf(
-			"error Connecting to Geth Server: %s [%v]",
+			"error Connecting to Celo node: %s [%v]",
 			url,
 			err,
 		)

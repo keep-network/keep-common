@@ -6,11 +6,11 @@ var contractEventsTemplateContent = `{{- $contract := . -}}
 {{- range $i, $event := .Events }}
 
 func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
-	opts *chainutil.SubscribeOpts,
+	opts *ethlike.SubscribeOpts,
 	{{$event.IndexedFilterDeclarations -}}
 ) *{{$event.SubscriptionCapsName}} {
 	if opts == nil {
-		opts = new(chainutil.SubscribeOpts)
+		opts = new(ethlike.SubscribeOpts)
 	}
 	if opts.Tick == 0 {
 		opts.Tick = chainutil.DefaultSubscribeOptsTick
@@ -28,7 +28,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
 
 type {{$event.SubscriptionCapsName}} struct {
 	contract *{{$contract.Class}}
-	opts *chainutil.SubscribeOpts
+	opts *ethlike.SubscribeOpts
 	{{$event.IndexedFilterFields -}}
 }
 

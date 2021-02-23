@@ -18,7 +18,7 @@ func TestContractAddress(t *testing.T) {
 	invalidHex := "0xZZZ"
 
 	config := &Config{
-		ethlike.CommonConfig{
+		Config: ethlike.Config{
 			ContractAddresses: map[string]string{
 				contractName1: validContractAddressString,
 				contractName2: invalidHex,

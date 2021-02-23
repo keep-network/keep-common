@@ -10,7 +10,7 @@ import (
 // Config is a struct that contains the configuration needed to connect to an
 // Celo node. This information will give access to a Celo network.
 type Config struct {
-	ethlike.CommonConfig
+	ethlike.Config
 
 	// MaxGasPrice specifies the maximum gas price the client is
 	// willing to pay for the transaction to be mined. The offered transaction

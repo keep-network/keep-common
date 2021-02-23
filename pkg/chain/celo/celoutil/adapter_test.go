@@ -88,7 +88,7 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	headerChanLen := len(headerChan)
 	if expectedHeaderChanLen != headerChanLen {
 		t.Errorf(
-			"unexpected blocks number\n"+
+			"unexpected number of blocks\n"+
 				"expected: [%v]\n"+
 				"actual:   [%v]",
 			expectedHeaderChanLen,

@@ -1,7 +1,5 @@
 package ethlike
 
-import "math/big"
-
 // Account is a struct that contains the configuration for accessing an
 // ETH-like network and a contract on the network.
 type Account struct {
@@ -35,13 +33,6 @@ type CommonConfig struct {
 	// time, the gas price is increased and transaction is resubmitted.
 	MiningCheckInterval int
 
-	// MaxGasPrice specifies the maximum gas price the client is
-	// willing to pay for the transaction to be mined. The offered transaction
-	// gas price can not be higher than the max gas price value. If the maximum
-	// allowed gas price is reached, no further resubmission attempts are
-	// performed.
-	MaxGasPrice *Value
-
 	// RequestsPerSecondLimit sets the maximum average number of requests
 	// per second which can be executed against the ETH-like node.
 	// All types of chain requests are rate-limited,
@@ -53,19 +44,6 @@ type CommonConfig struct {
 	// This limit affects all types of chain requests,
 	// including view function calls.
 	ConcurrencyLimit int
-
-	// BalanceAlertThreshold defines a minimum value of the operator's
-	// account balance below which an alert will be triggered.
-	BalanceAlertThreshold *Value
-}
-
-// BalanceAlertThresholdValue returns the `BalanceAlertThreshold` integer value.
-func (cg *CommonConfig) BalanceAlertThresholdValue() *big.Int {
-	if cg.BalanceAlertThreshold != nil {
-		return cg.BalanceAlertThreshold.Int
-	}
-
-	return nil
 }
 
 // GetAccount returns the account configuration.

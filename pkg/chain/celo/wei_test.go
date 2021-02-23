@@ -1,4 +1,4 @@
-package ethlike
+package celo
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestUnmarshalTextValue(t *testing.T) {
-	int5000ether, _ := new(big.Int).SetString("5000000000000000000000", 10)
+	int5000celo, _ := new(big.Int).SetString("5000000000000000000000", 10)
 
 	var tests = map[string]struct {
 		value          string
@@ -35,13 +35,9 @@ func TestUnmarshalTextValue(t *testing.T) {
 			value:          "30 gwei",
 			expectedResult: big.NewInt(30000000000),
 		},
-		"unit: ether": {
-			value:          "2 ether",
-			expectedResult: big.NewInt(2000000000000000000),
-		},
 		"unit: CELO": {
-			value:          "7 CELO",
-			expectedResult: big.NewInt(7000000000000000000),
+			value:          "2 CELO",
+			expectedResult: big.NewInt(2000000000000000000),
 		},
 		"unit: mixed case": {
 			value:          "5 GWei",
@@ -51,13 +47,9 @@ func TestUnmarshalTextValue(t *testing.T) {
 			value:          "2.9 wei",
 			expectedResult: big.NewInt(2),
 		},
-		"decimal ether": {
-			value:          "0.8 ether",
-			expectedResult: big.NewInt(800000000000000000),
-		},
 		"decimal CELO": {
-			value:          "0.9 CELO",
-			expectedResult: big.NewInt(900000000000000000),
+			value:          "0.8 CELO",
+			expectedResult: big.NewInt(800000000000000000),
 		},
 		"multiple decimal digits": {
 			value:          "5.6789 Gwei",
@@ -68,16 +60,16 @@ func TestUnmarshalTextValue(t *testing.T) {
 			expectedResult: big.NewInt(6000000000),
 		},
 		"no space": {
-			value:          "9ether",
+			value:          "9CELO",
 			expectedResult: big.NewInt(9000000000000000000),
 		},
 		"int overflow amount": {
 			value:          "5000000000000000000000",
-			expectedResult: int5000ether,
+			expectedResult: int5000celo,
 		},
 		"int overflow amount after conversion": {
-			value:          "5000 ether",
-			expectedResult: int5000ether,
+			value:          "5000 CELO",
+			expectedResult: int5000celo,
 		},
 		"double space": {
 			value:         "100  Gwei",
@@ -93,8 +85,8 @@ func TestUnmarshalTextValue(t *testing.T) {
 		},
 
 		"invalid comma delimeter": {
-			value:         "3,5 ether",
-			expectedError: fmt.Errorf("failed to parse value: [3,5 ether]"),
+			value:         "3,5 CELO",
+			expectedError: fmt.Errorf("failed to parse value: [3,5 CELO]"),
 		},
 		"only decimal number": {
 			value:         ".7 Gwei",
@@ -114,7 +106,7 @@ func TestUnmarshalTextValue(t *testing.T) {
 		},
 		"two values": {
 			value:         "3 wei2wei",
-			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: wei, Gwei, ether, CELO"),
+			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: celo, gwei, wei"),
 		},
 		"two values separated with space": {
 			value:         "3 wei 2wei",
@@ -126,15 +118,19 @@ func TestUnmarshalTextValue(t *testing.T) {
 		},
 		"invalid unit: ETH": {
 			value:         "6 ETH",
-			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: wei, Gwei, ether, CELO"),
+			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: celo, gwei, wei"),
+		},
+		"invalid unit: ether": {
+			value:         "6 ether",
+			expectedError: fmt.Errorf("invalid unit: ether; please use one of: celo, gwei, wei"),
 		},
 		"invalid unit: weinot": {
 			value:         "100 weinot",
-			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: wei, Gwei, ether, CELO"),
+			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: celo, gwei, wei"),
 		},
 		"invalid unit: notawei": {
 			value:         "100 notawei",
-			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: wei, Gwei, ether, CELO"),
+			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: celo, gwei, wei"),
 		},
 		"only unit": {
 			value:         "wei",
@@ -147,8 +143,8 @@ func TestUnmarshalTextValue(t *testing.T) {
 	}
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			v := Value{}
-			err := v.UnmarshalText([]byte(test.value))
+			w := Wei{}
+			err := w.UnmarshalText([]byte(test.value))
 			if test.expectedError != nil {
 				if !reflect.DeepEqual(test.expectedError, err) {
 					t.Errorf(
@@ -161,11 +157,11 @@ func TestUnmarshalTextValue(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			}
 
-			if test.expectedResult != nil && test.expectedResult.Cmp(v.Int) != 0 {
+			if test.expectedResult != nil && test.expectedResult.Cmp(w.Int) != 0 {
 				t.Errorf(
 					"invalid value\nexpected: %v\nactual:   %v",
 					test.expectedResult.String(),
-					v.Int.String(),
+					w.Int.String(),
 				)
 			}
 		})

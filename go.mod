@@ -8,7 +8,7 @@ require (
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20190924011532-60b7b74727fd // indirect
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
-	github.com/celo-org/celo-blockchain v0.0.0-20210211195335-cbc4f555cf87
+	github.com/celo-org/celo-blockchain v0.0.0-20210222234634-f8c8f6744526
 	github.com/cespare/cp v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect

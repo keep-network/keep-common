@@ -3,6 +3,7 @@ package ethutil
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 	"time"
@@ -33,14 +34,14 @@ func NewBalanceMonitor(balanceSource BalanceSource) *BalanceMonitor {
 // alert threshold value.
 func (bm *BalanceMonitor) Observe(
 	ctx context.Context,
-	address string,
-	alertThreshold *big.Int,
+	address common.Address,
+	alertThreshold *ethereum.Wei,
 	tick time.Duration,
 ) {
 	bm.delegate.Observe(
 		ctx,
-		ethlike.Address(common.HexToAddress(address)),
-		alertThreshold,
+		ethlike.Address(address),
+		alertThreshold.Int,
 		tick,
 	)
 }

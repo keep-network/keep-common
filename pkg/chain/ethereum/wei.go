@@ -1,16 +1,15 @@
 package ethereum
 
 import (
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 )
 
 // Units defines denominations of the Ether token.
 var Units = map[string]float64{
-	"wei":   params.Wei, // default unit
-	"gwei":  params.GWei,
-	"ether": params.Ether,
+	"wei":   1, // default unit
+	"gwei":  1e9,
+	"ether": 1e18,
 }
 
 // Wei is a custom type to handle Ether value parsing in configuration files

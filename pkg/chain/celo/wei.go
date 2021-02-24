@@ -1,15 +1,14 @@
 package celo
 
 import (
-	"github.com/celo-org/celo-blockchain/params"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 )
 
 // Units defines denominations of the CELO token.
 var Units = map[string]float64{
-	"wei":  params.Wei, // default unit
-	"gwei": params.GWei,
+	"wei":  1, // default unit
+	"gwei": 1e9,
 	"celo": 1e18,
 }
 

@@ -5,12 +5,11 @@ import (
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/keep-network/keep-common/pkg/chain/celo"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
-	"math/big"
 	"time"
 )
 
 // BalanceSource provides a balance info for the given address.
-type BalanceSource func(address common.Address) (*big.Int, error)
+type BalanceSource func(address common.Address) (*celo.Wei, error)
 
 // BalanceMonitor provides the possibility to monitor balances for given
 // accounts.
@@ -20,8 +19,15 @@ type BalanceMonitor struct {
 
 // NewBalanceMonitor creates a new instance of the balance monitor.
 func NewBalanceMonitor(balanceSource BalanceSource) *BalanceMonitor {
-	balanceSourceAdapter := func(address ethlike.Address) (*big.Int, error) {
-		return balanceSource(common.Address(address))
+	balanceSourceAdapter := func(
+		address ethlike.Address,
+	) (*ethlike.Token, error) {
+		balance, err := balanceSource(common.Address(address))
+		if err != nil {
+			return nil, err
+		}
+
+		return &balance.Token, err
 	}
 
 	return &BalanceMonitor{
@@ -41,7 +47,7 @@ func (bm *BalanceMonitor) Observe(
 	bm.delegate.Observe(
 		ctx,
 		ethlike.Address(address),
-		alertThreshold.Int,
+		&alertThreshold.Token,
 		tick,
 	)
 }

@@ -2,12 +2,11 @@ package ethlike
 
 import (
 	"context"
-	"math/big"
 	"time"
 )
 
 // BalanceSource provides a balance info for the given address.
-type BalanceSource func(address Address) (*big.Int, error)
+type BalanceSource func(address Address) (*Token, error)
 
 // BalanceMonitor provides the possibility to monitor balances for given
 // accounts.
@@ -26,7 +25,7 @@ func NewBalanceMonitor(balanceSource BalanceSource) *BalanceMonitor {
 func (bm *BalanceMonitor) Observe(
 	ctx context.Context,
 	address Address,
-	alertThreshold *big.Int,
+	alertThreshold *Token,
 	tick time.Duration,
 ) {
 	check := func() {
@@ -36,7 +35,7 @@ func (bm *BalanceMonitor) Observe(
 			return
 		}
 
-		if balance.Cmp(alertThreshold) == -1 {
+		if balance.Cmp(alertThreshold.Int) == -1 {
 			logger.Errorf(
 				"balance for account [%v] is below [%v]; "+
 					"account should be funded",

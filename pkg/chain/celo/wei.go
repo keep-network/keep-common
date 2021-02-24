@@ -3,6 +3,7 @@ package celo
 import (
 	"github.com/celo-org/celo-blockchain/params"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
+	"math/big"
 )
 
 // Units defines denominations of the CELO token.
@@ -19,6 +20,11 @@ var Units = map[string]float64{
 // `0.5 CELO`.
 type Wei struct {
 	ethlike.Token
+}
+
+// WrapWei wraps the given integer value in order to represent it as Wei value.
+func WrapWei(value *big.Int) *Wei {
+	return &Wei{ethlike.Token{value}}
 }
 
 // UnmarshalText is a function used to parse a value of CELO.

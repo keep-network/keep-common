@@ -3,6 +3,7 @@ package ethereum
 import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
+	"math/big"
 )
 
 // Units defines denominations of the Ether token.
@@ -19,6 +20,11 @@ var Units = map[string]float64{
 // `0.5 ether`.
 type Wei struct {
 	ethlike.Token
+}
+
+// WrapWei wraps the given integer value in order to represent it as Wei value.
+func WrapWei(value *big.Int) *Wei {
+	return &Wei{ethlike.Token{value}}
 }
 
 // UnmarshalText is a function used to parse a value of Ethers.

@@ -10,16 +10,16 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ethereum/go-ethereum"
-	ethereumabi "github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	hostchainabi "{{.HostChainModule}}/accounts/abi"
+	"{{.HostChainModule}}/accounts/abi/bind"
+	"{{.HostChainModule}}/accounts/keystore"
+	"{{.HostChainModule}}/common"
+	"{{.HostChainModule}}/core/types"
+	"{{.HostChainModule}}/event"
 
 	"github.com/ipfs/go-log"
 
-	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
+	chainutil "{{.ChainUtilPackage}}"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"github.com/keep-network/keep-common/pkg/subscription"
 )
@@ -32,12 +32,12 @@ var {{.ShortVar}}Logger = log.Logger("keep-contract-{{.Class}}")
 type {{.Class}} struct {
 	contract           *abi.{{.AbiClass}}
 	contractAddress    common.Address
-	contractABI        *ethereumabi.ABI
+	contractABI        *hostchainabi.ABI
 	caller             bind.ContractCaller
 	transactor         bind.ContractTransactor
 	callerOptions      *bind.CallOpts
 	transactorOptions  *bind.TransactOpts
-	errorResolver      *ethutil.ErrorResolver
+	errorResolver      *chainutil.ErrorResolver
 	nonceManager       *ethlike.NonceManager
 	miningWaiter       *ethlike.MiningWaiter
 	blockCounter	   *ethlike.BlockCounter
@@ -74,7 +74,7 @@ func New{{.Class}}(
 		)
 	}
 
-	contractABI, err := ethereumabi.JSON(strings.NewReader(abi.{{.AbiClass}}ABI))
+	contractABI, err := hostchainabi.JSON(strings.NewReader(abi.{{.AbiClass}}ABI))
 	if err != nil {
 		return nil, fmt.Errorf("failed to instantiate ABI: [%v]", err)
 	}
@@ -87,7 +87,7 @@ func New{{.Class}}(
 		transactor:        backend,
 		callerOptions:     callerOptions,
 		transactorOptions: transactorOptions,
-		errorResolver:     ethutil.NewErrorResolver(backend, &contractABI, &contractAddress),
+		errorResolver:     chainutil.NewErrorResolver(backend, &contractABI, &contractAddress),
 		nonceManager:      nonceManager,
 		miningWaiter:      miningWaiter,
 		blockCounter: 	   blockCounter,

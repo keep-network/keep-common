@@ -1,4 +1,4 @@
-package ethereum
+package celo
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestUnmarshalTextValue(t *testing.T) {
-	int5000ether, _ := new(big.Int).SetString("5000000000000000000000", 10)
+	int5000celo, _ := new(big.Int).SetString("5000000000000000000000", 10)
 
 	var tests = map[string]struct {
 		value          string
@@ -35,8 +35,8 @@ func TestUnmarshalTextValue(t *testing.T) {
 			value:          "30 gwei",
 			expectedResult: big.NewInt(30000000000),
 		},
-		"unit: ether": {
-			value:          "2 ether",
+		"unit: CELO": {
+			value:          "2 CELO",
 			expectedResult: big.NewInt(2000000000000000000),
 		},
 		"unit: mixed case": {
@@ -47,8 +47,8 @@ func TestUnmarshalTextValue(t *testing.T) {
 			value:          "2.9 wei",
 			expectedResult: big.NewInt(2),
 		},
-		"decimal ether": {
-			value:          "0.8 ether",
+		"decimal CELO": {
+			value:          "0.8 CELO",
 			expectedResult: big.NewInt(800000000000000000),
 		},
 		"multiple decimal digits": {
@@ -60,16 +60,16 @@ func TestUnmarshalTextValue(t *testing.T) {
 			expectedResult: big.NewInt(6000000000),
 		},
 		"no space": {
-			value:          "9ether",
+			value:          "9CELO",
 			expectedResult: big.NewInt(9000000000000000000),
 		},
 		"int overflow amount": {
 			value:          "5000000000000000000000",
-			expectedResult: int5000ether,
+			expectedResult: int5000celo,
 		},
 		"int overflow amount after conversion": {
-			value:          "5000 ether",
-			expectedResult: int5000ether,
+			value:          "5000 CELO",
+			expectedResult: int5000celo,
 		},
 		"double space": {
 			value:         "100  Gwei",
@@ -85,8 +85,8 @@ func TestUnmarshalTextValue(t *testing.T) {
 		},
 
 		"invalid comma delimeter": {
-			value:         "3,5 ether",
-			expectedError: fmt.Errorf("failed to parse value: [3,5 ether]"),
+			value:         "3,5 CELO",
+			expectedError: fmt.Errorf("failed to parse value: [3,5 CELO]"),
 		},
 		"only decimal number": {
 			value:         ".7 Gwei",
@@ -106,7 +106,7 @@ func TestUnmarshalTextValue(t *testing.T) {
 		},
 		"two values": {
 			value:         "3 wei2wei",
-			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: ether, gwei, wei"),
+			expectedError: fmt.Errorf("invalid unit: wei2wei; please use one of: celo, gwei, wei"),
 		},
 		"two values separated with space": {
 			value:         "3 wei 2wei",
@@ -118,19 +118,19 @@ func TestUnmarshalTextValue(t *testing.T) {
 		},
 		"invalid unit: ETH": {
 			value:         "6 ETH",
-			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: ether, gwei, wei"),
+			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: celo, gwei, wei"),
 		},
-		"invalid unit: CELO": {
-			value:         "6 CELO",
-			expectedError: fmt.Errorf("invalid unit: CELO; please use one of: ether, gwei, wei"),
+		"invalid unit: ether": {
+			value:         "6 ether",
+			expectedError: fmt.Errorf("invalid unit: ether; please use one of: celo, gwei, wei"),
 		},
 		"invalid unit: weinot": {
 			value:         "100 weinot",
-			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: ether, gwei, wei"),
+			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: celo, gwei, wei"),
 		},
 		"invalid unit: notawei": {
 			value:         "100 notawei",
-			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: ether, gwei, wei"),
+			expectedError: fmt.Errorf("invalid unit: notawei; please use one of: celo, gwei, wei"),
 		},
 		"only unit": {
 			value:         "wei",

@@ -1,4 +1,7 @@
-{{- $contract := . -}}
+package main
+
+// contractNonConstMethodsTemplateContent contains the template string from contract_non_const_methods.go.tmpl
+var contractNonConstMethodsTemplateContent = `{{- $contract := . -}}
 {{- $logger := (print $contract.ShortVar "Logger") -}}
 {{- range $i, $method := .NonConstMethods }}
 
@@ -8,7 +11,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{- if $method.Payable -}}
 	value *big.Int,
 	{{ end }}
-	transactionOptions ...ethutil.TransactionOptions,
+	transactionOptions ...chainutil.TransactionOptions,
 ) (*types.Transaction, error) {
 	{{$logger}}.Debug(
 		"submitting transaction {{$method.LowerName}}",
@@ -137,7 +140,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) Call{{$method.CapsName}}(
 	var result interface{} = nil
 	{{- end }}
 
-	err := ethutil.CallAtBlock(
+	err := chainutil.CallAtBlock(
 		{{$contract.ShortVar}}.transactorOptions.From,
 		blockNumber,
 		{{- if $method.Payable -}}
@@ -162,7 +165,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}GasEstima
 ) (uint64, error) {
 	var result uint64
 
-	result, err := ethutil.EstimateGas(
+	result, err := chainutil.EstimateGas(
 		{{$contract.ShortVar}}.callerOptions.From,
 		{{$contract.ShortVar}}.contractAddress,
 		"{{$method.LowerName}}",
@@ -175,3 +178,4 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}GasEstima
 }
 
 {{- end -}}
+`

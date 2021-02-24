@@ -1,4 +1,7 @@
-// Code generated - DO NOT EDIT.
+package main
+
+// commandTemplateContent contains the template string from command.go.tmpl
+var commandTemplateContent = `// Code generated - DO NOT EDIT.
 // This file is a generated command and any manual changes will be lost.
 
 package cmd
@@ -6,11 +9,11 @@ package cmd
 import (
     "sync"
 
-    "github.com/ethereum/go-ethereum/common"
-    "github.com/ethereum/go-ethereum/common/hexutil"
-    "github.com/ethereum/go-ethereum/core/types"
+    "{{.HostChainModule}}/common"
+    "{{.HostChainModule}}/common/hexutil"
+    "{{.HostChainModule}}/core/types"
 
-    "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
+    chainutil "{{.ChainUtilPackage}}"
     "github.com/keep-network/keep-common/pkg/cmd"
 
     "github.com/urfave/cli"
@@ -18,8 +21,8 @@ import (
 
 var {{.Class}}Command cli.Command
 
-var {{.FullVar}}Description = `The {{.DashedName}} command allows calling the {{.Class}} contract on an
-	Ethereum network. It has subcommands corresponding to each contract method,
+var {{.FullVar}}Description = ` + "`" + `The {{.DashedName}} command allows calling the {{.Class}} contract on an
+	ETH-like network. It has subcommands corresponding to each contract method,
 	which respectively each take parameters based on the contract method's
 	parameters.
 
@@ -39,12 +42,12 @@ var {{.FullVar}}Description = `The {{.DashedName}} command allows calling the {{
 	the transaction to be included in a block. They return the transaction hash.
 
 	Calls that require ether to be paid will get 0 ether by default, which can
-	be changed by passing the -v/--value flag.`
+	be changed by passing the -v/--value flag.` + "`" + `
 
 func init() {
     AvailableCommands = append(AvailableCommands, cli.Command{
         Name:        "{{.DashedName}}",
-        Usage:       `Provides access to the {{.Class}} contract.`,
+        Usage:       ` + "`" + `Provides access to the {{.Class}} contract.` + "`" + `,
         Description: {{.FullVar}}Description,
         Subcommands: []cli.Command{
             {{- $contract := . -}}
@@ -193,17 +196,17 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cli.Context) error {
 /// ------------------- Initialization -------------------
 
 func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
-    config, err := {{.EthereumConfigReader}}(c.GlobalString("config"))
+    config, err := {{.ConfigReader}}(c.GlobalString("config"))
     if err != nil {
-        return nil, fmt.Errorf("error reading Ethereum config from file: [%v]", err)
+        return nil, fmt.Errorf("error reading config from file: [%v]", err)
     }
 
-    client, _, _, err := ethutil.ConnectClients(config.URL, config.URLRPC)
+    client, _, _, err := chainutil.ConnectClients(config.URL, config.URLRPC)
     if err != nil {
-        return nil, fmt.Errorf("error connecting to Ethereum node: [%v]", err)
+        return nil, fmt.Errorf("error connecting to host chain node: [%v]", err)
     }
 
-    key, err := ethutil.DecryptKeyFile(
+    key, err := chainutil.DecryptKeyFile(
         config.Account.KeyFile,
         config.Account.KeyFilePassword,
     )
@@ -224,13 +227,13 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
 		maxGasPrice = config.MaxGasPrice.Int
 	}
 
-	miningWaiter := ethutil.NewMiningWaiter(
+	miningWaiter := chainutil.NewMiningWaiter(
 		client,
 		checkInterval,
 		maxGasPrice,
 	)
 
-	blockCounter, err := ethutil.NewBlockCounter(client)
+	blockCounter, err := chainutil.NewBlockCounter(client)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to create block counter: [%v]",
@@ -244,9 +247,10 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         address,
         key,
         client,
-        ethutil.NewNonceManager(client, key.Address),
+        chainutil.NewNonceManager(client, key.Address),
         miningWaiter,
         blockCounter,
         &sync.Mutex{},
     )
 }
+`

@@ -1,4 +1,4 @@
-package ethutil
+package celoutil
 
 import "time"
 
@@ -22,11 +22,11 @@ const (
 	// resubscription emits an error to the logs.
 	// WS connection can be dropped at any moment and event resubscription will
 	// follow. However, if WS connection for event subscription is getting
-	// dropped too often, it may indicate something is wrong with Ethereum
+	// dropped too often, it may indicate something is wrong with Celo
 	// client. This constant defines the minimum lifetime of an event
 	// subscription required before the subscription failure happens and
 	// resubscription follows so that the resubscription does not emit an error
-	// to the logs alerting about potential problems with Ethereum client
+	// to the logs alerting about potential problems with Celo client
 	// connection.
 	SubscriptionAlertThreshold = 15 * time.Minute
 )

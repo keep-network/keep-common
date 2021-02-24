@@ -1,4 +1,7 @@
-{{- $contract := . -}}
+package main
+
+// contractConstMethodsTemplateContent contains the template string from contract_const_methods.go.tmpl
+var contractConstMethodsTemplateContent = `{{- $contract := . -}}
 {{- range $i, $method := .ConstMethods }}
 
 {{- if $method.Return.Multi }}
@@ -37,7 +40,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}AtBlock(
 ) ({{$method.Return.Type}}, error) {
 	var result {{$method.Return.Type}}
 
-	err := ethutil.CallAtBlock(
+	err := chainutil.CallAtBlock(
 		{{$contract.ShortVar}}.callerOptions.From,
 		blockNumber,
 		nil,
@@ -54,3 +57,4 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}AtBlock(
 }
 
 {{end -}}
+`

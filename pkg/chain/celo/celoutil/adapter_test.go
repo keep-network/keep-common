@@ -1,11 +1,11 @@
-package ethutil
+package celoutil
 
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/celo-org/celo-blockchain"
+	"github.com/celo-org/celo-blockchain/common"
+	"github.com/celo-org/celo-blockchain/core/types"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 	"reflect"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
-	client := &mockAdaptedEthereumClient{
+	client := &mockAdaptedCeloClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
 			big.NewInt(1),
@@ -64,7 +64,7 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	)
 	defer cancelCtx()
 
-	client := &mockAdaptedEthereumClient{
+	client := &mockAdaptedCeloClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
 			big.NewInt(1),
@@ -126,7 +126,7 @@ func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
 	var hash [32]byte
 	copy(hash[:], []byte{255})
 
-	client := &mockAdaptedEthereumClient{
+	client := &mockAdaptedCeloClient{
 		transactions: map[common.Hash]*types.Receipt{
 			common.BytesToHash(hash[:]): {
 				Status:      1,
@@ -164,7 +164,7 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	var address [20]byte
 	copy(address[:], []byte{255})
 
-	client := &mockAdaptedEthereumClient{
+	client := &mockAdaptedCeloClient{
 		nonces: map[common.Address]uint64{
 			common.BytesToAddress(address[:]): 100,
 		},
@@ -189,35 +189,35 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	}
 }
 
-type mockAdaptedEthereumClient struct {
-	*mockEthereumClient
+type mockAdaptedCeloClient struct {
+	*mockCeloClient
 
 	blocks       []*big.Int
 	transactions map[common.Hash]*types.Receipt
 	nonces       map[common.Address]uint64
 }
 
-func (maec *mockAdaptedEthereumClient) BlockByNumber(
+func (macc *mockAdaptedCeloClient) BlockByNumber(
 	ctx context.Context,
 	number *big.Int,
 ) (*types.Block, error) {
-	index := len(maec.blocks) - 1
+	index := len(macc.blocks) - 1
 
 	if number != nil {
 		index = int(number.Int64())
 	}
 
 	return types.NewBlockWithHeader(
-		&types.Header{Number: maec.blocks[index]},
+		&types.Header{Number: macc.blocks[index]},
 	), nil
 }
 
-func (maec *mockAdaptedEthereumClient) SubscribeNewHead(
+func (macc *mockAdaptedCeloClient) SubscribeNewHead(
 	ctx context.Context,
 	ch chan<- *types.Header,
-) (ethereum.Subscription, error) {
+) (celo.Subscription, error) {
 	go func() {
-		for _, block := range maec.blocks {
+		for _, block := range macc.blocks {
 			ch <- &types.Header{Number: block}
 		}
 	}()
@@ -228,22 +228,22 @@ func (maec *mockAdaptedEthereumClient) SubscribeNewHead(
 	}, nil
 }
 
-func (maec *mockAdaptedEthereumClient) TransactionReceipt(
+func (macc *mockAdaptedCeloClient) TransactionReceipt(
 	ctx context.Context,
 	txHash common.Hash,
 ) (*types.Receipt, error) {
-	if tx, ok := maec.transactions[txHash]; ok {
+	if tx, ok := macc.transactions[txHash]; ok {
 		return tx, nil
 	}
 
 	return nil, fmt.Errorf("no tx with given hash")
 }
 
-func (maec *mockAdaptedEthereumClient) PendingNonceAt(
+func (macc *mockAdaptedCeloClient) PendingNonceAt(
 	ctx context.Context,
 	account common.Address,
 ) (uint64, error) {
-	if nonce, ok := maec.nonces[account]; ok {
+	if nonce, ok := macc.nonces[account]; ok {
 		return nonce, nil
 	}
 

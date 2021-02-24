@@ -41,6 +41,18 @@ import (
 // Note that currently the packages for contract and command are hardcoded to
 // contract and cmd, respectively.
 func main() {
+	hostChainModule := flag.String(
+		"host-chain-module",
+		"github.com/ethereum/go-ethereum",
+		"ETH-like host chain Go module imported from the generated code",
+	)
+
+	chainUtilPackage := flag.String(
+		"chain-util-package",
+		"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil",
+		"Host chain utils package imported from the generated code",
+	)
+
 	configReader := flag.String(
 		"config-func",
 		"config.ReadEthereumConfig",
@@ -104,7 +116,14 @@ func main() {
 	// ABI file, minus the extension.
 	abiClassName := path.Base(abiPath)
 	abiClassName = abiClassName[0 : len(abiClassName)-4] // strip .abi
-	contractInfo := buildContractInfo(*configReader, abiClassName, &abi, payableInfo)
+	contractInfo := buildContractInfo(
+		*hostChainModule,
+		*chainUtilPackage,
+		*configReader,
+		abiClassName,
+		&abi,
+		payableInfo,
+	)
 
 	contractBuf, err := generateCode(
 		contractOutputPath,

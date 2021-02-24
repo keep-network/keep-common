@@ -45,8 +45,3 @@ type Config struct {
 	// including view function calls.
 	ConcurrencyLimit int
 }
-
-// GetAccount returns the account configuration.
-func (c *Config) GetAccount() Account {
-	return c.Account
-}

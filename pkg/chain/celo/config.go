@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
-	"math/big"
 )
 
 // Config is a struct that contains the configuration needed to connect to an
@@ -46,13 +45,4 @@ func (c *Config) ContractAddress(contractName string) (*common.Address, error) {
 
 	address := common.HexToAddress(addressString)
 	return &address, nil
-}
-
-// BalanceAlertThresholdValue returns the `BalanceAlertThreshold` integer value.
-func (c *Config) BalanceAlertThresholdValue() *big.Int {
-	if c.BalanceAlertThreshold != nil {
-		return c.BalanceAlertThreshold.Int
-	}
-
-	return nil
 }

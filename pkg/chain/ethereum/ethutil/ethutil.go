@@ -29,10 +29,10 @@ var logger = log.Logger("keep-ethutil")
 // errors. See ResolveError below.
 const errorABIString = "[{\"constant\":true,\"outputs\":[{\"type\":\"string\"}],\"inputs\":[{\"name\":\"message\", \"type\":\"string\"}],\"name\":\"Error\"}]"
 
-// EthereumClient wraps the core `bind.ContractBackend` interface with
+// HostChainClient wraps the core `bind.ContractBackend` interface with
 // some other interfaces allowing to expose additional methods provided
 // by client implementations.
-type EthereumClient interface {
+type HostChainClient interface {
 	bind.ContractBackend
 	ethereum.ChainReader
 	ethereum.TransactionReader
@@ -194,7 +194,7 @@ func EstimateGas(
 
 // NewBlockCounter creates a new BlockCounter instance for the provided
 // Ethereum client.
-func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
+func NewBlockCounter(client HostChainClient) (*ethlike.BlockCounter, error) {
 	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
 }
 
@@ -202,7 +202,7 @@ func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
 // Ethereum client. It accepts two parameters setting up monitoring rules
 // of the transaction mining status.
 func NewMiningWaiter(
-	client EthereumClient,
+	client HostChainClient,
 	checkInterval time.Duration,
 	maxGasPrice *big.Int,
 ) *ethlike.MiningWaiter {
@@ -216,7 +216,7 @@ func NewMiningWaiter(
 // NewNonceManager creates NonceManager instance for the provided account
 // using the provided Ethereum client.
 func NewNonceManager(
-	client EthereumClient,
+	client HostChainClient,
 	account common.Address,
 ) *ethlike.NonceManager {
 	return ethlike.NewNonceManager(

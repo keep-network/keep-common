@@ -9,7 +9,7 @@ import (
 )
 
 type ethlikeAdapter struct {
-	delegate CeloClient
+	delegate HostChainClient
 }
 
 func (ea *ethlikeAdapter) BlockByNumber(

@@ -25,10 +25,10 @@ var logger = log.Logger("keep-celoutil")
 // errors. See ResolveError below.
 const errorABIString = "[{\"constant\":true,\"outputs\":[{\"type\":\"string\"}],\"inputs\":[{\"name\":\"message\", \"type\":\"string\"}],\"name\":\"Error\", \"type\": \"function\"}]"
 
-// CeloClient wraps the core `bind.ContractBackend` interface with
+// HostChainClient wraps the core `bind.ContractBackend` interface with
 // some other interfaces allowing to expose additional methods provided
 // by client implementations.
-type CeloClient interface {
+type HostChainClient interface {
 	bind.ContractBackend
 	celo.ChainReader
 	celo.TransactionReader
@@ -203,7 +203,7 @@ func EstimateGas(
 
 // NewBlockCounter creates a new BlockCounter instance for the provided
 // Celo client.
-func NewBlockCounter(client CeloClient) (*ethlike.BlockCounter, error) {
+func NewBlockCounter(client HostChainClient) (*ethlike.BlockCounter, error) {
 	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
 }
 
@@ -211,7 +211,7 @@ func NewBlockCounter(client CeloClient) (*ethlike.BlockCounter, error) {
 // Celo client. It accepts two parameters setting up monitoring rules
 // of the transaction mining status.
 func NewMiningWaiter(
-	client CeloClient,
+	client HostChainClient,
 	checkInterval time.Duration,
 	maxGasPrice *big.Int,
 ) *ethlike.MiningWaiter {
@@ -225,7 +225,7 @@ func NewMiningWaiter(
 // NewNonceManager creates NonceManager instance for the provided account
 // using the provided Celo client.
 func NewNonceManager(
-	client CeloClient,
+	client HostChainClient,
 	account common.Address,
 ) *ethlike.NonceManager {
 	return ethlike.NewNonceManager(

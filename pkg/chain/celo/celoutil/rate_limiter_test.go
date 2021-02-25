@@ -481,7 +481,7 @@ func (mcc *mockCeloClient) BalanceAt(
 }
 
 func getTests(
-	client CeloClient,
+	client HostChainClient,
 ) map[string]struct{ function func() error } {
 	return map[string]struct{ function func() error }{
 		"test CodeAt": {

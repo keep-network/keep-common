@@ -481,7 +481,7 @@ func (mec *mockEthereumClient) BalanceAt(
 }
 
 func getTests(
-	client EthereumClient,
+	client HostChainClient,
 ) map[string]struct{ function func() error } {
 	return map[string]struct{ function func() error }{
 		"test CodeAt": {

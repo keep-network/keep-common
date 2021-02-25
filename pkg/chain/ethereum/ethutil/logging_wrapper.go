@@ -8,7 +8,7 @@ import (
 )
 
 type loggingWrapper struct {
-	EthereumClient
+	HostChainClient
 
 	logger log.EventLogger
 }
@@ -16,7 +16,7 @@ type loggingWrapper struct {
 func (lw *loggingWrapper) SuggestGasPrice(
 	ctx context.Context,
 ) (*big.Int, error) {
-	price, err := lw.EthereumClient.SuggestGasPrice(ctx)
+	price, err := lw.HostChainClient.SuggestGasPrice(ctx)
 
 	if err != nil {
 		lw.logger.Debugf("error requesting gas price suggestion: [%v]", err)
@@ -31,7 +31,7 @@ func (lw *loggingWrapper) EstimateGas(
 	ctx context.Context,
 	msg ethereum.CallMsg,
 ) (uint64, error) {
-	gas, err := lw.EthereumClient.EstimateGas(ctx, msg)
+	gas, err := lw.HostChainClient.EstimateGas(ctx, msg)
 
 	if err != nil {
 		return 0, err
@@ -46,7 +46,7 @@ func (lw *loggingWrapper) EstimateGas(
 // delegated to the passed client.
 func WrapCallLogging(
 	logger log.EventLogger,
-	client EthereumClient,
-) EthereumClient {
+	client HostChainClient,
+) HostChainClient {
 	return &loggingWrapper{client, logger}
 }

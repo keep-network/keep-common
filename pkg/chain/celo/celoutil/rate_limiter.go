@@ -1,9 +1,11 @@
+// Code generated - DO NOT EDIT.
+
 package celoutil
 
 import (
 	"context"
 	"fmt"
-	"github.com/celo-org/celo-blockchain"
+	hostchain "github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/celo-org/celo-blockchain/core/types"
 	"github.com/keep-network/keep-common/pkg/rate"
@@ -46,7 +48,7 @@ func (rl *rateLimiter) CodeAt(
 
 func (rl *rateLimiter) CallContract(
 	ctx context.Context,
-	call celo.CallMsg,
+	call hostchain.CallMsg,
 	blockNumber *big.Int,
 ) ([]byte, error) {
 	err := rl.Limiter.AcquirePermit()
@@ -98,7 +100,7 @@ func (rl *rateLimiter) SuggestGasPrice(
 
 func (rl *rateLimiter) EstimateGas(
 	ctx context.Context,
-	call celo.CallMsg,
+	call hostchain.CallMsg,
 ) (uint64, error) {
 	err := rl.Limiter.AcquirePermit()
 	if err != nil {
@@ -124,7 +126,7 @@ func (rl *rateLimiter) SendTransaction(
 
 func (rl *rateLimiter) FilterLogs(
 	ctx context.Context,
-	query celo.FilterQuery,
+	query hostchain.FilterQuery,
 ) ([]types.Log, error) {
 	err := rl.Limiter.AcquirePermit()
 	if err != nil {
@@ -137,9 +139,9 @@ func (rl *rateLimiter) FilterLogs(
 
 func (rl *rateLimiter) SubscribeFilterLogs(
 	ctx context.Context,
-	query celo.FilterQuery,
+	query hostchain.FilterQuery,
 	ch chan<- types.Log,
-) (celo.Subscription, error) {
+) (hostchain.Subscription, error) {
 	err := rl.Limiter.AcquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
@@ -231,7 +233,7 @@ func (rl *rateLimiter) TransactionInBlock(
 func (rl *rateLimiter) SubscribeNewHead(
 	ctx context.Context,
 	ch chan<- *types.Header,
-) (celo.Subscription, error) {
+) (hostchain.Subscription, error) {
 	err := rl.Limiter.AcquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)

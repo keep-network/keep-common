@@ -1,13 +1,13 @@
 // Code generated - DO NOT EDIT.
 
-package ethutil
+package {{.PackageName}}
 
 import (
 	"context"
 	"fmt"
-	hostchain "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	hostchain "{{.HostChainModule}}"
+	"{{.HostChainModule}}/common"
+	"{{.HostChainModule}}/core/types"
 	"github.com/keep-network/keep-common/pkg/rate"
 	"math/big"
 )

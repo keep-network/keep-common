@@ -1,3 +1,6 @@
+// Code generated - DO NOT EDIT.
+// This file is a generated binding and any manual changes will be lost.
+
 package celoutil
 
 import (
@@ -35,7 +38,9 @@ func WithResubscription(
 	subscriptionFailedFn func(error),
 ) event.Subscription {
 	lastAttempt := time.Time{}
-	wrappedResubscribeFn := func(ctx context.Context) (event.Subscription, error) {
+	wrappedResubscribeFn := func(
+		ctx context.Context,
+	) (event.Subscription, error) {
 		now := time.Now()
 		elapsed := now.Sub(lastAttempt)
 		if elapsed < alertThreshold {

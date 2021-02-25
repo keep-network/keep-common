@@ -1,8 +1,10 @@
+// Code generated - DO NOT EDIT.
+
 package ethutil
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum"
+	hostchain "github.com/ethereum/go-ethereum"
 	"github.com/ipfs/go-log"
 	"math/big"
 )
@@ -29,7 +31,7 @@ func (lw *loggingWrapper) SuggestGasPrice(
 
 func (lw *loggingWrapper) EstimateGas(
 	ctx context.Context,
-	msg ethereum.CallMsg,
+	msg hostchain.CallMsg,
 ) (uint64, error) {
 	gas, err := lw.HostChainClient.EstimateGas(ctx, msg)
 

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -247,6 +248,9 @@ func buildMethodInfo(
 		}
 	}
 
+	sort.Sort(methodInfoSlice(constMethods))
+	sort.Sort(methodInfoSlice(nonConstMethods))
+
 	return constMethods, nonConstMethods
 }
 
@@ -307,6 +311,8 @@ func buildEventInfo(
 		})
 	}
 
+	sort.Sort(eventInfoSlice(eventInfos))
+
 	return eventInfos
 }
 
@@ -338,4 +344,30 @@ func camelCase(input string) string {
 		}
 	}
 	return lowercaseFirst(strings.Join(parts, ""))
+}
+
+// For sorting purposes, we define the following interfaces on methodInfo and
+// eventInfo slices.
+type methodInfoSlice []methodInfo
+
+func (mis methodInfoSlice) Len() int {
+	return len(mis)
+}
+func (mis methodInfoSlice) Less(i, j int) bool {
+	return mis[i].LowerName < mis[j].LowerName
+}
+func (mis methodInfoSlice) Swap(i, j int) {
+	mis[i], mis[j] = mis[j], mis[i]
+}
+
+type eventInfoSlice []eventInfo
+
+func (eis eventInfoSlice) Len() int {
+	return len(eis)
+}
+func (eis eventInfoSlice) Less(i, j int) bool {
+	return eis[i].LowerName < eis[j].LowerName
+}
+func (eis eventInfoSlice) Swap(i, j int) {
+	eis[i], eis[j] = eis[j], eis[i]
 }

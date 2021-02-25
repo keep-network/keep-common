@@ -23,6 +23,12 @@ import (
 
 var logger = log.Logger("keep-ethutil")
 
+// ABI for errors bubbled out from revert calls. Not used directly as errors are
+// neither encoded strictly as method calls nor strictly as return values, nor
+// strictly as events, but some various bits of it are used for unpacking the
+// errors. See ResolveError below.
+const errorABIString = "[{\"constant\":true,\"outputs\":[{\"type\":\"string\"}],\"inputs\":[{\"name\":\"message\", \"type\":\"string\"}],\"name\":\"Error\"}]"
+
 // EthereumClient wraps the core `bind.ContractBackend` interface with
 // some other interfaces allowing to expose additional methods provided
 // by client implementations.

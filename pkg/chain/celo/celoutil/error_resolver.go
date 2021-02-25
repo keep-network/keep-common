@@ -1,3 +1,6 @@
+// Code generated - DO NOT EDIT.
+// This file is a generated binding and any manual changes will be lost.
+
 package celoutil
 
 import (
@@ -6,16 +9,10 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/celo-org/celo-blockchain"
+	hostchain "github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/accounts/abi"
 	"github.com/celo-org/celo-blockchain/common"
 )
-
-// ABI for errors bubbled out from revert calls. Not used directly as errors are
-// neither encoded strictly as method calls nor strictly as return values, nor
-// strictly as events, but some various bits of it are used for unpacking the
-// errors. See ResolveError below.
-const errorABIString = "[{\"constant\":true,\"outputs\":[{\"type\":\"string\"}],\"inputs\":[{\"name\":\"message\", \"type\":\"string\"}],\"name\":\"Error\", \"type\": \"function\"}]"
 
 var errorABI abi.ABI
 
@@ -34,7 +31,7 @@ func init() {
 //
 // It has one method, ResolveError, that does the heavy lifting.
 type ErrorResolver struct {
-	contractCaller celo.ContractCaller
+	contractCaller hostchain.ContractCaller
 	abi            *abi.ABI
 	address        *common.Address
 }
@@ -42,7 +39,7 @@ type ErrorResolver struct {
 // NewErrorResolver returns an ErroResolver for the given Celo client,
 // contract ABI, and contract address combination.
 func NewErrorResolver(
-	contractCaller celo.ContractCaller,
+	contractCaller hostchain.ContractCaller,
 	abi *abi.ABI,
 	address *common.Address,
 ) *ErrorResolver {
@@ -71,7 +68,7 @@ func (er *ErrorResolver) ResolveError(
 	)
 
 	packed, err := er.abi.Pack(methodName, parameters...)
-	msg := celo.CallMsg{
+	msg := hostchain.CallMsg{
 		From:  from,
 		To:    er.address,
 		Data:  packed,

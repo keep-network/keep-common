@@ -4,12 +4,13 @@ import (
 	"context"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil/client"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 )
 
 type ethlikeAdapter struct {
-	delegate HostChainClient
+	delegate client.ChainClient
 }
 
 func (ea *ethlikeAdapter) BlockByNumber(

@@ -15,21 +15,21 @@ const (
 )
 
 type context struct {
-	PackageName     string
-	HostChainModule string
+	HostChainModule  string
+	ChainUtilPackage string
 }
 
 func main() {
-	packageName := flag.String(
-		"package-name",
-		"ethutil",
-		"Name of the package where the generated code will be placed in",
-	)
-
 	hostChainModule := flag.String(
 		"host-chain-module",
 		"github.com/ethereum/go-ethereum",
 		"ETH-like host chain Go module imported from the generated code",
+	)
+
+	chainUtilPackage := flag.String(
+		"chain-util-package",
+		"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil",
+		"Host chain utils package imported from the generated code",
 	)
 
 	flag.Parse()
@@ -50,8 +50,8 @@ func main() {
 	}
 
 	context := context{
-		PackageName:     *packageName,
-		HostChainModule: *hostChainModule,
+		HostChainModule:  *hostChainModule,
+		ChainUtilPackage: *chainUtilPackage,
 	}
 
 	tmpl, err := template.ParseFiles(templateFilePath)

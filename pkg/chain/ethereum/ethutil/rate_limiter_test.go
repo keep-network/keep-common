@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil/client"
 	"github.com/keep-network/keep-common/pkg/rate"
 	"math/big"
 	"strings"
@@ -481,7 +482,7 @@ func (mec *mockEthereumClient) BalanceAt(
 }
 
 func getTests(
-	client HostChainClient,
+	client client.ChainClient,
 ) map[string]struct{ function func() error } {
 	return map[string]struct{ function func() error }{
 		"test CodeAt": {

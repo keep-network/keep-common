@@ -4,12 +4,13 @@ import (
 	"context"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/celo-org/celo-blockchain/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil/client"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 )
 
 type ethlikeAdapter struct {
-	delegate HostChainClient
+	delegate client.ChainClient
 }
 
 func (ea *ethlikeAdapter) BlockByNumber(

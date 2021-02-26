@@ -8,12 +8,13 @@ import (
 	hostchain "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil/client"
 	"github.com/keep-network/keep-common/pkg/rate"
 	"math/big"
 )
 
 type rateLimiter struct {
-	HostChainClient
+	client.ChainClient
 
 	*rate.Limiter
 }
@@ -23,12 +24,12 @@ type rateLimiter struct {
 // All types of requests to the contract are rate-limited,
 // including view function calls.
 func WrapRateLimiting(
-	client HostChainClient,
+	client client.ChainClient,
 	config *rate.LimiterConfig,
-) HostChainClient {
+) client.ChainClient {
 	return &rateLimiter{
-		HostChainClient: client,
-		Limiter:         rate.NewLimiter(config),
+		ChainClient: client,
+		Limiter:     rate.NewLimiter(config),
 	}
 }
 
@@ -43,7 +44,7 @@ func (rl *rateLimiter) CodeAt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.CodeAt(ctx, contract, blockNumber)
+	return rl.ChainClient.CodeAt(ctx, contract, blockNumber)
 }
 
 func (rl *rateLimiter) CallContract(
@@ -57,7 +58,7 @@ func (rl *rateLimiter) CallContract(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.CallContract(ctx, call, blockNumber)
+	return rl.ChainClient.CallContract(ctx, call, blockNumber)
 }
 
 func (rl *rateLimiter) PendingCodeAt(
@@ -70,7 +71,7 @@ func (rl *rateLimiter) PendingCodeAt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.PendingCodeAt(ctx, account)
+	return rl.ChainClient.PendingCodeAt(ctx, account)
 }
 
 func (rl *rateLimiter) PendingNonceAt(
@@ -83,7 +84,7 @@ func (rl *rateLimiter) PendingNonceAt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.PendingNonceAt(ctx, account)
+	return rl.ChainClient.PendingNonceAt(ctx, account)
 }
 
 func (rl *rateLimiter) SuggestGasPrice(
@@ -95,7 +96,7 @@ func (rl *rateLimiter) SuggestGasPrice(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.SuggestGasPrice(ctx)
+	return rl.ChainClient.SuggestGasPrice(ctx)
 }
 
 func (rl *rateLimiter) EstimateGas(
@@ -108,7 +109,7 @@ func (rl *rateLimiter) EstimateGas(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.EstimateGas(ctx, call)
+	return rl.ChainClient.EstimateGas(ctx, call)
 }
 
 func (rl *rateLimiter) SendTransaction(
@@ -121,7 +122,7 @@ func (rl *rateLimiter) SendTransaction(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.SendTransaction(ctx, tx)
+	return rl.ChainClient.SendTransaction(ctx, tx)
 }
 
 func (rl *rateLimiter) FilterLogs(
@@ -134,7 +135,7 @@ func (rl *rateLimiter) FilterLogs(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.FilterLogs(ctx, query)
+	return rl.ChainClient.FilterLogs(ctx, query)
 }
 
 func (rl *rateLimiter) SubscribeFilterLogs(
@@ -148,7 +149,7 @@ func (rl *rateLimiter) SubscribeFilterLogs(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.SubscribeFilterLogs(ctx, query, ch)
+	return rl.ChainClient.SubscribeFilterLogs(ctx, query, ch)
 }
 
 func (rl *rateLimiter) BlockByHash(
@@ -161,7 +162,7 @@ func (rl *rateLimiter) BlockByHash(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.BlockByHash(ctx, hash)
+	return rl.ChainClient.BlockByHash(ctx, hash)
 }
 
 func (rl *rateLimiter) BlockByNumber(
@@ -174,7 +175,7 @@ func (rl *rateLimiter) BlockByNumber(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.BlockByNumber(ctx, number)
+	return rl.ChainClient.BlockByNumber(ctx, number)
 }
 
 func (rl *rateLimiter) HeaderByHash(
@@ -187,7 +188,7 @@ func (rl *rateLimiter) HeaderByHash(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.HeaderByHash(ctx, hash)
+	return rl.ChainClient.HeaderByHash(ctx, hash)
 }
 
 func (rl *rateLimiter) HeaderByNumber(
@@ -200,7 +201,7 @@ func (rl *rateLimiter) HeaderByNumber(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.HeaderByNumber(ctx, number)
+	return rl.ChainClient.HeaderByNumber(ctx, number)
 }
 
 func (rl *rateLimiter) TransactionCount(
@@ -213,7 +214,7 @@ func (rl *rateLimiter) TransactionCount(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.TransactionCount(ctx, blockHash)
+	return rl.ChainClient.TransactionCount(ctx, blockHash)
 }
 
 func (rl *rateLimiter) TransactionInBlock(
@@ -227,7 +228,7 @@ func (rl *rateLimiter) TransactionInBlock(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.TransactionInBlock(ctx, blockHash, index)
+	return rl.ChainClient.TransactionInBlock(ctx, blockHash, index)
 }
 
 func (rl *rateLimiter) SubscribeNewHead(
@@ -240,7 +241,7 @@ func (rl *rateLimiter) SubscribeNewHead(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.SubscribeNewHead(ctx, ch)
+	return rl.ChainClient.SubscribeNewHead(ctx, ch)
 }
 
 func (rl *rateLimiter) TransactionByHash(
@@ -253,7 +254,7 @@ func (rl *rateLimiter) TransactionByHash(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.TransactionByHash(ctx, txHash)
+	return rl.ChainClient.TransactionByHash(ctx, txHash)
 }
 
 func (rl *rateLimiter) TransactionReceipt(
@@ -266,7 +267,7 @@ func (rl *rateLimiter) TransactionReceipt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.TransactionReceipt(ctx, txHash)
+	return rl.ChainClient.TransactionReceipt(ctx, txHash)
 }
 
 func (rl *rateLimiter) BalanceAt(
@@ -280,5 +281,5 @@ func (rl *rateLimiter) BalanceAt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.HostChainClient.BalanceAt(ctx, account, blockNumber)
+	return rl.ChainClient.BalanceAt(ctx, account, blockNumber)
 }

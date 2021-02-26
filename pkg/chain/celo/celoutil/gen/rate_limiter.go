@@ -1,6 +1,6 @@
 // Code generated - DO NOT EDIT.
 
-package celoutil
+package gen
 
 import (
 	"context"

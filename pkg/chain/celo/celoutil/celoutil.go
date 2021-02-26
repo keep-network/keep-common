@@ -12,6 +12,7 @@ import (
 	"github.com/celo-org/celo-blockchain/rpc"
 	"github.com/ipfs/go-log"
 	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil/client"
+	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil/gen"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"io/ioutil"
 	"math/big"
@@ -19,12 +20,6 @@ import (
 )
 
 var logger = log.Logger("keep-celoutil")
-
-// ABI for errors bubbled out from revert calls. Not used directly as errors are
-// neither encoded strictly as method calls nor strictly as return values, nor
-// strictly as events, but some various bits of it are used for unpacking the
-// errors. See ResolveError below.
-const errorABIString = "[{\"constant\":true,\"outputs\":[{\"type\":\"string\"}],\"inputs\":[{\"name\":\"message\", \"type\":\"string\"}],\"name\":\"Error\", \"type\": \"function\"}]"
 
 // AddressFromHex converts the passed string to a common.Address and returns it,
 // unless it is not a valid address, in which case it returns an error. Compare
@@ -104,7 +99,7 @@ func CallAtBlock(
 	value *big.Int,
 	contractABI *abi.ABI,
 	caller bind.ContractCaller,
-	errorResolver *ErrorResolver,
+	errorResolver *gen.ErrorResolver,
 	contractAddress common.Address,
 	method string,
 	result interface{},

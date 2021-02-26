@@ -1,4 +1,4 @@
-package celoutil
+package gen
 
 import (
 	"context"

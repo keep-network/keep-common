@@ -1,12 +1,12 @@
 // Code generated - DO NOT EDIT.
 
-package celoutil
+package gen
 
 import (
 	"context"
 	"time"
 
-	"github.com/celo-org/celo-blockchain/event"
+	"github.com/ethereum/go-ethereum/event"
 )
 
 // WithResubscription wraps the subscribe function to call it repeatedly

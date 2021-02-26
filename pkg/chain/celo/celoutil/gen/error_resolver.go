@@ -1,6 +1,6 @@
 // Code generated - DO NOT EDIT.
 
-package ethutil
+package gen
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"math/big"
 	"strings"
 
-	hostchain "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
+	hostchain "github.com/celo-org/celo-blockchain"
+	"github.com/celo-org/celo-blockchain/accounts/abi"
+	"github.com/celo-org/celo-blockchain/common"
 )
 
 var errorABI abi.ABI

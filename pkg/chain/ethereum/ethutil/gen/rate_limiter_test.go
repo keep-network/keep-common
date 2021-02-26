@@ -1,11 +1,11 @@
-package celoutil
+package gen
 
 import (
 	"context"
-	"github.com/celo-org/celo-blockchain"
-	"github.com/celo-org/celo-blockchain/common"
-	"github.com/celo-org/celo-blockchain/core/types"
-	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil/client"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil/client"
 	"github.com/keep-network/keep-common/pkg/rate"
 	"math/big"
 	"strings"
@@ -21,7 +21,7 @@ func TestRateLimiter(t *testing.T) {
 	requests := 500
 	requestDuration := 10 * time.Millisecond
 
-	client := &mockCeloClient{
+	client := &mockEthereumClient{
 		requestDuration,
 		make([]string, 0),
 		sync.Mutex{},
@@ -110,7 +110,7 @@ func TestRateLimiter_RequestsPerSecondLimitOnly(t *testing.T) {
 	requests := 500
 	requestDuration := 10 * time.Millisecond
 
-	client := &mockCeloClient{
+	client := &mockEthereumClient{
 		requestDuration,
 		make([]string, 0),
 		sync.Mutex{},
@@ -177,7 +177,7 @@ func TestRateLimiter_ConcurrencyLimitOnly(t *testing.T) {
 	requests := 500
 	requestDuration := 10 * time.Millisecond
 
-	client := &mockCeloClient{
+	client := &mockEthereumClient{
 		requestDuration,
 		make([]string, 0),
 		sync.Mutex{},
@@ -252,7 +252,7 @@ func TestRateLimiter_AcquirePermitTimout(t *testing.T) {
 	requests := 3
 	requestDuration := 250 * time.Millisecond
 
-	client := &mockCeloClient{
+	client := &mockEthereumClient{
 		requestDuration,
 		make([]string, 0),
 		sync.Mutex{},
@@ -306,178 +306,178 @@ func TestRateLimiter_AcquirePermitTimout(t *testing.T) {
 	}
 }
 
-type mockCeloClient struct {
+type mockEthereumClient struct {
 	requestDuration time.Duration
 
 	events []string
 	mutex  sync.Mutex
 }
 
-func (mcc *mockCeloClient) mockRequest() {
-	mcc.mutex.Lock()
-	mcc.events = append(mcc.events, "start")
-	mcc.mutex.Unlock()
+func (mec *mockEthereumClient) mockRequest() {
+	mec.mutex.Lock()
+	mec.events = append(mec.events, "start")
+	mec.mutex.Unlock()
 
-	time.Sleep(mcc.requestDuration)
+	time.Sleep(mec.requestDuration)
 
-	mcc.mutex.Lock()
-	mcc.events = append(mcc.events, "end")
-	mcc.mutex.Unlock()
+	mec.mutex.Lock()
+	mec.events = append(mec.events, "end")
+	mec.mutex.Unlock()
 }
 
-func (mcc *mockCeloClient) CodeAt(
+func (mec *mockEthereumClient) CodeAt(
 	ctx context.Context,
 	contract common.Address,
 	blockNumber *big.Int,
 ) ([]byte, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) CallContract(
+func (mec *mockEthereumClient) CallContract(
 	ctx context.Context,
-	call celo.CallMsg,
+	call ethereum.CallMsg,
 	blockNumber *big.Int,
 ) ([]byte, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) PendingCodeAt(
+func (mec *mockEthereumClient) PendingCodeAt(
 	ctx context.Context,
 	account common.Address,
 ) ([]byte, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) PendingNonceAt(
+func (mec *mockEthereumClient) PendingNonceAt(
 	ctx context.Context,
 	account common.Address,
 ) (uint64, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return 0, nil
 }
 
-func (mcc *mockCeloClient) SuggestGasPrice(
+func (mec *mockEthereumClient) SuggestGasPrice(
 	ctx context.Context,
 ) (*big.Int, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) EstimateGas(
+func (mec *mockEthereumClient) EstimateGas(
 	ctx context.Context,
-	call celo.CallMsg,
+	call ethereum.CallMsg,
 ) (uint64, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return 0, nil
 }
 
-func (mcc *mockCeloClient) SendTransaction(
+func (mec *mockEthereumClient) SendTransaction(
 	ctx context.Context,
 	tx *types.Transaction,
 ) error {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil
 }
 
-func (mcc *mockCeloClient) FilterLogs(
+func (mec *mockEthereumClient) FilterLogs(
 	ctx context.Context,
-	query celo.FilterQuery,
+	query ethereum.FilterQuery,
 ) ([]types.Log, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) SubscribeFilterLogs(
+func (mec *mockEthereumClient) SubscribeFilterLogs(
 	ctx context.Context,
-	query celo.FilterQuery,
+	query ethereum.FilterQuery,
 	ch chan<- types.Log,
-) (celo.Subscription, error) {
-	mcc.mockRequest()
+) (ethereum.Subscription, error) {
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) BlockByHash(
+func (mec *mockEthereumClient) BlockByHash(
 	ctx context.Context,
 	hash common.Hash,
 ) (*types.Block, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) BlockByNumber(
+func (mec *mockEthereumClient) BlockByNumber(
 	ctx context.Context,
 	number *big.Int,
 ) (*types.Block, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) HeaderByHash(
+func (mec *mockEthereumClient) HeaderByHash(
 	ctx context.Context,
 	hash common.Hash,
 ) (*types.Header, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) HeaderByNumber(
+func (mec *mockEthereumClient) HeaderByNumber(
 	ctx context.Context,
 	number *big.Int,
 ) (*types.Header, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) TransactionCount(
+func (mec *mockEthereumClient) TransactionCount(
 	ctx context.Context,
 	blockHash common.Hash,
 ) (uint, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return 0, nil
 }
 
-func (mcc *mockCeloClient) TransactionInBlock(
+func (mec *mockEthereumClient) TransactionInBlock(
 	ctx context.Context,
 	blockHash common.Hash,
 	index uint,
 ) (*types.Transaction, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) SubscribeNewHead(
+func (mec *mockEthereumClient) SubscribeNewHead(
 	ctx context.Context,
 	ch chan<- *types.Header,
-) (celo.Subscription, error) {
-	mcc.mockRequest()
+) (ethereum.Subscription, error) {
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) TransactionByHash(
+func (mec *mockEthereumClient) TransactionByHash(
 	ctx context.Context,
 	txHash common.Hash,
 ) (*types.Transaction, bool, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, false, nil
 }
 
-func (mcc *mockCeloClient) TransactionReceipt(
+func (mec *mockEthereumClient) TransactionReceipt(
 	ctx context.Context,
 	txHash common.Hash,
 ) (*types.Receipt, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
-func (mcc *mockCeloClient) BalanceAt(
+func (mec *mockEthereumClient) BalanceAt(
 	ctx context.Context,
 	account common.Address,
 	blockNumber *big.Int,
 ) (*big.Int, error) {
-	mcc.mockRequest()
+	mec.mockRequest()
 	return nil, nil
 }
 
@@ -499,7 +499,7 @@ func getTests(
 			function: func() error {
 				_, err := client.CallContract(
 					context.Background(),
-					celo.CallMsg{},
+					ethereum.CallMsg{},
 					nil,
 				)
 				return err
@@ -535,7 +535,7 @@ func getTests(
 			function: func() error {
 				_, err := client.EstimateGas(
 					context.Background(),
-					celo.CallMsg{},
+					ethereum.CallMsg{},
 				)
 				return err
 			},
@@ -553,7 +553,7 @@ func getTests(
 			function: func() error {
 				_, err := client.FilterLogs(
 					context.Background(),
-					celo.FilterQuery{},
+					ethereum.FilterQuery{},
 				)
 				return err
 			},
@@ -562,7 +562,7 @@ func getTests(
 			function: func() error {
 				_, err := client.SubscribeFilterLogs(
 					context.Background(),
-					celo.FilterQuery{},
+					ethereum.FilterQuery{},
 					nil,
 				)
 				return err

@@ -1,4 +1,4 @@
-package ethutil_test
+package gen_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil/gen"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -89,7 +89,7 @@ func (cc *callbackCaller) CallContract(ctx context.Context, call ethereum.CallMs
 
 func TestErrorResolverHandlesErrorCall(t *testing.T) {
 	caller := &erroringCaller{}
-	resolver := ethutil.NewErrorResolver(caller, &testABI, &testAddress)
+	resolver := gen.NewErrorResolver(caller, &testABI, &testAddress)
 
 	err := resolver.ResolveError(errOriginal, common.Address{}, nil, "Test")
 	if err == nil {
@@ -107,7 +107,7 @@ func TestErrorResolverHandlesErrorCall(t *testing.T) {
 
 func TestErrorResolverHandlesShortResponses(t *testing.T) {
 	caller := &fixedReturnCaller{}
-	resolver := ethutil.NewErrorResolver(caller, &testABI, &testAddress)
+	resolver := gen.NewErrorResolver(caller, &testABI, &testAddress)
 
 	for returnLength := 0; returnLength < 4; returnLength++ {
 		caller.returnedBytes = make([]byte, returnLength)
@@ -124,7 +124,7 @@ func TestErrorResolverHandlesShortResponses(t *testing.T) {
 
 func TestErrorResolverHandlesUnknownMethodResponses(t *testing.T) {
 	caller := &fixedReturnCaller{[]byte{0, 0, 0, 1}}
-	resolver := ethutil.NewErrorResolver(caller, &testABI, &testAddress)
+	resolver := gen.NewErrorResolver(caller, &testABI, &testAddress)
 
 	err := resolver.ResolveError(errOriginal, common.Address{}, nil, "Test")
 	assertErrorContains(
@@ -140,7 +140,7 @@ func TestErrorResolverHandlesBadParameterResponses(t *testing.T) {
 	// method ABI signature for the basic error construction we get back in case
 	// of a require failing.
 	caller := &fixedReturnCaller{[]byte{8, 195, 121, 160}}
-	resolver := ethutil.NewErrorResolver(caller, &testABI, &testAddress)
+	resolver := gen.NewErrorResolver(caller, &testABI, &testAddress)
 
 	// bad response length
 	err := resolver.ResolveError(errOriginal, common.Address{}, nil, "Test")
@@ -191,7 +191,7 @@ func TestErrorResolverHandlesGoodErrorResponse(t *testing.T) {
 	caller.returnedBytes = append(caller.returnedBytes, buildingBlock[:]...)
 	caller.returnedBytes[len(caller.returnedBytes)-1] = 0
 
-	resolver := ethutil.NewErrorResolver(caller, &testABI, &testAddress)
+	resolver := gen.NewErrorResolver(caller, &testABI, &testAddress)
 	err := resolver.ResolveError(errOriginal, common.Address{}, nil, "Test")
 	assertErrorContains(
 		t,
@@ -237,7 +237,7 @@ func TestErrorResolverPropagateFromAddress(t *testing.T) {
 		return nil, fmt.Errorf("I don't care")
 	})
 
-	resolver := ethutil.NewErrorResolver(assertingCaller, &testABI, &testAddress)
+	resolver := gen.NewErrorResolver(assertingCaller, &testABI, &testAddress)
 	resolver.ResolveError(errOriginal, fromAddress, nil, "Test")
 
 	if !assertingCaller.callbackCalled {
@@ -264,7 +264,7 @@ func TestErrorResolverPropagateToAddress(t *testing.T) {
 		return (&erroringCaller{}).CallContract(ctx, msg, blockNumber)
 	})
 
-	resolver := ethutil.NewErrorResolver(assertingCaller, &testABI, &toAddress)
+	resolver := gen.NewErrorResolver(assertingCaller, &testABI, &toAddress)
 	resolver.ResolveError(errOriginal, common.Address{}, nil, "Test")
 
 	if !assertingCaller.callbackCalled {
@@ -291,7 +291,7 @@ func TestErrorResolverPropagateValue(t *testing.T) {
 		return (&erroringCaller{}).CallContract(ctx, msg, blockNumber)
 	})
 
-	resolver := ethutil.NewErrorResolver(assertingCaller, &testABI, &testAddress)
+	resolver := gen.NewErrorResolver(assertingCaller, &testABI, &testAddress)
 	resolver.ResolveError(errOriginal, common.Address{}, value, "Test")
 
 	if !assertingCaller.callbackCalled {
@@ -320,7 +320,7 @@ func TestErrorResolverPropagateData(t *testing.T) {
 		return (&erroringCaller{}).CallContract(ctx, msg, blockNumber)
 	})
 
-	resolver := ethutil.NewErrorResolver(assertingCaller, &testABI, &testAddress)
+	resolver := gen.NewErrorResolver(assertingCaller, &testABI, &testAddress)
 	resolver.ResolveError(errOriginal, common.Address{}, nil, "Test")
 
 	if !assertingCaller.callbackCalled {

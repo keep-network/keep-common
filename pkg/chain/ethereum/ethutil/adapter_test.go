@@ -14,7 +14,7 @@ import (
 )
 
 func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
-	client := &mockAdaptedEthereumClient{
+	client := &mockEthereumClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
 			big.NewInt(1),
@@ -64,7 +64,7 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	)
 	defer cancelCtx()
 
-	client := &mockAdaptedEthereumClient{
+	client := &mockEthereumClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
 			big.NewInt(1),
@@ -126,7 +126,7 @@ func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
 	var hash [32]byte
 	copy(hash[:], []byte{255})
 
-	client := &mockAdaptedEthereumClient{
+	client := &mockEthereumClient{
 		transactions: map[common.Hash]*types.Receipt{
 			common.BytesToHash(hash[:]): {
 				Status:      1,
@@ -164,7 +164,7 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	var address [20]byte
 	copy(address[:], []byte{255})
 
-	client := &mockAdaptedEthereumClient{
+	client := &mockEthereumClient{
 		nonces: map[common.Address]uint64{
 			common.BytesToAddress(address[:]): 100,
 		},
@@ -189,35 +189,138 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	}
 }
 
-type mockAdaptedEthereumClient struct {
-	*mockEthereumClient
-
+type mockEthereumClient struct {
 	blocks       []*big.Int
 	transactions map[common.Hash]*types.Receipt
 	nonces       map[common.Address]uint64
 }
 
-func (maec *mockAdaptedEthereumClient) BlockByNumber(
+func (mec *mockEthereumClient) CodeAt(
+	ctx context.Context,
+	contract common.Address,
+	blockNumber *big.Int,
+) ([]byte, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) CallContract(
+	ctx context.Context,
+	call ethereum.CallMsg,
+	blockNumber *big.Int,
+) ([]byte, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) PendingCodeAt(
+	ctx context.Context,
+	account common.Address,
+) ([]byte, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) PendingNonceAt(
+	ctx context.Context,
+	account common.Address,
+) (uint64, error) {
+	if nonce, ok := mec.nonces[account]; ok {
+		return nonce, nil
+	}
+
+	return 0, fmt.Errorf("no nonce for given account")
+}
+
+func (mec *mockEthereumClient) SuggestGasPrice(
+	ctx context.Context,
+) (*big.Int, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) EstimateGas(
+	ctx context.Context,
+	call ethereum.CallMsg,
+) (uint64, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) SendTransaction(
+	ctx context.Context,
+	tx *types.Transaction,
+) error {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) FilterLogs(
+	ctx context.Context,
+	query ethereum.FilterQuery,
+) ([]types.Log, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) SubscribeFilterLogs(
+	ctx context.Context,
+	query ethereum.FilterQuery,
+	ch chan<- types.Log,
+) (ethereum.Subscription, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) BlockByHash(
+	ctx context.Context,
+	hash common.Hash,
+) (*types.Block, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) BlockByNumber(
 	ctx context.Context,
 	number *big.Int,
 ) (*types.Block, error) {
-	index := len(maec.blocks) - 1
+	index := len(mec.blocks) - 1
 
 	if number != nil {
 		index = int(number.Int64())
 	}
 
 	return types.NewBlockWithHeader(
-		&types.Header{Number: maec.blocks[index]},
+		&types.Header{Number: mec.blocks[index]},
 	), nil
 }
 
-func (maec *mockAdaptedEthereumClient) SubscribeNewHead(
+func (mec *mockEthereumClient) HeaderByHash(
+	ctx context.Context,
+	hash common.Hash,
+) (*types.Header, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) HeaderByNumber(
+	ctx context.Context,
+	number *big.Int,
+) (*types.Header, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) TransactionCount(
+	ctx context.Context,
+	blockHash common.Hash,
+) (uint, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) TransactionInBlock(
+	ctx context.Context,
+	blockHash common.Hash,
+	index uint,
+) (*types.Transaction, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) SubscribeNewHead(
 	ctx context.Context,
 	ch chan<- *types.Header,
 ) (ethereum.Subscription, error) {
 	go func() {
-		for _, block := range maec.blocks {
+		for _, block := range mec.blocks {
 			ch <- &types.Header{Number: block}
 		}
 	}()
@@ -228,24 +331,28 @@ func (maec *mockAdaptedEthereumClient) SubscribeNewHead(
 	}, nil
 }
 
-func (maec *mockAdaptedEthereumClient) TransactionReceipt(
+func (mec *mockEthereumClient) TransactionByHash(
+	ctx context.Context,
+	txHash common.Hash,
+) (*types.Transaction, bool, error) {
+	panic("implement")
+}
+
+func (mec *mockEthereumClient) TransactionReceipt(
 	ctx context.Context,
 	txHash common.Hash,
 ) (*types.Receipt, error) {
-	if tx, ok := maec.transactions[txHash]; ok {
+	if tx, ok := mec.transactions[txHash]; ok {
 		return tx, nil
 	}
 
 	return nil, fmt.Errorf("no tx with given hash")
 }
 
-func (maec *mockAdaptedEthereumClient) PendingNonceAt(
+func (mec *mockEthereumClient) BalanceAt(
 	ctx context.Context,
 	account common.Address,
-) (uint64, error) {
-	if nonce, ok := maec.nonces[account]; ok {
-		return nonce, nil
-	}
-
-	return 0, fmt.Errorf("no nonce for given account")
+	blockNumber *big.Int,
+) (*big.Int, error) {
+	panic("implement")
 }

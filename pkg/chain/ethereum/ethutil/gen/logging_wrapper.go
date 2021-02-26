@@ -1,12 +1,12 @@
 // Code generated - DO NOT EDIT.
 
-package celoutil
+package gen
 
 import (
 	"context"
-	hostchain "github.com/celo-org/celo-blockchain"
+	hostchain "github.com/ethereum/go-ethereum"
 	"github.com/ipfs/go-log"
-	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil/client"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil/client"
 	"math/big"
 )
 

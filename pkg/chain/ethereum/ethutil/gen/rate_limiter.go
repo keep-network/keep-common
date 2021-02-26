@@ -1,6 +1,6 @@
 // Code generated - DO NOT EDIT.
 
-package ethutil
+package gen
 
 import (
 	"context"

@@ -29,7 +29,7 @@ func WrapRateLimiting(
 ) client.ChainClient {
 	return &rateLimiter{
 		ChainClient: client,
-		Limiter:         rate.NewLimiter(config),
+		Limiter: rate.NewLimiter(config),
 	}
 }
 

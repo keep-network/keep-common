@@ -7,7 +7,6 @@ replace github.com/urfave/cli => github.com/keep-network/cli v1.20.0
 require (
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20190924011532-60b7b74727fd // indirect
-	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/celo-org/celo-blockchain v0.0.0-20210222234634-f8c8f6744526
 	github.com/cespare/cp v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect

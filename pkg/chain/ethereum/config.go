@@ -25,17 +25,17 @@ type Config struct {
 
 // ContractAddress finds a given contract's address configuration and returns it
 // as Ethereum address.
-func (c *Config) ContractAddress(contractName string) (*common.Address, error) {
+func (c *Config) ContractAddress(contractName string) (common.Address, error) {
 	addressString, exists := c.ContractAddresses[contractName]
 	if !exists {
-		return nil, fmt.Errorf(
+		return common.Address{}, fmt.Errorf(
 			"no address information for [%v] in configuration",
 			contractName,
 		)
 	}
 
 	if !common.IsHexAddress(addressString) {
-		return nil, fmt.Errorf(
+		return common.Address{}, fmt.Errorf(
 			"configured address [%v] for contract [%v] "+
 				"is not valid hex address",
 			addressString,
@@ -44,5 +44,5 @@ func (c *Config) ContractAddress(contractName string) (*common.Address, error) {
 	}
 
 	address := common.HexToAddress(addressString)
-	return &address, nil
+	return address, nil
 }

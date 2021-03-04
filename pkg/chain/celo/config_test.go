@@ -28,16 +28,16 @@ func TestContractAddress(t *testing.T) {
 
 	var tests = map[string]struct {
 		contractName    string
-		expectedAddress *common.Address
+		expectedAddress common.Address
 		expectedError   error
 	}{
 		"contract name matching valid configuration": {
 			contractName:    contractName1,
-			expectedAddress: &validContractAddress,
+			expectedAddress: validContractAddress,
 		},
 		"invalid contract hex address": {
 			contractName:    contractName2,
-			expectedAddress: nil,
+			expectedAddress: common.Address{},
 			expectedError: fmt.Errorf(
 				"configured address [%v] for contract [%v] "+
 					"is not valid hex address",
@@ -47,7 +47,7 @@ func TestContractAddress(t *testing.T) {
 		},
 		"missing contract configuration": {
 			contractName:    "Peekaboo",
-			expectedAddress: nil,
+			expectedAddress: common.Address{},
 			expectedError: fmt.Errorf("no address information " +
 				"for [Peekaboo] in configuration"),
 		},

@@ -207,6 +207,14 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         return nil, fmt.Errorf("error connecting to Ethereum node: [%v]", err)
     }
 
+   	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to resolve Ethereum chain id: [%v]",
+			err,
+		)
+	}
+
     key, err := ethutil.DecryptKeyFile(
         config.Account.KeyFile,
         config.Account.KeyFilePassword,
@@ -242,6 +250,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
 
     return contract.New{{.Class}}(
         address,
+        chainID,
         key,
         client,
         ethutil.NewNonceManager(key.Address, client),

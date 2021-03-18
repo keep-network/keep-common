@@ -4,6 +4,7 @@ package ethutil
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -217,4 +218,13 @@ func NewNonceManager(
 		&ethlikeAdapter{client},
 		ethlike.Address(account),
 	)
+}
+
+// NewKeyedTransactorWithChainID is a utility method to easily create
+// a transaction signer from a single private key.
+func NewKeyedTransactorWithChainID(
+	privateKey *ecdsa.PrivateKey,
+	chainID *big.Int,
+) (*bind.TransactOpts, error) {
+	return bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 }

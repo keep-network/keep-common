@@ -2,19 +2,23 @@ package celoutil
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
+	"io/ioutil"
+	"math/big"
+	"time"
+
 	"github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/accounts/abi"
 	"github.com/celo-org/celo-blockchain/accounts/abi/bind"
 	"github.com/celo-org/celo-blockchain/accounts/keystore"
 	"github.com/celo-org/celo-blockchain/common"
+	"github.com/celo-org/celo-blockchain/core/types"
+	"github.com/celo-org/celo-blockchain/crypto"
 	celoclient "github.com/celo-org/celo-blockchain/ethclient"
 	"github.com/celo-org/celo-blockchain/rpc"
 	"github.com/ipfs/go-log"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
-	"io/ioutil"
-	"math/big"
-	"time"
 )
 
 var logger = log.Logger("keep-celoutil")
@@ -226,4 +230,38 @@ func NewNonceManager(
 		&ethlikeAdapter{client},
 		ethlike.Address(account),
 	)
+}
+
+// NewKeyedTransactorWithChainID is a utility method to easily create
+// a transaction signer from a single private key.
+// FIXME Remove this function and rely on bind.NewKeyedTransactorWithChainID
+// FIXME when celo-org/celo-blockchain merges in changes from upstream
+// FIXME ethereum/go-ethereum beyond v1.9.25.
+func NewKeyedTransactorWithChainID(
+	key *ecdsa.PrivateKey,
+	chainID *big.Int,
+) (*bind.TransactOpts, error) {
+	keyAddress := crypto.PubkeyToAddress(key.PublicKey)
+	if chainID == nil {
+		return nil, fmt.Errorf("no chain id specified")
+	}
+	return &bind.TransactOpts{
+		From: keyAddress,
+		Signer: func(
+			_ types.Signer,
+			address common.Address,
+			tx *types.Transaction,
+		) (*types.Transaction, error) {
+			signer := types.NewEIP155Signer(chainID)
+
+			if address != keyAddress {
+				return nil, fmt.Errorf("not authorized to sign this account")
+			}
+			signature, err := crypto.Sign(signer.Hash(tx).Bytes(), key)
+			if err != nil {
+				return nil, err
+			}
+			return tx.WithSignature(signer, signature)
+		},
+	}, nil
 }

@@ -5,10 +5,11 @@ package ethutil
 import (
 	"context"
 	"fmt"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"io/ioutil"
 	"math/big"
 	"time"
+
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 
 	"github.com/ipfs/go-log"
 
@@ -140,8 +141,7 @@ func CallAtBlock(
 		}
 	}
 
-	err = contractABI.Unpack(result, method, output)
-
+	err = contractABI.UnpackIntoInterface(result, method, output)
 	if err != nil {
 		return errorResolver.ResolveError(
 			err,

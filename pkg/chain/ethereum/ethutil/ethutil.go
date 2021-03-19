@@ -5,6 +5,8 @@ package ethutil
 import (
 	"context"
 	"fmt"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil/client"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil/gen"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"io/ioutil"
 	"math/big"
@@ -22,21 +24,6 @@ import (
 )
 
 var logger = log.Logger("keep-ethutil")
-
-// EthereumClient wraps the core `bind.ContractBackend` interface with
-// some other interfaces allowing to expose additional methods provided
-// by client implementations.
-type EthereumClient interface {
-	bind.ContractBackend
-	ethereum.ChainReader
-	ethereum.TransactionReader
-
-	BalanceAt(
-		ctx context.Context,
-		account common.Address,
-		blockNumber *big.Int,
-	) (*big.Int, error)
-}
 
 // AddressFromHex converts the passed string to a common.Address and returns it,
 // unless it is not a valid address, in which case it returns an error. Compare
@@ -108,7 +95,7 @@ func CallAtBlock(
 	value *big.Int,
 	contractABI *abi.ABI,
 	caller bind.ContractCaller,
-	errorResolver *ErrorResolver,
+	errorResolver *gen.ErrorResolver,
 	contractAddress common.Address,
 	method string,
 	result interface{},
@@ -188,7 +175,7 @@ func EstimateGas(
 
 // NewBlockCounter creates a new BlockCounter instance for the provided
 // Ethereum client.
-func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
+func NewBlockCounter(client client.ChainClient) (*ethlike.BlockCounter, error) {
 	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
 }
 
@@ -196,7 +183,7 @@ func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
 // Ethereum client. It accepts two parameters setting up monitoring rules
 // of the transaction mining status.
 func NewMiningWaiter(
-	client EthereumClient,
+	client client.ChainClient,
 	checkInterval time.Duration,
 	maxGasPrice *big.Int,
 ) *ethlike.MiningWaiter {
@@ -210,7 +197,7 @@ func NewMiningWaiter(
 // NewNonceManager creates NonceManager instance for the provided account
 // using the provided Ethereum client.
 func NewNonceManager(
-	client EthereumClient,
+	client client.ChainClient,
 	account common.Address,
 ) *ethlike.NonceManager {
 	return ethlike.NewNonceManager(

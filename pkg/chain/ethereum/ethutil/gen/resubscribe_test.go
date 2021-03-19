@@ -1,4 +1,4 @@
-package ethutil
+package gen
 
 import (
 	"context"

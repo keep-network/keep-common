@@ -1,10 +1,11 @@
-package celoutil
+package gen
 
 import (
 	"context"
 	"github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/celo-org/celo-blockchain/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil/client"
 	"github.com/keep-network/keep-common/pkg/rate"
 	"math/big"
 	"strings"
@@ -481,7 +482,7 @@ func (mcc *mockCeloClient) BalanceAt(
 }
 
 func getTests(
-	client CeloClient,
+	client client.ChainClient,
 ) map[string]struct{ function func() error } {
 	return map[string]struct{ function func() error }{
 		"test CodeAt": {

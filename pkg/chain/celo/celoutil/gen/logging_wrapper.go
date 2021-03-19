@@ -1,14 +1,17 @@
-package ethutil
+// Code generated - DO NOT EDIT.
+
+package gen
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum"
+	hostchain "github.com/celo-org/celo-blockchain"
 	"github.com/ipfs/go-log"
+	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil/client"
 	"math/big"
 )
 
 type loggingWrapper struct {
-	EthereumClient
+	client.ChainClient
 
 	logger log.EventLogger
 }
@@ -16,7 +19,7 @@ type loggingWrapper struct {
 func (lw *loggingWrapper) SuggestGasPrice(
 	ctx context.Context,
 ) (*big.Int, error) {
-	price, err := lw.EthereumClient.SuggestGasPrice(ctx)
+	price, err := lw.ChainClient.SuggestGasPrice(ctx)
 
 	if err != nil {
 		lw.logger.Debugf("error requesting gas price suggestion: [%v]", err)
@@ -29,9 +32,9 @@ func (lw *loggingWrapper) SuggestGasPrice(
 
 func (lw *loggingWrapper) EstimateGas(
 	ctx context.Context,
-	msg ethereum.CallMsg,
+	msg hostchain.CallMsg,
 ) (uint64, error) {
-	gas, err := lw.EthereumClient.EstimateGas(ctx, msg)
+	gas, err := lw.ChainClient.EstimateGas(ctx, msg)
 
 	if err != nil {
 		return 0, err
@@ -46,7 +49,7 @@ func (lw *loggingWrapper) EstimateGas(
 // delegated to the passed client.
 func WrapCallLogging(
 	logger log.EventLogger,
-	client EthereumClient,
-) EthereumClient {
+	client client.ChainClient,
+) client.ChainClient {
 	return &loggingWrapper{client, logger}
 }

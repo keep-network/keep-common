@@ -14,7 +14,7 @@ import (
 )
 
 func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
-	client := &mockAdaptedCeloClient{
+	client := &mockCeloClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
 			big.NewInt(1),
@@ -64,7 +64,7 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	)
 	defer cancelCtx()
 
-	client := &mockAdaptedCeloClient{
+	client := &mockCeloClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
 			big.NewInt(1),
@@ -126,7 +126,7 @@ func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
 	var hash [32]byte
 	copy(hash[:], []byte{255})
 
-	client := &mockAdaptedCeloClient{
+	client := &mockCeloClient{
 		transactions: map[common.Hash]*types.Receipt{
 			common.BytesToHash(hash[:]): {
 				Status:      1,
@@ -164,7 +164,7 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	var address [20]byte
 	copy(address[:], []byte{255})
 
-	client := &mockAdaptedCeloClient{
+	client := &mockCeloClient{
 		nonces: map[common.Address]uint64{
 			common.BytesToAddress(address[:]): 100,
 		},
@@ -189,35 +189,138 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	}
 }
 
-type mockAdaptedCeloClient struct {
-	*mockCeloClient
-
+type mockCeloClient struct {
 	blocks       []*big.Int
 	transactions map[common.Hash]*types.Receipt
 	nonces       map[common.Address]uint64
 }
 
-func (macc *mockAdaptedCeloClient) BlockByNumber(
+func (mcc *mockCeloClient) CodeAt(
+	ctx context.Context,
+	contract common.Address,
+	blockNumber *big.Int,
+) ([]byte, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) CallContract(
+	ctx context.Context,
+	call celo.CallMsg,
+	blockNumber *big.Int,
+) ([]byte, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) PendingCodeAt(
+	ctx context.Context,
+	account common.Address,
+) ([]byte, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) PendingNonceAt(
+	ctx context.Context,
+	account common.Address,
+) (uint64, error) {
+	if nonce, ok := mcc.nonces[account]; ok {
+		return nonce, nil
+	}
+
+	return 0, fmt.Errorf("no nonce for given account")
+}
+
+func (mcc *mockCeloClient) SuggestGasPrice(
+	ctx context.Context,
+) (*big.Int, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) EstimateGas(
+	ctx context.Context,
+	call celo.CallMsg,
+) (uint64, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) SendTransaction(
+	ctx context.Context,
+	tx *types.Transaction,
+) error {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) FilterLogs(
+	ctx context.Context,
+	query celo.FilterQuery,
+) ([]types.Log, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) SubscribeFilterLogs(
+	ctx context.Context,
+	query celo.FilterQuery,
+	ch chan<- types.Log,
+) (celo.Subscription, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) BlockByHash(
+	ctx context.Context,
+	hash common.Hash,
+) (*types.Block, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) BlockByNumber(
 	ctx context.Context,
 	number *big.Int,
 ) (*types.Block, error) {
-	index := len(macc.blocks) - 1
+	index := len(mcc.blocks) - 1
 
 	if number != nil {
 		index = int(number.Int64())
 	}
 
 	return types.NewBlockWithHeader(
-		&types.Header{Number: macc.blocks[index]},
+		&types.Header{Number: mcc.blocks[index]},
 	), nil
 }
 
-func (macc *mockAdaptedCeloClient) SubscribeNewHead(
+func (mcc *mockCeloClient) HeaderByHash(
+	ctx context.Context,
+	hash common.Hash,
+) (*types.Header, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) HeaderByNumber(
+	ctx context.Context,
+	number *big.Int,
+) (*types.Header, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) TransactionCount(
+	ctx context.Context,
+	blockHash common.Hash,
+) (uint, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) TransactionInBlock(
+	ctx context.Context,
+	blockHash common.Hash,
+	index uint,
+) (*types.Transaction, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) SubscribeNewHead(
 	ctx context.Context,
 	ch chan<- *types.Header,
 ) (celo.Subscription, error) {
 	go func() {
-		for _, block := range macc.blocks {
+		for _, block := range mcc.blocks {
 			ch <- &types.Header{Number: block}
 		}
 	}()
@@ -228,24 +331,28 @@ func (macc *mockAdaptedCeloClient) SubscribeNewHead(
 	}, nil
 }
 
-func (macc *mockAdaptedCeloClient) TransactionReceipt(
+func (mcc *mockCeloClient) TransactionByHash(
+	ctx context.Context,
+	txHash common.Hash,
+) (*types.Transaction, bool, error) {
+	panic("implement")
+}
+
+func (mcc *mockCeloClient) TransactionReceipt(
 	ctx context.Context,
 	txHash common.Hash,
 ) (*types.Receipt, error) {
-	if tx, ok := macc.transactions[txHash]; ok {
+	if tx, ok := mcc.transactions[txHash]; ok {
 		return tx, nil
 	}
 
 	return nil, fmt.Errorf("no tx with given hash")
 }
 
-func (macc *mockAdaptedCeloClient) PendingNonceAt(
+func (mcc *mockCeloClient) BalanceAt(
 	ctx context.Context,
 	account common.Address,
-) (uint64, error) {
-	if nonce, ok := macc.nonces[account]; ok {
-		return nonce, nil
-	}
-
-	return 0, fmt.Errorf("no nonce for given account")
+	blockNumber *big.Int,
+) (*big.Int, error) {
+	panic("implement")
 }

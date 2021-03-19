@@ -1,17 +1,20 @@
-package celoutil
+// Code generated - DO NOT EDIT.
+
+package gen
 
 import (
 	"context"
 	"fmt"
-	"github.com/celo-org/celo-blockchain"
+	hostchain "github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/celo-org/celo-blockchain/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/celo/celoutil/client"
 	"github.com/keep-network/keep-common/pkg/rate"
 	"math/big"
 )
 
 type rateLimiter struct {
-	CeloClient
+	client.ChainClient
 
 	*rate.Limiter
 }
@@ -21,12 +24,12 @@ type rateLimiter struct {
 // All types of requests to the contract are rate-limited,
 // including view function calls.
 func WrapRateLimiting(
-	client CeloClient,
+	client client.ChainClient,
 	config *rate.LimiterConfig,
-) CeloClient {
+) client.ChainClient {
 	return &rateLimiter{
-		CeloClient: client,
-		Limiter:    rate.NewLimiter(config),
+		ChainClient: client,
+		Limiter:     rate.NewLimiter(config),
 	}
 }
 
@@ -41,12 +44,12 @@ func (rl *rateLimiter) CodeAt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.CodeAt(ctx, contract, blockNumber)
+	return rl.ChainClient.CodeAt(ctx, contract, blockNumber)
 }
 
 func (rl *rateLimiter) CallContract(
 	ctx context.Context,
-	call celo.CallMsg,
+	call hostchain.CallMsg,
 	blockNumber *big.Int,
 ) ([]byte, error) {
 	err := rl.Limiter.AcquirePermit()
@@ -55,7 +58,7 @@ func (rl *rateLimiter) CallContract(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.CallContract(ctx, call, blockNumber)
+	return rl.ChainClient.CallContract(ctx, call, blockNumber)
 }
 
 func (rl *rateLimiter) PendingCodeAt(
@@ -68,7 +71,7 @@ func (rl *rateLimiter) PendingCodeAt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.PendingCodeAt(ctx, account)
+	return rl.ChainClient.PendingCodeAt(ctx, account)
 }
 
 func (rl *rateLimiter) PendingNonceAt(
@@ -81,7 +84,7 @@ func (rl *rateLimiter) PendingNonceAt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.PendingNonceAt(ctx, account)
+	return rl.ChainClient.PendingNonceAt(ctx, account)
 }
 
 func (rl *rateLimiter) SuggestGasPrice(
@@ -93,12 +96,12 @@ func (rl *rateLimiter) SuggestGasPrice(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.SuggestGasPrice(ctx)
+	return rl.ChainClient.SuggestGasPrice(ctx)
 }
 
 func (rl *rateLimiter) EstimateGas(
 	ctx context.Context,
-	call celo.CallMsg,
+	call hostchain.CallMsg,
 ) (uint64, error) {
 	err := rl.Limiter.AcquirePermit()
 	if err != nil {
@@ -106,7 +109,7 @@ func (rl *rateLimiter) EstimateGas(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.EstimateGas(ctx, call)
+	return rl.ChainClient.EstimateGas(ctx, call)
 }
 
 func (rl *rateLimiter) SendTransaction(
@@ -119,12 +122,12 @@ func (rl *rateLimiter) SendTransaction(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.SendTransaction(ctx, tx)
+	return rl.ChainClient.SendTransaction(ctx, tx)
 }
 
 func (rl *rateLimiter) FilterLogs(
 	ctx context.Context,
-	query celo.FilterQuery,
+	query hostchain.FilterQuery,
 ) ([]types.Log, error) {
 	err := rl.Limiter.AcquirePermit()
 	if err != nil {
@@ -132,21 +135,21 @@ func (rl *rateLimiter) FilterLogs(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.FilterLogs(ctx, query)
+	return rl.ChainClient.FilterLogs(ctx, query)
 }
 
 func (rl *rateLimiter) SubscribeFilterLogs(
 	ctx context.Context,
-	query celo.FilterQuery,
+	query hostchain.FilterQuery,
 	ch chan<- types.Log,
-) (celo.Subscription, error) {
+) (hostchain.Subscription, error) {
 	err := rl.Limiter.AcquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.SubscribeFilterLogs(ctx, query, ch)
+	return rl.ChainClient.SubscribeFilterLogs(ctx, query, ch)
 }
 
 func (rl *rateLimiter) BlockByHash(
@@ -159,7 +162,7 @@ func (rl *rateLimiter) BlockByHash(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.BlockByHash(ctx, hash)
+	return rl.ChainClient.BlockByHash(ctx, hash)
 }
 
 func (rl *rateLimiter) BlockByNumber(
@@ -172,7 +175,7 @@ func (rl *rateLimiter) BlockByNumber(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.BlockByNumber(ctx, number)
+	return rl.ChainClient.BlockByNumber(ctx, number)
 }
 
 func (rl *rateLimiter) HeaderByHash(
@@ -185,7 +188,7 @@ func (rl *rateLimiter) HeaderByHash(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.HeaderByHash(ctx, hash)
+	return rl.ChainClient.HeaderByHash(ctx, hash)
 }
 
 func (rl *rateLimiter) HeaderByNumber(
@@ -198,7 +201,7 @@ func (rl *rateLimiter) HeaderByNumber(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.HeaderByNumber(ctx, number)
+	return rl.ChainClient.HeaderByNumber(ctx, number)
 }
 
 func (rl *rateLimiter) TransactionCount(
@@ -211,7 +214,7 @@ func (rl *rateLimiter) TransactionCount(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.TransactionCount(ctx, blockHash)
+	return rl.ChainClient.TransactionCount(ctx, blockHash)
 }
 
 func (rl *rateLimiter) TransactionInBlock(
@@ -225,20 +228,20 @@ func (rl *rateLimiter) TransactionInBlock(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.TransactionInBlock(ctx, blockHash, index)
+	return rl.ChainClient.TransactionInBlock(ctx, blockHash, index)
 }
 
 func (rl *rateLimiter) SubscribeNewHead(
 	ctx context.Context,
 	ch chan<- *types.Header,
-) (celo.Subscription, error) {
+) (hostchain.Subscription, error) {
 	err := rl.Limiter.AcquirePermit()
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.SubscribeNewHead(ctx, ch)
+	return rl.ChainClient.SubscribeNewHead(ctx, ch)
 }
 
 func (rl *rateLimiter) TransactionByHash(
@@ -251,7 +254,7 @@ func (rl *rateLimiter) TransactionByHash(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.TransactionByHash(ctx, txHash)
+	return rl.ChainClient.TransactionByHash(ctx, txHash)
 }
 
 func (rl *rateLimiter) TransactionReceipt(
@@ -264,7 +267,7 @@ func (rl *rateLimiter) TransactionReceipt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.TransactionReceipt(ctx, txHash)
+	return rl.ChainClient.TransactionReceipt(ctx, txHash)
 }
 
 func (rl *rateLimiter) BalanceAt(
@@ -278,5 +281,5 @@ func (rl *rateLimiter) BalanceAt(
 	}
 	defer rl.Limiter.ReleasePermit()
 
-	return rl.CeloClient.BalanceAt(ctx, account, blockNumber)
+	return rl.ChainClient.BalanceAt(ctx, account, blockNumber)
 }

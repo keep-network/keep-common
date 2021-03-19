@@ -1,4 +1,6 @@
-package ethutil
+// Code generated - DO NOT EDIT.
+
+package gen
 
 import (
 	"context"
@@ -35,7 +37,9 @@ func WithResubscription(
 	subscriptionFailedFn func(error),
 ) event.Subscription {
 	lastAttempt := time.Time{}
-	wrappedResubscribeFn := func(ctx context.Context) (event.Subscription, error) {
+	wrappedResubscribeFn := func(
+		ctx context.Context,
+	) (event.Subscription, error) {
 		now := time.Now()
 		elapsed := now.Sub(lastAttempt)
 		if elapsed < alertThreshold {

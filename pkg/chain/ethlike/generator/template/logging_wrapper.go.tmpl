@@ -1,14 +1,17 @@
-package celoutil
+// Code generated - DO NOT EDIT.
+
+package gen
 
 import (
 	"context"
-	"github.com/celo-org/celo-blockchain"
+	hostchain "{{.HostChainModule}}"
+	"{{.ChainUtilPackage}}/client"
 	"github.com/ipfs/go-log"
 	"math/big"
 )
 
 type loggingWrapper struct {
-	CeloClient
+	client.ChainClient
 
 	logger log.EventLogger
 }
@@ -16,7 +19,7 @@ type loggingWrapper struct {
 func (lw *loggingWrapper) SuggestGasPrice(
 	ctx context.Context,
 ) (*big.Int, error) {
-	price, err := lw.CeloClient.SuggestGasPrice(ctx)
+	price, err := lw.ChainClient.SuggestGasPrice(ctx)
 
 	if err != nil {
 		lw.logger.Debugf("error requesting gas price suggestion: [%v]", err)
@@ -29,9 +32,9 @@ func (lw *loggingWrapper) SuggestGasPrice(
 
 func (lw *loggingWrapper) EstimateGas(
 	ctx context.Context,
-	msg celo.CallMsg,
+	msg hostchain.CallMsg,
 ) (uint64, error) {
-	gas, err := lw.CeloClient.EstimateGas(ctx, msg)
+	gas, err := lw.ChainClient.EstimateGas(ctx, msg)
 
 	if err != nil {
 		return 0, err
@@ -46,7 +49,7 @@ func (lw *loggingWrapper) EstimateGas(
 // delegated to the passed client.
 func WrapCallLogging(
 	logger log.EventLogger,
-	client CeloClient,
-) CeloClient {
+	client client.ChainClient,
+) client.ChainClient {
 	return &loggingWrapper{client, logger}
 }

@@ -17,10 +17,10 @@ import (
 
 var testABIMethods = map[string]abi.Method{
 	"Test": abi.Method{
-		Const:   false,
-		Name:    "Test",
-		Inputs:  []abi.Argument{},
-		Outputs: []abi.Argument{},
+		Constant: false,
+		Name:     "Test",
+		Inputs:   []abi.Argument{},
+		Outputs:  []abi.Argument{},
 	},
 }
 var testABI = abi.ABI{

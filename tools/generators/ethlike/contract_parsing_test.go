@@ -118,9 +118,9 @@ func TestMethodStability(t *testing.T) {
 	allMethods := make(map[string]abi.Method)
 	allMethods["boop"] = abi.Method{Name: "boop", RawName: "boop"}
 	allMethods["boop0"] = abi.Method{Name: "boop0", RawName: "boop"}
-	allMethods["bap"] = abi.Method{Name: "bap", RawName: "bap", Const: true}
+	allMethods["bap"] = abi.Method{Name: "bap", RawName: "bap", Constant: true}
 	allMethods["sap"] = abi.Method{Name: "sap", RawName: "sap"}
-	allMethods["map"] = abi.Method{Name: "map", RawName: "map", Const: true}
+	allMethods["map"] = abi.Method{Name: "map", RawName: "map", Constant: true}
 	allMethods["map0"] = abi.Method{Name: "map0", RawName: "map"}
 
 	payableMethods := make(map[string]struct{})

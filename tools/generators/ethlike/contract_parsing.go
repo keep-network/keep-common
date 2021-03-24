@@ -163,7 +163,7 @@ func buildMethodInfo(
 		if payable {
 			modifiers = append(modifiers, "payable")
 		}
-		if method.Const {
+		if method.Constant {
 			modifiers = append(modifiers, "constant")
 		}
 		modifierString := strings.Join(modifiers, " ")
@@ -176,7 +176,7 @@ func buildMethodInfo(
 		paramInfos := make([]paramInfo, 0, 0)
 
 		for index, param := range method.Inputs {
-			goType := param.Type.Type.String()
+			goType := param.Type.GetType().String()
 			paramName := param.Name
 			if paramName == "" {
 				paramName = fmt.Sprintf("arg%v", index)
@@ -211,7 +211,7 @@ func buildMethodInfo(
 			returned.Type = strings.Replace(normalizedName, "get", "", 1)
 
 			for _, output := range method.Outputs {
-				goType := output.Type.Type.String()
+				goType := output.Type.GetType().String()
 
 				returned.Declarations += fmt.Sprintf(
 					"\t%v %v\n",
@@ -224,7 +224,7 @@ func buildMethodInfo(
 			returned.Multi = false
 		} else {
 			returned.Multi = false
-			returned.Type = method.Outputs[0].Type.Type.String()
+			returned.Type = method.Outputs[0].Type.GetType().String()
 			returned.Vars += "ret,"
 		}
 
@@ -241,7 +241,7 @@ func buildMethodInfo(
 			returned,
 		}
 
-		if method.Const {
+		if method.Constant {
 			constMethods = append(constMethods, info)
 		} else {
 			nonConstMethods = append(nonConstMethods, info)
@@ -281,7 +281,7 @@ func buildEventInfo(
 		indexedFilters := ""
 		for _, param := range event.Inputs {
 			upperParam := uppercaseFirst(param.Name)
-			goType := param.Type.Type.String()
+			goType := param.Type.GetType().String()
 
 			paramDeclarations += fmt.Sprintf("%v %v,\n", upperParam, goType)
 			paramExtractors += fmt.Sprintf("event.%v,\n", upperParam)

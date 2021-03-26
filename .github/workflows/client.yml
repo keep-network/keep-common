@@ -25,23 +25,11 @@ jobs:
       - name: Build Go
         run: go build ./...
 
-      - name: Create test results directory
-        run: mkdir test-results
-
       - name: Install gotestsum
         run: go get gotest.tools/gotestsum
 
       - name: Run Go tests
-        run: gotestsum --junitfile test-results/unit-tests.xml
-
-      - name: Publish unit test results
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        if: always()
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          files: ./test-results/unit-tests.xml
-          check_name: Go Test Results # name under which test results will be presented in GitHub (optional)
-          comment_on_pr: false # turns off commenting on Pull Requests
+        run: gotestsum
 
   client-scan:
     runs-on: ubuntu-latest

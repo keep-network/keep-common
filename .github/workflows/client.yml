@@ -42,3 +42,13 @@ jobs:
           files: ./test-results/unit-tests.xml
           check_name: Go Test Results # name under which test results will be presented in GitHub (optional)
           comment_on_pr: false # turns off commenting on Pull Requests
+
+  scan:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - uses: actions/checkout@v2
+      - uses: securego/gosec@master
+        with:
+          args: ./...

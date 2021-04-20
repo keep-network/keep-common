@@ -8,11 +8,12 @@ import (
 	"strings"
 )
 
+// Token represents a token
 type Token struct {
 	*big.Int
 }
 
-// UnmarshalText is a function used to parse an ETH-like token.
+// UnmarshalToken is a function used to parse an ETH-like token.
 func (t *Token) UnmarshalToken(text []byte, units map[string]float64) error {
 	re := regexp.MustCompile(`^(\d+[\.]?[\d]*)[ ]?([\w]*)$`)
 	matched := re.FindSubmatch(text)

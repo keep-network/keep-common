@@ -1,4 +1,4 @@
-// Package `metrics` provides some tools useful for gathering and
+// Package metrics provides some tools useful for gathering and
 // exposing system metrics for external monitoring tools.
 //
 // Currently, this package is intended to use with Prometheus but

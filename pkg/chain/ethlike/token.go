@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Token represents a token
+// Token represents a token.
 type Token struct {
 	*big.Int
 }

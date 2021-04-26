@@ -59,7 +59,7 @@ func NewLimiter(
 	return l
 }
 
-// AcquirePermit acquires the permit
+// AcquirePermit acquires the permit.
 func (l *Limiter) AcquirePermit() error {
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
@@ -84,7 +84,7 @@ func (l *Limiter) AcquirePermit() error {
 	return nil
 }
 
-// ReleasePermit releases the permit
+// ReleasePermit releases the permit.
 func (l *Limiter) ReleasePermit() {
 	if l.semaphore != nil {
 		l.semaphore.Release(1)

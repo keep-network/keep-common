@@ -1,7 +1,7 @@
 // Package diagnostics provides some tools useful for gathering and
 // exposing arbitrary diagnositcs information for external monitoring tools.
 //
-// Possible usage: integration nodes list into dashboard
+// Possible usage: integration nodes list into dashboard.
 package diagnostics
 
 import (

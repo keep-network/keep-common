@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// BlockCounter represents a block counter.
 type BlockCounter struct {
 	structMutex         sync.Mutex
 	latestBlockHeight   uint64
@@ -25,6 +26,7 @@ type watcher struct {
 	channel chan uint64
 }
 
+// WaitForBlockHeight waits for a given block height.
 func (bc *BlockCounter) WaitForBlockHeight(blockNumber uint64) error {
 	waiter, err := bc.BlockHeightWaiter(blockNumber)
 	if err != nil {
@@ -34,6 +36,7 @@ func (bc *BlockCounter) WaitForBlockHeight(blockNumber uint64) error {
 	return nil
 }
 
+// BlockHeightWaiter returns a waiter for the given block.
 func (bc *BlockCounter) BlockHeightWaiter(
 	blockNumber uint64,
 ) (<-chan uint64, error) {
@@ -56,10 +59,12 @@ func (bc *BlockCounter) BlockHeightWaiter(
 	return newWaiter, nil
 }
 
+// CurrentBlock returns the current block.
 func (bc *BlockCounter) CurrentBlock() (uint64, error) {
 	return bc.latestBlockHeight, nil
 }
 
+// WatchBlocks watches the blocks.
 func (bc *BlockCounter) WatchBlocks(ctx context.Context) <-chan uint64 {
 	watcher := &watcher{
 		ctx:     ctx,
@@ -206,6 +211,7 @@ func (bc *BlockCounter) subscribeBlocks(
 	return nil
 }
 
+// CreateBlockCounter creates a block counter.
 func CreateBlockCounter(chainReader ChainReader) (*BlockCounter, error) {
 	ctx := context.Background()
 

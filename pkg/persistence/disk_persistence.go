@@ -23,17 +23,17 @@ func NewDiskHandle(path string) (Handle, error) {
 		return nil, err
 	}
 
-	err = ensureDirectoryExists(path, currentDir)
+	err = EnsureDirectoryExists(path, currentDir)
 	if err != nil {
 		return nil, err
 	}
 
-	err = ensureDirectoryExists(path, archiveDir)
+	err = EnsureDirectoryExists(path, archiveDir)
 	if err != nil {
 		return nil, err
 	}
 
-	err = ensureDirectoryExists(path, snapshotDir)
+	err = EnsureDirectoryExists(path, snapshotDir)
 	if err != nil {
 		return nil, err
 	}
@@ -74,12 +74,12 @@ func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
 	}
 
 	dirPath := ds.getStorageCurrentDirPath()
-	err := ensureDirectoryExists(dirPath, dirName)
+	err := EnsureDirectoryExists(dirPath, dirName)
 	if err != nil {
 		return err
 	}
 
-	return write(fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName), data)
+	return Write(fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName), data)
 }
 
 func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error {
@@ -106,7 +106,7 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 	defer ds.snapshotMutex.Unlock()
 
 	dirPath := fmt.Sprintf("%s/%s", ds.dataDir, snapshotDir)
-	err := ensureDirectoryExists(dirPath, dirName)
+	err := EnsureDirectoryExists(dirPath, dirName)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 		)
 	}
 
-	return write(filePath, data)
+	return Write(filePath, data)
 }
 
 func isNonExistingFile(filePath string) bool {
@@ -168,7 +168,9 @@ func checkStoragePermission(dirBasePath string) error {
 	return nil
 }
 
-func ensureDirectoryExists(dirBasePath, newDirName string) error {
+// EnsureDirectoryExists creates a new directory in a base path if it doesn't
+// exist, returns nil if it does, and errors out if the base path doesn't exist.
+func EnsureDirectoryExists(dirBasePath, newDirName string) error {
 	dirPath := fmt.Sprintf("%s/%s", dirBasePath, newDirName)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.Mkdir(dirPath, os.ModePerm)
@@ -180,8 +182,8 @@ func ensureDirectoryExists(dirBasePath, newDirName string) error {
 	return nil
 }
 
-// create and write data to a file
-func write(filePath string, data []byte) error {
+// Write creates and writes data to a file
+func Write(filePath string, data []byte) error {
 	writeFile, err := os.Create(filePath)
 	if err != nil {
 		return err
@@ -202,8 +204,8 @@ func write(filePath string, data []byte) error {
 	return nil
 }
 
-// read a file from a file system
-func read(filePath string) ([]byte, error) {
+// Read a file from a file system
+func Read(filePath string) ([]byte, error) {
 	// #nosec G304 (file path provided as taint input)
 	// This line opens a file from the predefined storage.
 	// There is no user input.
@@ -270,7 +272,7 @@ func readAll(directoryPath string) (<-chan DataDescriptor, <-chan error) {
 					fileName := dirFile.Name()
 
 					readFunc := func() ([]byte, error) {
-						return read(fmt.Sprintf(
+						return Read(fmt.Sprintf(
 							"%s/%s/%s",
 							directoryPath,
 							dirName,

@@ -18,7 +18,7 @@ const (
 
 // NewDiskHandle creates on-disk data persistence handle
 func NewDiskHandle(path string) (Handle, error) {
-	err := checkStoragePermission(path)
+	err := CheckStoragePermission(path)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,8 @@ func (ds *diskPersistence) getStorageCurrentDirPath() string {
 	return fmt.Sprintf("%s/%s", ds.dataDir, currentDir)
 }
 
-func checkStoragePermission(dirBasePath string) error {
+// CheckStoragePermission returns an error if we don't have both read and write access to a directory.
+func CheckStoragePermission(dirBasePath string) error {
 	_, err := ioutil.ReadDir(dirBasePath)
 	if err != nil {
 		return fmt.Errorf("cannot read from the storage directory: [%v]", err)

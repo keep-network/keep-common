@@ -16,13 +16,13 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{$logger}}.Debug(
 		"submitting transaction {{$method.LowerName}}",
 		{{if $method.Params -}}
-		"params: ",
+		" params: ",
 		fmt.Sprint(
 			{{$method.Params}}
 		),
 		{{end -}}
 		{{if $method.Payable -}}
-		"value: ", value,
+		" value: ", value,
 		{{- end}}
 	)
 
@@ -71,8 +71,8 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	}
 
 	{{$logger}}.Infof(
-		"submitted transaction {{$method.LowerName}} with id: [%v] and nonce [%v]",
-		transaction.Hash().Hex(),
+		"submitted transaction {{$method.LowerName}} with id: [%s] and nonce [%v]",
+		transaction.Hash(),
 		transaction.Nonce(),
 	)
 
@@ -104,8 +104,8 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 			}
 
 			{{$logger}}.Infof(
-				"submitted transaction {{$method.LowerName}} with id: [%v] and nonce [%v]",
-				transaction.Hash().Hex(),
+				"submitted transaction {{$method.LowerName}} with id: [%s] and nonce [%v]",
+				transaction.Hash(),
 				transaction.Nonce(),
 			)
 

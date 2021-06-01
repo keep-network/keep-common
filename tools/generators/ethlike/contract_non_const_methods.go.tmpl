@@ -13,13 +13,13 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{$logger}}.Debug(
 		"submitting transaction {{$method.LowerName}}",
 		{{if $method.Params -}}
-		"params: ",
+		" params: ",
 		fmt.Sprint(
 			{{$method.Params}}
 		),
 		{{end -}}
 		{{if $method.Payable -}}
-		"value: ", value,
+		" value: ", value,
 		{{- end}}
 	)
 

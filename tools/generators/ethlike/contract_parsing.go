@@ -208,7 +208,13 @@ func buildMethodInfo(
 		returned := returnInfo{}
 		if len(method.Outputs) > 1 {
 			returned.Multi = true
-			returned.Type = strings.Replace(normalizedName, "get", "", 1)
+			returned.Type = uppercaseFirst(
+				strings.Replace(normalizedName,
+					"get",
+					"",
+					1,
+				),
+			)
 
 			for _, output := range method.Outputs {
 				goType := output.Type.GetType().String()

@@ -32,8 +32,6 @@ jobs:
 
   client-scan:
     runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
     steps:
       - uses: actions/checkout@v2
       - uses: securego/gosec@master

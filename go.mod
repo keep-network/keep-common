@@ -9,7 +9,6 @@ require (
 	github.com/aristanetworks/goarista v0.0.0-20190924011532-60b7b74727fd // indirect
 	github.com/celo-org/celo-blockchain v0.0.0-20210222234634-f8c8f6744526
 	github.com/cespare/cp v1.1.1 // indirect
-	github.com/consensys/gurvy v0.3.8 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/ethereum/go-ethereum v1.10.8
 	github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08 // indirect

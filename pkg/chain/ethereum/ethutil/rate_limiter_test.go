@@ -2,15 +2,16 @@ package ethutil
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/keep-network/keep-common/pkg/rate"
 	"math/big"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-common/pkg/rate"
 )
 
 func TestRateLimiter(t *testing.T) {
@@ -365,6 +366,13 @@ func (mec *mockEthereumClient) SuggestGasPrice(
 	return nil, nil
 }
 
+func (mec *mockEthereumClient) SuggestGasTipCap(
+	ctx context.Context,
+) (*big.Int, error) {
+	mec.mockRequest()
+	return nil, nil
+}
+
 func (mec *mockEthereumClient) EstimateGas(
 	ctx context.Context,
 	call ethereum.CallMsg,
@@ -525,6 +533,14 @@ func getTests(
 		"test SuggestGasPrice": {
 			function: func() error {
 				_, err := client.SuggestGasPrice(
+					context.Background(),
+				)
+				return err
+			},
+		},
+		"test SuggestGasTipCap": {
+			function: func() error {
+				_, err := client.SuggestGasTipCap(
 					context.Background(),
 				)
 				return err

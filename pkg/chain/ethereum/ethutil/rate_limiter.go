@@ -3,11 +3,12 @@ package ethutil
 import (
 	"context"
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/keep-network/keep-common/pkg/rate"
-	"math/big"
 )
 
 type rateLimiter struct {
@@ -94,6 +95,18 @@ func (rl *rateLimiter) SuggestGasPrice(
 	defer rl.Limiter.ReleasePermit()
 
 	return rl.EthereumClient.SuggestGasPrice(ctx)
+}
+
+func (rl *rateLimiter) SuggestGasTipCap(
+	ctx context.Context,
+) (*big.Int, error) {
+	err := rl.Limiter.AcquirePermit()
+	if err != nil {
+		return nil, fmt.Errorf("cannot acquire rate limiter permit: [%v]", err)
+	}
+	defer rl.Limiter.ReleasePermit()
+
+	return rl.EthereumClient.SuggestGasTipCap(ctx)
 }
 
 func (rl *rateLimiter) EstimateGas(

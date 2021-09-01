@@ -2,7 +2,10 @@ package ethlike
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/keep-network/keep-common/pkg/wrappers"
 )
 
 // BalanceSource provides a balance info for the given address.
@@ -22,17 +25,26 @@ func NewBalanceMonitor(balanceSource BalanceSource) *BalanceMonitor {
 // Observe starts a process which checks the address balance with the given
 // tick and triggers an alert in case the balance falls below the
 // alert threshold value.
+// The balance check will be retried in case of an error up to the retry timeout.
 func (bm *BalanceMonitor) Observe(
 	ctx context.Context,
 	address Address,
 	alertThreshold *Token,
 	tick time.Duration,
+	retryTimeout time.Duration,
 ) {
-	check := func() {
+	check := func(ctx context.Context) error {
 		balance, err := bm.balanceSource(address)
 		if err != nil {
-			logger.Errorf("balance monitor error: [%v]", err)
-			return
+			wrappedErr := fmt.Errorf(
+				"failed to get balance for account [%s]: [%w]",
+				address.TerminalString(),
+				err,
+			)
+
+			logger.Warning(wrappedErr)
+
+			return wrappedErr
 		}
 
 		if balance.Cmp(alertThreshold.Int) == -1 {
@@ -43,6 +55,8 @@ func (bm *BalanceMonitor) Observe(
 				alertThreshold.Text(10),
 			)
 		}
+
+		return nil
 	}
 
 	go func() {
@@ -52,7 +66,9 @@ func (bm *BalanceMonitor) Observe(
 		for {
 			select {
 			case <-ticker.C:
-				check()
+				err := wrappers.DoWithDefaultRetry(retryTimeout, check)
+
+				logger.Errorf("balance monitor error: [%v]", err)
 			case <-ctx.Done():
 				return
 			}

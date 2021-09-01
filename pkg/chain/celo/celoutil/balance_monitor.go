@@ -2,10 +2,11 @@ package celoutil
 
 import (
 	"context"
+	"time"
+
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/keep-network/keep-common/pkg/chain/celo"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
-	"time"
 )
 
 // BalanceSource provides a balance info for the given address.
@@ -38,16 +39,19 @@ func NewBalanceMonitor(balanceSource BalanceSource) *BalanceMonitor {
 // Observe starts a process which checks the address balance with the given
 // tick and triggers an alert in case the balance falls below the
 // alert threshold value.
+// The balance check will be retried in case of an error up to the retry timeout.
 func (bm *BalanceMonitor) Observe(
 	ctx context.Context,
 	address common.Address,
 	alertThreshold *celo.Wei,
 	tick time.Duration,
+	retryTimeout time.Duration,
 ) {
 	bm.delegate.Observe(
 		ctx,
 		ethlike.Address(address),
 		&alertThreshold.Token,
 		tick,
+		retryTimeout,
 	)
 }

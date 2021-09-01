@@ -63,12 +63,21 @@ func (bm *BalanceMonitor) Observe(
 		ticker := time.NewTicker(tick)
 		defer ticker.Stop()
 
+		checkBalance := func() {
+			err := wrappers.DoWithDefaultRetry(retryTimeout, check)
+			if err != nil {
+				logger.Errorf("balance monitor error: [%v]", err)
+			}
+		}
+
+		// Initial balance check at monitoring start.
+		checkBalance()
+
 		for {
 			select {
+			// Balance check at ticks.
 			case <-ticker.C:
-				err := wrappers.DoWithDefaultRetry(retryTimeout, check)
-
-				logger.Errorf("balance monitor error: [%v]", err)
+				checkBalance()
 			case <-ctx.Done():
 				return
 			}

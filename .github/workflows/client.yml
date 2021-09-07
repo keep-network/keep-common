@@ -1,6 +1,8 @@
 name: Go
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
@@ -31,6 +33,7 @@ jobs:
         run: gotestsum
 
   client-scan:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -39,6 +42,7 @@ jobs:
           args: ./...
 
   client-lint:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

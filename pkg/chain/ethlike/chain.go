@@ -24,7 +24,8 @@ func (a Address) TerminalString() string {
 
 // Header represents a block header in the ETH-like blockchain.
 type Header struct {
-	Number *big.Int
+	Number  *big.Int
+	BaseFee *big.Int // Added by EIP-1559 and is ignored in legacy headers.
 }
 
 // Block represents an entire block in the ETH-like blockchain.

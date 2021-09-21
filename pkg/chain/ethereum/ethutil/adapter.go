@@ -23,7 +23,8 @@ func (ea *ethlikeAdapter) BlockByNumber(
 
 	return &ethlike.Block{
 		Header: &ethlike.Header{
-			Number: block.Number(),
+			Number:  block.Number(),
+			BaseFee: block.Header().BaseFee,
 		},
 	}, nil
 }

@@ -24,6 +24,7 @@ func (ea *ethlikeAdapter) BlockByNumber(
 	return &ethlike.Block{
 		Header: &ethlike.Header{
 			Number: block.Number(),
+			// TODO: Set the base fee.
 		},
 	}, nil
 }

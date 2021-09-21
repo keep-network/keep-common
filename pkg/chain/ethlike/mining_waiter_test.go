@@ -12,23 +12,23 @@ const checkInterval = 100 * time.Millisecond
 
 var maxGasPrice = big.NewInt(45000000000) // 45 Gwei
 
-func TestForceMining_FirstMined(t *testing.T) {
-	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
+func TestForceMining_Legacy_FirstMined(t *testing.T) {
+	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	txReader := &mockTransactionReader{}
+	chain := newMockChain()
 
 	var resubmissionGasPrices []*big.Int
 
 	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
-		return createTransaction(gasPrice), nil
+		return createLegacyTransaction(gasPrice), nil
 	}
 
 	// receipt is already there
-	txReader.receipt = &Receipt{}
+	chain.receipt = &Receipt{}
 
 	waiter := NewMiningWaiter(
-		txReader,
+		chain,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -43,22 +43,22 @@ func TestForceMining_FirstMined(t *testing.T) {
 	}
 }
 
-func TestForceMining_SecondMined(t *testing.T) {
-	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
+func TestForceMining_Legacy_SecondMined(t *testing.T) {
+	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	txReader := &mockTransactionReader{}
+	chain := newMockChain()
 
 	var resubmissionGasPrices []*big.Int
 
 	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		// first resubmission succeeded
-		txReader.receipt = &Receipt{}
-		return createTransaction(gasPrice), nil
+		chain.receipt = &Receipt{}
+		return createLegacyTransaction(gasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
-		txReader,
+		chain,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -73,10 +73,10 @@ func TestForceMining_SecondMined(t *testing.T) {
 	}
 }
 
-func TestForceMining_MultipleAttempts(t *testing.T) {
-	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
+func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
+	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	txReader := &mockTransactionReader{}
+	chain := newMockChain()
 
 	var resubmissionGasPrices []*big.Int
 
@@ -91,15 +91,15 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		if attemptsSoFar == expectedAttempts {
-			txReader.receipt = &Receipt{}
+			chain.receipt = &Receipt{}
 		} else {
 			attemptsSoFar++
 		}
-		return createTransaction(gasPrice), nil
+		return createLegacyTransaction(gasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
-		txReader,
+		chain,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -129,10 +129,10 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 	}
 }
 
-func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
-	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
+func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
+	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	source := &mockTransactionReader{}
+	chain := newMockChain()
 
 	var resubmissionGasPrices []*big.Int
 
@@ -148,11 +148,11 @@ func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		// not setting mockBackend.receipt, mining takes a very long time
-		return createTransaction(gasPrice), nil
+		return createLegacyTransaction(gasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
-		source,
+		chain,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -182,23 +182,23 @@ func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 	}
 }
 
-func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
+func TestForceMining_Legacy_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	// original transaction was priced at 46 Gwei, the maximum allowed gas price
 	// is 45 Gwei
-	originalTransaction := createTransaction(big.NewInt(46000000000))
+	originalTransaction := createLegacyTransaction(big.NewInt(46000000000))
 
-	txReader := &mockTransactionReader{}
+	chain := newMockChain()
 
 	var resubmissionGasPrices []*big.Int
 
 	resubmitFn := func(gasPrice *big.Int) (*Transaction, error) {
 		resubmissionGasPrices = append(resubmissionGasPrices, gasPrice)
 		// not setting mockBackend.receipt, mining takes a very long time
-		return createTransaction(gasPrice), nil
+		return createLegacyTransaction(gasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
-		txReader,
+		chain,
 		checkInterval,
 		maxGasPrice,
 	)
@@ -213,7 +213,7 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	}
 }
 
-func createTransaction(gasPrice *big.Int) *Transaction {
+func createLegacyTransaction(gasPrice *big.Int) *Transaction {
 	hashSlice, err := hex.DecodeString(
 		"121D387731bBbC988B312206c74F77D004D6B84b",
 	)
@@ -228,6 +228,36 @@ func createTransaction(gasPrice *big.Int) *Transaction {
 		Hash:     hash,
 		GasPrice: gasPrice,
 	}
+}
+
+type mockChain struct {
+	*mockChainReader
+	*mockTransactionReader
+	*mockContractTransactor
+}
+
+func newMockChain() *mockChain {
+	return &mockChain{
+		mockChainReader:        &mockChainReader{},
+		mockTransactionReader:  &mockTransactionReader{},
+		mockContractTransactor: &mockContractTransactor{},
+	}
+}
+
+type mockChainReader struct{}
+
+func (mcr *mockChainReader) BlockByNumber(
+	ctx context.Context,
+	number *big.Int,
+) (*Block, error) {
+	panic("implement me")
+}
+
+func (mcr *mockChainReader) SubscribeNewHead(
+	ctx context.Context,
+	ch chan<- *Header,
+) (Subscription, error) {
+	panic("implement me")
 }
 
 type mockTransactionReader struct {

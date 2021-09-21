@@ -32,10 +32,35 @@ type Block struct {
 	*Header
 }
 
+// TxType represents an ETH-like transaction type.
+type TxType int
+
+// Possible ETH-like transaction types.
+const (
+	// LegacyTxType represents a pre EIP-1559 legacy transaction.
+	LegacyTxType TxType = iota
+	// AccessListTxType represents a EIP-2930 access list transaction.
+	AccessListTxType
+	// DynamicFeeTxType represents a post EIP-1559 dynamic fee transaction.
+	DynamicFeeTxType
+)
+
 // Transaction represents an ETH-like chain transaction.
 type Transaction struct {
-	Hash     Hash
+	// Transaction hash.
+	Hash Hash
+
+	// Gas price to use for legacy (pre EIP-1559) transaction.
 	GasPrice *big.Int
+
+	// Gas fee cap to use for the EIP-1559 transaction.
+	GasFeeCap *big.Int
+
+	// Gas tip cap to use for the EIP-1559 transaction.
+	GasTipCap *big.Int
+
+	// Type of transaction.
+	Type TxType
 }
 
 // Receipt represents the results of a transaction.

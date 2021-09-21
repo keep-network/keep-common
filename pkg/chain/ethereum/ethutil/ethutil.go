@@ -199,12 +199,12 @@ func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
 func NewMiningWaiter(
 	client EthereumClient,
 	checkInterval time.Duration,
-	maxGasPrice *big.Int,
+	maxGasFeeCap *big.Int,
 ) *ethlike.MiningWaiter {
 	return ethlike.NewMiningWaiter(
 		&ethlikeAdapter{client},
 		checkInterval,
-		maxGasPrice,
+		maxGasFeeCap,
 	)
 }
 

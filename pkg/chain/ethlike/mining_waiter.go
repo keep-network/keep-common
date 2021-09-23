@@ -306,6 +306,20 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 		// with the maximum.
 		if newGasFeeCap.Cmp(mw.maxGasFeeCap) > 0 {
 			newGasFeeCap = mw.maxGasFeeCap
+
+			// Check if the threshold condition is fulfilled once again.
+			// If the maximum allowed gas fee cap is below the threshold,
+			// there is no sense to submit the transaction as it won't
+			// be accepted by the miners.
+			if newGasFeeCap.Cmp(requiredGasFeeCapThreshold) < 0 {
+				logger.Infof(
+					"could not fulfill required gas fee cap threshold as " +
+						"the maximum gas fee cap value defined in config " +
+						"has been reached; " +
+						"stopping resubmissions",
+				)
+				return
+			}
 		}
 
 		// Transaction not yet mined and we are still under the maximum allowed

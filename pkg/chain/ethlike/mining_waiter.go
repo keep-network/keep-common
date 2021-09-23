@@ -270,7 +270,7 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 		latestBaseFee, err := mw.latestBaseFee()
 		if err != nil {
 			logger.Errorf("could not get latest base fee: [%v]", err)
-			return
+			continue
 		}
 
 		// Compute new value of gas fee cap using the latest base fee

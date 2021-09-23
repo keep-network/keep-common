@@ -262,7 +262,7 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 		oldGasTipCap := transaction.GasTipCap
 		newGasTipCap := new(big.Int).Add(
 			oldGasTipCap,
-			new(big.Int).Div(oldGasTipCap, big.NewInt(5)),
+			new(big.Int).Div(oldGasTipCap, big.NewInt(5)), // + 20%
 		)
 
 		// Fetch latest base fee from the chain. It's needed to compute the

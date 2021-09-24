@@ -66,6 +66,9 @@ func NewMiningWaiter(
 		maxGasFeeCap = config.MaxGasFeeCap.Int
 	}
 
+	logger.Infof("using [%v] mining check interval", checkInterval)
+	logger.Infof("using [%v] wei max gas fee cap", maxGasFeeCap)
+
 	return &MiningWaiter{
 		client,
 		checkInterval,

@@ -5,14 +5,18 @@ import (
 	"github.com/celo-org/celo-blockchain/accounts/abi/bind"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/celo-org/celo-blockchain/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/celo"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 	"testing"
-	"time"
 )
 
-const checkInterval = 100 * time.Millisecond
-
-var maxGasFeeCap = big.NewInt(45000000000) // 45 Gwei
+var config = celo.Config{
+	Config: ethlike.Config{
+		MiningCheckInterval: 1,
+	},
+	MaxGasPrice: celo.WrapWei(big.NewInt(45000000000)), // 45 Gwei
+}
 
 var originalTransactorOptions = &bind.TransactOpts{
 	From:  common.BytesToAddress([]byte{0x01}),
@@ -36,11 +40,7 @@ func TestForceMining_NoResubmission(t *testing.T) {
 	// receipt is already there
 	chain.receipt = &types.Receipt{}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -69,11 +69,7 @@ func TestForceMining_OneResubmission(t *testing.T) {
 		return createTransaction(newTransactorOptions.GasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -132,11 +128,7 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 		return createTransaction(newTransactorOptions.GasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -201,11 +193,7 @@ func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 		return createTransaction(newTransactorOptions.GasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -263,11 +251,7 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 		return createTransaction(newTransactorOptions.GasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,

@@ -5,14 +5,18 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 	"testing"
-	"time"
 )
 
-const checkInterval = 100 * time.Millisecond
-
-var maxGasFeeCap = big.NewInt(45000000000) // 45 Gwei
+var config = ethereum.Config{
+	Config: ethlike.Config{
+		MiningCheckInterval: 1,
+	},
+	MaxGasFeeCap: ethereum.WrapWei(big.NewInt(45000000000)), // 45 Gwei
+}
 
 var originalTransactorOptions = &bind.TransactOpts{
 	From:  common.BytesToAddress([]byte{0x01}),
@@ -36,11 +40,7 @@ func TestForceMining_Legacy_NoResubmission(t *testing.T) {
 	// receipt is already there
 	chain.receipt = &types.Receipt{}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -69,11 +69,7 @@ func TestForceMining_Legacy_OneResubmission(t *testing.T) {
 		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -136,11 +132,7 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -209,11 +201,7 @@ func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -275,11 +263,7 @@ func TestForceMining_Legacy_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -323,11 +307,7 @@ func TestForceMining_DynamicFee_NoResubmission(t *testing.T) {
 	// Receipt is already there.
 	chain.receipt = &types.Receipt{}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -408,11 +388,7 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 				), nil
 			}
 
-			waiter := NewMiningWaiter(
-				chain,
-				checkInterval,
-				maxGasFeeCap,
-			)
+			waiter := NewMiningWaiter(chain, config)
 			waiter.ForceMining(
 				originalTransaction,
 				originalTransactorOptions,
@@ -511,11 +487,7 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 		), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -605,11 +577,7 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 		), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -718,11 +686,7 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 		), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,
@@ -810,11 +774,7 @@ func TestForceMining_DynamicFee_OriginalPriceHigherThanMaxAllowed(t *testing.T) 
 		), nil
 	}
 
-	waiter := NewMiningWaiter(
-		chain,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	waiter := NewMiningWaiter(chain, config)
 	waiter.ForceMining(
 		originalTransaction,
 		originalTransactorOptions,

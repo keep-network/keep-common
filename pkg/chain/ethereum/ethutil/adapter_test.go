@@ -20,6 +20,11 @@ func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
 			big.NewInt(1),
 			big.NewInt(2),
 		},
+		blocksBaseFee: []*big.Int{
+			big.NewInt(10),
+			big.NewInt(11),
+			big.NewInt(12),
+		},
 	}
 
 	adapter := &ethlikeAdapter{client}
@@ -122,44 +127,6 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	}
 }
 
-func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
-	var hash [32]byte
-	copy(hash[:], []byte{255})
-
-	client := &mockAdaptedEthereumClient{
-		transactions: map[common.Hash]*types.Receipt{
-			common.BytesToHash(hash[:]): {
-				Status:      1,
-				BlockNumber: big.NewInt(100),
-			},
-		},
-	}
-
-	adapter := &ethlikeAdapter{client}
-
-	receipt, err := adapter.TransactionReceipt(
-		context.Background(),
-		hash,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expectedReceipt := &ethlike.Receipt{
-		Status:      1,
-		BlockNumber: big.NewInt(100),
-	}
-	if !reflect.DeepEqual(expectedReceipt, receipt) {
-		t.Errorf(
-			"unexpected tx receipt\n"+
-				"expected: [%+v]\n"+
-				"actual:   [%+v]",
-			expectedReceipt,
-			receipt,
-		)
-	}
-}
-
 func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	var address [20]byte
 	copy(address[:], []byte{255})
@@ -192,9 +159,10 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 type mockAdaptedEthereumClient struct {
 	*mockEthereumClient
 
-	blocks       []*big.Int
-	transactions map[common.Hash]*types.Receipt
-	nonces       map[common.Address]uint64
+	blocks        []*big.Int
+	blocksBaseFee []*big.Int
+	receipt       *types.Receipt
+	nonces        map[common.Address]uint64
 }
 
 func (maec *mockAdaptedEthereumClient) BlockByNumber(
@@ -208,7 +176,10 @@ func (maec *mockAdaptedEthereumClient) BlockByNumber(
 	}
 
 	return types.NewBlockWithHeader(
-		&types.Header{Number: maec.blocks[index]},
+		&types.Header{
+			Number:  maec.blocks[index],
+			BaseFee: maec.blocksBaseFee[index],
+		},
 	), nil
 }
 
@@ -232,11 +203,7 @@ func (maec *mockAdaptedEthereumClient) TransactionReceipt(
 	ctx context.Context,
 	txHash common.Hash,
 ) (*types.Receipt, error) {
-	if tx, ok := maec.transactions[txHash]; ok {
-		return tx, nil
-	}
-
-	return nil, fmt.Errorf("no tx with given hash")
+	return maec.receipt, nil
 }
 
 func (maec *mockAdaptedEthereumClient) PendingNonceAt(

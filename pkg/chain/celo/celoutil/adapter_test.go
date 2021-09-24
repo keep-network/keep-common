@@ -122,44 +122,6 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	}
 }
 
-func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
-	var hash [32]byte
-	copy(hash[:], []byte{255})
-
-	client := &mockAdaptedCeloClient{
-		transactions: map[common.Hash]*types.Receipt{
-			common.BytesToHash(hash[:]): {
-				Status:      1,
-				BlockNumber: big.NewInt(100),
-			},
-		},
-	}
-
-	adapter := &ethlikeAdapter{client}
-
-	receipt, err := adapter.TransactionReceipt(
-		context.Background(),
-		hash,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expectedReceipt := &ethlike.Receipt{
-		Status:      1,
-		BlockNumber: big.NewInt(100),
-	}
-	if !reflect.DeepEqual(expectedReceipt, receipt) {
-		t.Errorf(
-			"unexpected tx receipt\n"+
-				"expected: [%+v]\n"+
-				"actual:   [%+v]",
-			expectedReceipt,
-			receipt,
-		)
-	}
-}
-
 func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	var address [20]byte
 	copy(address[:], []byte{255})

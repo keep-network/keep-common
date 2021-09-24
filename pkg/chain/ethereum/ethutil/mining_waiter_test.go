@@ -1,8 +1,10 @@
-package ethlike
+package ethutil
 
 import (
-	"context"
-	"encoding/hex"
+	"bytes"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"testing"
 	"time"
@@ -12,20 +14,27 @@ const checkInterval = 100 * time.Millisecond
 
 var maxGasFeeCap = big.NewInt(45000000000) // 45 Gwei
 
+var originalTransactorOptions = &bind.TransactOpts{
+	From:  common.BytesToAddress([]byte{0x01}),
+	Nonce: big.NewInt(100),
+}
+
 func TestForceMining_Legacy_NoResubmission(t *testing.T) {
 	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
-	var resubmissionParams []*ResubmitParams
+	var resubmissions []*bind.TransactOpts
 
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
-		return createLegacyTransaction(params.GasPrice), nil
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
+		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
 	// receipt is already there
-	chain.receipt = &Receipt{}
+	chain.receipt = &types.Receipt{}
 
 	waiter := NewMiningWaiter(
 		chain,
@@ -34,10 +43,11 @@ func TestForceMining_Legacy_NoResubmission(t *testing.T) {
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != 0 {
 		t.Fatalf("expected no resubmissions; has: [%v]", resubmissionCount)
 	}
@@ -46,15 +56,17 @@ func TestForceMining_Legacy_NoResubmission(t *testing.T) {
 func TestForceMining_Legacy_OneResubmission(t *testing.T) {
 	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
-	var resubmissionParams []*ResubmitParams
+	var resubmissions []*bind.TransactOpts
 
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		// first resubmission succeeded
-		chain.receipt = &Receipt{}
-		return createLegacyTransaction(params.GasPrice), nil
+		chain.receipt = &types.Receipt{}
+		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
@@ -64,15 +76,22 @@ func TestForceMining_Legacy_OneResubmission(t *testing.T) {
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != 1 {
 		t.Fatalf("expected one resubmission; has: [%v]", resubmissionCount)
 	}
 
-	resubmission := resubmissionParams[0]
+	resubmission := resubmissions[0]
+
+	assertTransactionOptionsInvariants(t, resubmission)
+
+	if resubmission.GasLimit != originalTransaction.Gas() {
+		t.Fatalf("gas limit should be the same as in original transaction")
+	}
 
 	if resubmission.GasFeeCap != nil || resubmission.GasTipCap != nil {
 		t.Fatalf("gas fee and tip cap should be nil")
@@ -93,9 +112,9 @@ func TestForceMining_Legacy_OneResubmission(t *testing.T) {
 func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
-	var resubmissionParams []*ResubmitParams
+	var resubmissions []*bind.TransactOpts
 
 	expectedAttempts := 3
 	expectedResubmissionGasPrices := []*big.Int{
@@ -105,14 +124,16 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 	}
 
 	attemptsSoFar := 1
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		if attemptsSoFar == expectedAttempts {
-			chain.receipt = &Receipt{}
+			chain.receipt = &types.Receipt{}
 		} else {
 			attemptsSoFar++
 		}
-		return createLegacyTransaction(params.GasPrice), nil
+		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
@@ -122,10 +143,11 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != expectedAttempts {
 		t.Fatalf(
 			"expected [%v] resubmission; has: [%v]",
@@ -134,7 +156,17 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 		)
 	}
 
-	for index, resubmission := range resubmissionParams {
+	for index, resubmission := range resubmissions {
+		assertTransactionOptionsInvariants(t, resubmission)
+
+		if resubmission.GasLimit != originalTransaction.Gas() {
+			t.Fatalf(
+				"resubmission [%v] gas limit should be the same as in "+
+					"original transaction",
+				index,
+			)
+		}
+
 		if resubmission.GasFeeCap != nil || resubmission.GasTipCap != nil {
 			t.Fatalf("resubmission [%v] gas fee and tip cap should be nil", index)
 		}
@@ -145,7 +177,7 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 				"unexpected resubmission [%v] gas price\n"+
 					"expected: [%v]\n"+
 					"actual:   [%v]",
-				resubmission,
+				index,
 				expectedResubmissionGasPrices[index],
 				price,
 			)
@@ -156,9 +188,9 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
-	var resubmissionParams []*ResubmitParams
+	var resubmissions []*bind.TransactOpts
 
 	expectedAttempts := 5
 	expectedResubmissionGasPrices := []*big.Int{
@@ -169,10 +201,12 @@ func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 		big.NewInt(45000000000), // max allowed
 	}
 
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		// not setting mockBackend.receipt, mining takes a very long time
-		return createLegacyTransaction(params.GasPrice), nil
+		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
@@ -182,10 +216,11 @@ func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != expectedAttempts {
 		t.Fatalf(
 			"expected [%v] resubmission; has: [%v]",
@@ -194,7 +229,17 @@ func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 		)
 	}
 
-	for index, resubmission := range resubmissionParams {
+	for index, resubmission := range resubmissions {
+		assertTransactionOptionsInvariants(t, resubmission)
+
+		if resubmission.GasLimit != originalTransaction.Gas() {
+			t.Fatalf(
+				"resubmission [%v] gas limit should be the same as in "+
+					"original transaction",
+				index,
+			)
+		}
+
 		if resubmission.GasFeeCap != nil || resubmission.GasTipCap != nil {
 			t.Fatalf("resubmission [%v] gas fee and tip cap should be nil", index)
 		}
@@ -205,7 +250,7 @@ func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 				"unexpected resubmission [%v] gas price\n"+
 					"expected: [%v]\n"+
 					"actual:   [%v]",
-				resubmission,
+				index,
 				expectedResubmissionGasPrices[index],
 				price,
 			)
@@ -218,14 +263,16 @@ func TestForceMining_Legacy_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	// is 45 Gwei
 	originalTransaction := createLegacyTransaction(big.NewInt(46000000000))
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
-	var resubmissionParams []*ResubmitParams
+	var resubmissions []*bind.TransactOpts
 
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		// not setting mockBackend.receipt, mining takes a very long time
-		return createLegacyTransaction(params.GasPrice), nil
+		return createLegacyTransaction(newTransactorOptions.GasPrice), nil
 	}
 
 	waiter := NewMiningWaiter(
@@ -235,10 +282,11 @@ func TestForceMining_Legacy_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != 0 {
 		t.Fatalf("expected no resubmissions; has: [%v]", resubmissionCount)
 	}
@@ -254,25 +302,26 @@ func TestForceMining_DynamicFee_NoResubmission(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
 	// Base fee remains unchanged.
-	chain.blocks = []*Block{
-		{&Header{big.NewInt(1), originalBaseFee}},
-	}
+	chain.blocks = append(chain.blocks, big.NewInt(1))
+	chain.blocksBaseFee = append(chain.blocksBaseFee, originalBaseFee)
 
-	var resubmissionParams []*ResubmitParams
+	var resubmissions []*bind.TransactOpts
 
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		return createDynamicFeeTransaction(
-			params.GasFeeCap,
-			params.GasTipCap,
+			newTransactorOptions.GasFeeCap,
+			newTransactorOptions.GasTipCap,
 		), nil
 	}
 
 	// Receipt is already there.
-	chain.receipt = &Receipt{}
+	chain.receipt = &types.Receipt{}
 
 	waiter := NewMiningWaiter(
 		chain,
@@ -281,10 +330,11 @@ func TestForceMining_DynamicFee_NoResubmission(t *testing.T) {
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != 0 {
 		t.Fatalf("expected no resubmissions; has: [%v]", resubmissionCount)
 	}
@@ -339,21 +389,22 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 				originalGasTipCap,
 			)
 
-			chain := newMockChain()
+			chain := &mockAdaptedEthereumClient{}
 
-			chain.blocks = []*Block{
-				{&Header{big.NewInt(1), test.nextBaseFee}},
-			}
+			chain.blocks = append(chain.blocks, big.NewInt(1))
+			chain.blocksBaseFee = append(chain.blocksBaseFee, test.nextBaseFee)
 
-			var resubmissionParams []*ResubmitParams
+			var resubmissions []*bind.TransactOpts
 
-			resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-				resubmissionParams = append(resubmissionParams, params)
+			resubmitFn := func(
+				newTransactorOptions *bind.TransactOpts,
+			) (*types.Transaction, error) {
+				resubmissions = append(resubmissions, newTransactorOptions)
 				// First resubmission succeeded.
-				chain.receipt = &Receipt{}
+				chain.receipt = &types.Receipt{}
 				return createDynamicFeeTransaction(
-					params.GasFeeCap,
-					params.GasTipCap,
+					newTransactorOptions.GasFeeCap,
+					newTransactorOptions.GasTipCap,
 				), nil
 			}
 
@@ -364,10 +415,11 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 			)
 			waiter.ForceMining(
 				originalTransaction,
+				originalTransactorOptions,
 				resubmitFn,
 			)
 
-			resubmissionCount := len(resubmissionParams)
+			resubmissionCount := len(resubmissions)
 			if resubmissionCount != 1 {
 				t.Fatalf(
 					"expected one resubmission; has: [%v]",
@@ -375,7 +427,13 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 				)
 			}
 
-			resubmission := resubmissionParams[0]
+			resubmission := resubmissions[0]
+
+			assertTransactionOptionsInvariants(t, resubmission)
+
+			if resubmission.GasLimit != originalTransaction.Gas() {
+				t.Fatalf("gas limit should be the same as in original transaction")
+			}
 
 			if resubmission.GasPrice != nil {
 				t.Fatalf("gas price should be nil")
@@ -414,36 +472,42 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
 	// Base fee remains unchanged.
-	chain.blocks = []*Block{
-		{&Header{big.NewInt(1), originalBaseFee}},
+	chain.blocks = append(chain.blocks, big.NewInt(1))
+	chain.blocksBaseFee = append(chain.blocksBaseFee, originalBaseFee)
+
+	var resubmissions []*bind.TransactOpts
+
+	type gasPriceTuple struct {
+		gasFeeCap *big.Int
+		gasTipCap *big.Int
 	}
 
-	var resubmissionParams []*ResubmitParams
-
 	expectedAttempts := 3
-	expectedResubmissionParams := []*ResubmitParams{
+	expectedResubmissionParams := []*gasPriceTuple{
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(26400000000), big.NewInt(4800000000)},
+		{big.NewInt(26400000000), big.NewInt(4800000000)},
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(29040000000), big.NewInt(5760000000)},
+		{big.NewInt(29040000000), big.NewInt(5760000000)},
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(31944000000), big.NewInt(6912000000)},
+		{big.NewInt(31944000000), big.NewInt(6912000000)},
 	}
 
 	attemptsSoFar := 1
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		if attemptsSoFar == expectedAttempts {
-			chain.receipt = &Receipt{}
+			chain.receipt = &types.Receipt{}
 		} else {
 			attemptsSoFar++
 		}
 		return createDynamicFeeTransaction(
-			params.GasFeeCap,
-			params.GasTipCap,
+			newTransactorOptions.GasFeeCap,
+			newTransactorOptions.GasTipCap,
 		), nil
 	}
 
@@ -454,10 +518,11 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != expectedAttempts {
 		t.Fatalf(
 			"expected [%v] resubmission; has: [%v]",
@@ -466,12 +531,22 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 		)
 	}
 
-	for index, resubmission := range resubmissionParams {
+	for index, resubmission := range resubmissions {
+		assertTransactionOptionsInvariants(t, resubmission)
+
+		if resubmission.GasLimit != originalTransaction.Gas() {
+			t.Fatalf(
+				"resubmission [%v] gas limit should be the same as in "+
+					"original transaction",
+				index,
+			)
+		}
+
 		if resubmission.GasPrice != nil {
 			t.Fatalf("resubmission [%v] gas price should be nil", index)
 		}
 
-		expectedGasFeeCap := expectedResubmissionParams[index].GasFeeCap
+		expectedGasFeeCap := expectedResubmissionParams[index].gasFeeCap
 		if resubmission.GasFeeCap.Cmp(expectedGasFeeCap) != 0 {
 			t.Fatalf(
 				"unexpected resubmission [%v] gas fee cap value\n"+
@@ -483,7 +558,7 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 			)
 		}
 
-		expectedGasTipCap := expectedResubmissionParams[index].GasTipCap
+		expectedGasTipCap := expectedResubmissionParams[index].gasTipCap
 		if resubmission.GasTipCap.Cmp(expectedGasTipCap) != 0 {
 			t.Fatalf(
 				"unexpected resubmission [%v]  gas tip cap value\n"+
@@ -507,27 +582,26 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
-	chain.blocks = []*Block{
-		{
-			&Header{
-				big.NewInt(1),
-				// Massive increase of base fee to 30 Gwei. This is needed
-				// to exceed the maximum gas fee cap value.
-				new(big.Int).Mul(originalBaseFee, big.NewInt(3)),
-			},
-		},
-	}
+	// Massive increase of base fee to 30 Gwei. This is needed
+	// to exceed the maximum gas fee cap value.
+	chain.blocks = append(chain.blocks, big.NewInt(1))
+	chain.blocksBaseFee = append(
+		chain.blocksBaseFee,
+		new(big.Int).Mul(originalBaseFee, big.NewInt(3)),
+	)
 
-	var resubmissionParams []*ResubmitParams
+	var resubmissions []*bind.TransactOpts
 
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		// Not setting mockBackend.receipt, mining takes a very long time.
 		return createDynamicFeeTransaction(
-			params.GasFeeCap,
-			params.GasTipCap,
+			newTransactorOptions.GasFeeCap,
+			newTransactorOptions.GasTipCap,
 		), nil
 	}
 
@@ -538,10 +612,11 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != 1 {
 		t.Fatalf(
 			"expected one resubmission; has: [%v]",
@@ -549,7 +624,13 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 		)
 	}
 
-	resubmission := resubmissionParams[0]
+	resubmission := resubmissions[0]
+
+	assertTransactionOptionsInvariants(t, resubmission)
+
+	if resubmission.GasLimit != originalTransaction.Gas() {
+		t.Fatalf("gas limit should be the same as in original transaction")
+	}
 
 	if resubmission.GasPrice != nil {
 		t.Fatalf("gas price should be nil")
@@ -592,29 +673,33 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 		originalGasTipCap,
 	)
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
 	// Base fee remains unchanged.
-	chain.blocks = []*Block{
-		{&Header{big.NewInt(1), originalBaseFee}},
+	chain.blocks = append(chain.blocks, big.NewInt(1))
+	chain.blocksBaseFee = append(chain.blocksBaseFee, originalBaseFee)
+
+	var resubmissions []*bind.TransactOpts
+
+	type gasPriceTuple struct {
+		gasFeeCap *big.Int
+		gasTipCap *big.Int
 	}
 
-	var resubmissionParams []*ResubmitParams
-
 	expectedAttempts := 6
-	expectedResubmissionParams := []*ResubmitParams{
+	expectedResubmissionParams := []*gasPriceTuple{
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(26400000000), big.NewInt(4800000000)},
+		{big.NewInt(26400000000), big.NewInt(4800000000)},
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(29040000000), big.NewInt(5760000000)},
+		{big.NewInt(29040000000), big.NewInt(5760000000)},
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(31944000000), big.NewInt(6912000000)},
+		{big.NewInt(31944000000), big.NewInt(6912000000)},
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(35138400000), big.NewInt(8294400000)},
+		{big.NewInt(35138400000), big.NewInt(8294400000)},
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(38652240000), big.NewInt(9953280000)},
+		{big.NewInt(38652240000), big.NewInt(9953280000)},
 		// gasFeeCap +10%, gasTipCap +20%
-		{nil, big.NewInt(42517464000), big.NewInt(11943936000)},
+		{big.NewInt(42517464000), big.NewInt(11943936000)},
 		// The last attempt would bump the gas fee cap up to 46769210400.
 		// However, this value exceeds the max gas fee cap which is 45000000000.
 		// On the other hand, the max gas fee cap is under the required fee bump
@@ -622,12 +707,14 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 		// at all.
 	}
 
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		// Not setting mockBackend.receipt, mining takes a very long time.
 		return createDynamicFeeTransaction(
-			params.GasFeeCap,
-			params.GasTipCap,
+			newTransactorOptions.GasFeeCap,
+			newTransactorOptions.GasTipCap,
 		), nil
 	}
 
@@ -638,10 +725,11 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != expectedAttempts {
 		t.Fatalf(
 			"expected [%v] resubmission; has: [%v]",
@@ -650,12 +738,22 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 		)
 	}
 
-	for index, resubmission := range resubmissionParams {
+	for index, resubmission := range resubmissions {
+		assertTransactionOptionsInvariants(t, resubmission)
+
+		if resubmission.GasLimit != originalTransaction.Gas() {
+			t.Fatalf(
+				"resubmission [%v] gas limit should be the same as in "+
+					"original transaction",
+				index,
+			)
+		}
+
 		if resubmission.GasPrice != nil {
 			t.Fatalf("resubmission [%v] gas price should be nil", index)
 		}
 
-		expectedGasFeeCap := expectedResubmissionParams[index].GasFeeCap
+		expectedGasFeeCap := expectedResubmissionParams[index].gasFeeCap
 		if resubmission.GasFeeCap.Cmp(expectedGasFeeCap) != 0 {
 			t.Fatalf(
 				"unexpected resubmission [%v] gas fee cap value\n"+
@@ -667,7 +765,7 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 			)
 		}
 
-		expectedGasTipCap := expectedResubmissionParams[index].GasTipCap
+		expectedGasTipCap := expectedResubmissionParams[index].gasTipCap
 		if resubmission.GasTipCap.Cmp(expectedGasTipCap) != 0 {
 			t.Fatalf(
 				"unexpected resubmission [%v]  gas tip cap value\n"+
@@ -693,21 +791,22 @@ func TestForceMining_DynamicFee_OriginalPriceHigherThanMaxAllowed(t *testing.T) 
 		originalGasTipCap,
 	)
 
-	chain := newMockChain()
+	chain := &mockAdaptedEthereumClient{}
 
 	// Base fee remains unchanged.
-	chain.blocks = []*Block{
-		{&Header{big.NewInt(1), originalBaseFee}},
-	}
+	chain.blocks = append(chain.blocks, big.NewInt(1))
+	chain.blocksBaseFee = append(chain.blocksBaseFee, originalBaseFee)
 
-	var resubmissionParams []*ResubmitParams
+	var resubmissions []*bind.TransactOpts
 
-	resubmitFn := func(params *ResubmitParams) (*Transaction, error) {
-		resubmissionParams = append(resubmissionParams, params)
+	resubmitFn := func(
+		newTransactorOptions *bind.TransactOpts,
+	) (*types.Transaction, error) {
+		resubmissions = append(resubmissions, newTransactorOptions)
 		// Not setting mockBackend.receipt, mining takes a very long time.
 		return createDynamicFeeTransaction(
-			params.GasFeeCap,
-			params.GasTipCap,
+			newTransactorOptions.GasFeeCap,
+			newTransactorOptions.GasTipCap,
 		), nil
 	}
 
@@ -718,96 +817,43 @@ func TestForceMining_DynamicFee_OriginalPriceHigherThanMaxAllowed(t *testing.T) 
 	)
 	waiter.ForceMining(
 		originalTransaction,
+		originalTransactorOptions,
 		resubmitFn,
 	)
 
-	resubmissionCount := len(resubmissionParams)
+	resubmissionCount := len(resubmissions)
 	if resubmissionCount != 0 {
 		t.Fatalf("expected no resubmissions; has: [%v]", resubmissionCount)
 	}
 }
 
-func createLegacyTransaction(gasPrice *big.Int) *Transaction {
-	hashSlice, err := hex.DecodeString(
-		"121D387731bBbC988B312206c74F77D004D6B84b",
-	)
-	if err != nil {
-		return nil
+func assertTransactionOptionsInvariants(
+	t *testing.T,
+	newTransactionOptions *bind.TransactOpts,
+) {
+	if !bytes.Equal(
+		newTransactionOptions.From.Bytes(),
+		originalTransactorOptions.From.Bytes(),
+	) {
+		t.Fatalf("from address should remain unchanged")
 	}
 
-	var hash [32]byte
-	copy(hash[:], hashSlice)
-
-	return &Transaction{
-		Hash:     hash,
-		GasPrice: gasPrice,
+	if newTransactionOptions.Nonce.Cmp(originalTransactorOptions.Nonce) != 0 {
+		t.Fatalf("nonce should remain unchanged")
 	}
 }
 
-func createDynamicFeeTransaction(gasFeeCap, gasTipCap *big.Int) *Transaction {
-	hashSlice, err := hex.DecodeString(
-		"121D387731bBbC988B312206c74F77D004D6B84b",
-	)
-	if err != nil {
-		return nil
-	}
+func createLegacyTransaction(gasPrice *big.Int) *types.Transaction {
+	return types.NewTx(&types.LegacyTx{
+		GasPrice: gasPrice,
+		Gas:      25000,
+	})
+}
 
-	var hash [32]byte
-	copy(hash[:], hashSlice)
-
-	return &Transaction{
-		Hash:      hash,
+func createDynamicFeeTransaction(gasFeeCap, gasTipCap *big.Int) *types.Transaction {
+	return types.NewTx(&types.DynamicFeeTx{
 		GasFeeCap: gasFeeCap,
 		GasTipCap: gasTipCap,
-		Type:      DynamicFeeTxType,
-	}
-}
-
-type mockChain struct {
-	*mockChainReader
-	*mockTransactionReader
-	*mockContractTransactor
-}
-
-func newMockChain() *mockChain {
-	return &mockChain{
-		mockChainReader: &mockChainReader{
-			blocks: make([]*Block, 0),
-		},
-		mockTransactionReader:  &mockTransactionReader{},
-		mockContractTransactor: &mockContractTransactor{},
-	}
-}
-
-type mockChainReader struct {
-	blocks []*Block
-}
-
-func (mcr *mockChainReader) BlockByNumber(
-	ctx context.Context,
-	number *big.Int,
-) (*Block, error) {
-	if number == nil {
-		return mcr.blocks[len(mcr.blocks)-1], nil
-	}
-
-	return mcr.blocks[number.Int64()], nil
-}
-
-func (mcr *mockChainReader) SubscribeNewHead(
-	ctx context.Context,
-	ch chan<- *Header,
-) (Subscription, error) {
-	panic("implement me")
-}
-
-type mockTransactionReader struct {
-	receipt *Receipt
-}
-
-func (mtr *mockTransactionReader) TransactionReceipt(
-	ctx context.Context,
-	txHash Hash,
-) (*Receipt, error) {
-	return mtr.receipt, nil
+		Gas:       35000,
+	})
 }

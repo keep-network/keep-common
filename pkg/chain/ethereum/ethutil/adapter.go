@@ -23,8 +23,7 @@ func (ea *ethlikeAdapter) BlockByNumber(
 
 	return &ethlike.Block{
 		Header: &ethlike.Header{
-			Number:  block.Number(),
-			BaseFee: block.Header().BaseFee,
+			Number: block.Number(),
 		},
 	}, nil
 }
@@ -75,24 +74,6 @@ func (sw *subscriptionWrapper) Unsubscribe() {
 
 func (sw *subscriptionWrapper) Err() <-chan error {
 	return sw.errChan
-}
-
-func (ea *ethlikeAdapter) TransactionReceipt(
-	ctx context.Context,
-	txHash ethlike.Hash,
-) (*ethlike.Receipt, error) {
-	receipt, err := ea.delegate.TransactionReceipt(
-		ctx,
-		common.Hash(txHash),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ethlike.Receipt{
-		Status:      receipt.Status,
-		BlockNumber: receipt.BlockNumber,
-	}, nil
 }
 
 func (ea *ethlikeAdapter) PendingNonceAt(

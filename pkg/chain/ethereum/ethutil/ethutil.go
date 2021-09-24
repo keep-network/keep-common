@@ -6,11 +6,9 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"io/ioutil"
 	"math/big"
-	"time"
-
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 
 	"github.com/ipfs/go-log"
 
@@ -191,21 +189,6 @@ func EstimateGas(
 // Ethereum client.
 func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
 	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
-}
-
-// NewMiningWaiter creates a new MiningWaiter instance for the provided
-// Ethereum client. It accepts two parameters setting up monitoring rules
-// of the transaction mining status.
-func NewMiningWaiter(
-	client EthereumClient,
-	checkInterval time.Duration,
-	maxGasFeeCap *big.Int,
-) *ethlike.MiningWaiter {
-	return ethlike.NewMiningWaiter(
-		&ethlikeAdapter{client},
-		checkInterval,
-		maxGasFeeCap,
-	)
 }
 
 // NewNonceManager creates NonceManager instance for the provided account

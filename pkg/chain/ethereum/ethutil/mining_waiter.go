@@ -1,8 +1,10 @@
-package ethlike
+package ethutil
 
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"time"
 )
@@ -17,7 +19,7 @@ import (
 // - dynamic fee post EIP-1559 transaction: bumps up the gas tip cap by 20%
 //   and adjusts the gas fee cap accordingly
 type MiningWaiter struct {
-	chain         Chain
+	client        EthereumClient
 	checkInterval time.Duration
 	maxGasFeeCap  *big.Int
 }
@@ -35,12 +37,12 @@ type MiningWaiter struct {
 // be higher than this value. If the maximum allowed price is reached, no
 // further resubmission attempts are performed.
 func NewMiningWaiter(
-	chain Chain,
+	client EthereumClient,
 	checkInterval time.Duration,
 	maxGasFeeCap *big.Int,
 ) *MiningWaiter {
 	return &MiningWaiter{
-		chain,
+		client,
 		checkInterval,
 		maxGasFeeCap,
 	}
@@ -51,8 +53,8 @@ func NewMiningWaiter(
 // the given timeout passes.
 func (mw *MiningWaiter) waitMined(
 	timeout time.Duration,
-	transaction *Transaction,
-) (*Receipt, error) {
+	transaction *types.Transaction,
+) (*types.Receipt, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -60,9 +62,9 @@ func (mw *MiningWaiter) waitMined(
 	defer queryTicker.Stop()
 
 	for {
-		receipt, _ := mw.chain.TransactionReceipt(
+		receipt, _ := mw.client.TransactionReceipt(
 			context.TODO(),
-			transaction.Hash,
+			transaction.Hash(),
 		)
 		if receipt != nil {
 			return receipt, nil
@@ -76,17 +78,12 @@ func (mw *MiningWaiter) waitMined(
 	}
 }
 
-// ResubmitParams determines price parameters for transaction resubmission.
-type ResubmitParams struct {
-	GasPrice  *big.Int
-	GasFeeCap *big.Int
-	GasTipCap *big.Int
-}
-
 // ResubmitTransactionFn implements the code for resubmitting the transaction
 // after mining waiter performs the action. It should guarantee the same nonce
 // is used for transaction resubmission.
-type ResubmitTransactionFn func(params *ResubmitParams) (*Transaction, error)
+type ResubmitTransactionFn func(
+	newTransactorOptions *bind.TransactOpts,
+) (*types.Transaction, error)
 
 // ForceMining blocks until the transaction is mined and performs an appropriate
 // action to increase mining probability in the intervals defined by MiningWaiter
@@ -94,14 +91,23 @@ type ResubmitTransactionFn func(params *ResubmitParams) (*Transaction, error)
 // transaction reference and the function responsible for executing transaction
 // resubmission.
 func (mw *MiningWaiter) ForceMining(
-	originalTransaction *Transaction,
+	originalTransaction *types.Transaction,
+	originalTransactorOptions *bind.TransactOpts,
 	resubmitFn ResubmitTransactionFn,
 ) {
-	switch originalTransaction.Type {
-	case LegacyTxType, AccessListTxType:
-		mw.forceMiningLegacyTx(originalTransaction, resubmitFn)
-	case DynamicFeeTxType:
-		mw.forceMiningDynamicFeeTx(originalTransaction, resubmitFn)
+	switch originalTransaction.Type() {
+	case types.LegacyTxType, types.AccessListTxType:
+		mw.forceMiningLegacyTx(
+			originalTransaction,
+			originalTransactorOptions,
+			resubmitFn,
+		)
+	case types.DynamicFeeTxType:
+		mw.forceMiningDynamicFeeTx(
+			originalTransaction,
+			originalTransactorOptions,
+			resubmitFn,
+		)
 	default:
 		logger.Errorf(
 			"could not start mining waiter; unsupported transaction type [%v]",
@@ -111,12 +117,13 @@ func (mw *MiningWaiter) ForceMining(
 }
 
 func (mw *MiningWaiter) forceMiningLegacyTx(
-	originalTransaction *Transaction,
+	originalTransaction *types.Transaction,
+	originalTransactorOptions *bind.TransactOpts,
 	resubmitFn ResubmitTransactionFn,
 ) {
 	logger.Infof(
 		"starting mining waiter for legacy transaction: [%v]",
-		originalTransaction.Hash.TerminalString(),
+		originalTransaction.Hash().TerminalString(),
 	)
 
 	// For legacy transactions, the `maxGasFeeCap` is considered to be the same
@@ -126,7 +133,7 @@ func (mw *MiningWaiter) forceMiningLegacyTx(
 
 	// If the original transaction's gas price was higher or equal the max
 	// allowed we do nothing; we need to wait for it to be mined.
-	if originalTransaction.GasPrice.Cmp(maxGasPrice) >= 0 {
+	if originalTransaction.GasPrice().Cmp(maxGasPrice) >= 0 {
 		logger.Infof(
 			"original transaction gas price is higher than the max allowed; " +
 				"skipping resubmissions",
@@ -140,7 +147,7 @@ func (mw *MiningWaiter) forceMiningLegacyTx(
 		if err != nil {
 			logger.Infof(
 				"transaction [%v] not yet mined: [%v]",
-				transaction.Hash.TerminalString(),
+				transaction.Hash().TerminalString(),
 				err,
 			)
 		}
@@ -149,7 +156,7 @@ func (mw *MiningWaiter) forceMiningLegacyTx(
 		if receipt != nil {
 			logger.Infof(
 				"transaction [%v] mined with status [%v] at block [%v]",
-				transaction.Hash.TerminalString(),
+				transaction.Hash().TerminalString(),
 				receipt.Status,
 				receipt.BlockNumber,
 			)
@@ -158,7 +165,7 @@ func (mw *MiningWaiter) forceMiningLegacyTx(
 
 		// Transaction not yet mined, if the previous gas price was the maximum
 		// one, we no longer resubmit.
-		gasPrice := transaction.GasPrice
+		gasPrice := transaction.GasPrice()
 		if gasPrice.Cmp(maxGasPrice) == 0 {
 			logger.Infof(
 				"reached the maximum allowed gas price; " +
@@ -183,14 +190,17 @@ func (mw *MiningWaiter) forceMiningLegacyTx(
 		logger.Infof(
 			"resubmitting previous transaction [%v] "+
 				"with a higher gas price [%v]",
-			transaction.Hash.TerminalString(),
+			transaction.Hash().TerminalString(),
 			gasPrice,
 		)
-		transaction, err = resubmitFn(
-			&ResubmitParams{
-				GasPrice: gasPrice,
-			},
-		)
+
+		// Copy transactor options.
+		newTransactorOptions := new(bind.TransactOpts)
+		*newTransactorOptions = *originalTransactorOptions
+		newTransactorOptions.GasLimit = originalTransaction.Gas()
+		newTransactorOptions.GasPrice = gasPrice
+
+		transaction, err = resubmitFn(newTransactorOptions)
 		if err != nil {
 			logger.Warningf(
 				"could not resubmit TX with a higher gas price: [%v]",
@@ -202,17 +212,18 @@ func (mw *MiningWaiter) forceMiningLegacyTx(
 }
 
 func (mw *MiningWaiter) forceMiningDynamicFeeTx(
-	originalTransaction *Transaction,
+	originalTransaction *types.Transaction,
+	originalTransactorOptions *bind.TransactOpts,
 	resubmitFn ResubmitTransactionFn,
 ) {
 	logger.Infof(
 		"starting mining waiter for dynamic fee transaction: [%v]",
-		originalTransaction.Hash.TerminalString(),
+		originalTransaction.Hash().TerminalString(),
 	)
 
 	// If the original transaction's gas fee cap was higher or equal the max
 	// allowed we do nothing; we need to wait for it to be mined.
-	if originalTransaction.GasFeeCap.Cmp(mw.maxGasFeeCap) >= 0 {
+	if originalTransaction.GasFeeCap().Cmp(mw.maxGasFeeCap) >= 0 {
 		logger.Infof(
 			"original transaction gas fee cap is higher than the max allowed; " +
 				"skipping resubmissions",
@@ -226,7 +237,7 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 		if err != nil {
 			logger.Infof(
 				"transaction [%v] not yet mined: [%v]",
-				transaction.Hash.TerminalString(),
+				transaction.Hash().TerminalString(),
 				err,
 			)
 		}
@@ -235,7 +246,7 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 		if receipt != nil {
 			logger.Infof(
 				"transaction [%v] mined with status [%v] at block [%v]",
-				transaction.Hash.TerminalString(),
+				transaction.Hash().TerminalString(),
 				receipt.Status,
 				receipt.BlockNumber,
 			)
@@ -244,7 +255,7 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 
 		// Transaction not yet mined, if the previous gas fee cap was the
 		// maximum one, we no longer resubmit.
-		oldGasFeeCap := transaction.GasFeeCap
+		oldGasFeeCap := transaction.GasFeeCap()
 		if oldGasFeeCap.Cmp(mw.maxGasFeeCap) == 0 {
 			logger.Infof(
 				"reached the maximum allowed gas fee cap; " +
@@ -259,7 +270,7 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 		// https://github.com/ethereum/go-ethereum/pull/22898/files#r636583352.
 		// We increase it even more than the required level to greatly increase
 		// the transaction's chance for being picked up by miners.
-		oldGasTipCap := transaction.GasTipCap
+		oldGasTipCap := transaction.GasTipCap()
 		newGasTipCap := new(big.Int).Add(
 			oldGasTipCap,
 			new(big.Int).Div(oldGasTipCap, big.NewInt(5)), // + 20%
@@ -328,16 +339,19 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 		logger.Infof(
 			"resubmitting previous transaction [%v] "+
 				"with a higher gas fee cap [%v] and tip cap [%v]",
-			transaction.Hash.TerminalString(),
+			transaction.Hash().TerminalString(),
 			newGasFeeCap,
 			newGasTipCap,
 		)
-		transaction, err = resubmitFn(
-			&ResubmitParams{
-				GasFeeCap: newGasFeeCap,
-				GasTipCap: newGasTipCap,
-			},
-		)
+
+		// Copy transactor options.
+		newTransactorOptions := new(bind.TransactOpts)
+		*newTransactorOptions = *originalTransactorOptions
+		newTransactorOptions.GasLimit = originalTransaction.Gas()
+		newTransactorOptions.GasFeeCap = newGasFeeCap
+		newTransactorOptions.GasTipCap = newGasTipCap
+
+		transaction, err = resubmitFn(newTransactorOptions)
 		if err != nil {
 			logger.Warningf(
 				"could not resubmit TX with a higher "+
@@ -350,7 +364,7 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 }
 
 func (mw *MiningWaiter) latestBaseFee() (*big.Int, error) {
-	latestBlock, err := mw.chain.BlockByNumber(
+	latestBlock, err := mw.client.BlockByNumber(
 		context.Background(),
 		nil,
 	)
@@ -358,7 +372,7 @@ func (mw *MiningWaiter) latestBaseFee() (*big.Int, error) {
 		return nil, fmt.Errorf("could not get latest block: [%v]", err)
 	}
 
-	baseFee := latestBlock.BaseFee
+	baseFee := latestBlock.BaseFee()
 	if baseFee == nil {
 		return nil, fmt.Errorf("not an EIP-1559 block")
 	}

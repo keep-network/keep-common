@@ -11,12 +11,12 @@ import (
 type Config struct {
 	ethlike.Config
 
-	// MaxGasPrice specifies the maximum gas price the client is
+	// MaxGasFeeCap specifies the maximum gas fee cap the client is
 	// willing to pay for the transaction to be mined. The offered transaction
-	// gas price can not be higher than the max gas price value. If the maximum
-	// allowed gas price is reached, no further resubmission attempts are
+	// gas cost can not be higher than the max gas fee cap value. If the maximum
+	// allowed gas fee cap is reached, no further resubmission attempts are
 	// performed.
-	MaxGasPrice *Wei
+	MaxGasFeeCap *Wei
 
 	// BalanceAlertThreshold defines a minimum value of the operator's
 	// account balance below which an alert will be triggered.

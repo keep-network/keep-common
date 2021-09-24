@@ -4,8 +4,24 @@ import (
 	"context"
 	"github.com/celo-org/celo-blockchain/accounts/abi/bind"
 	"github.com/celo-org/celo-blockchain/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/celo"
 	"math/big"
 	"time"
+)
+
+var (
+	// DefaultMiningCheckInterval is the default interval in which transaction
+	// mining status is checked. If the transaction is not mined within this
+	// time, the gas price is increased and transaction is resubmitted.
+	// This value can be overwritten in the configuration file.
+	DefaultMiningCheckInterval = 60 * time.Second
+
+	// DefaultMaxGasPrice specifies the default maximum gas price the client is
+	// willing to pay for the transaction to be mined. The offered transaction
+	// gas price can not be higher than the max gas price value. If the maximum
+	// allowed gas price is reached, no further resubmission attempts are
+	// performed. This value can be overwritten in the configuration file.
+	DefaultMaxGasPrice = big.NewInt(500000000000) // 500 Gwei
 )
 
 // MiningWaiter allows to block the execution until the given transaction is
@@ -31,9 +47,17 @@ type MiningWaiter struct {
 // further resubmission attempts are performed.
 func NewMiningWaiter(
 	client CeloClient,
-	checkInterval time.Duration,
-	maxGasPrice *big.Int,
+	config celo.Config,
 ) *MiningWaiter {
+	checkInterval := DefaultMiningCheckInterval
+	maxGasPrice := DefaultMaxGasPrice
+	if config.MiningCheckInterval != 0 {
+		checkInterval = time.Duration(config.MiningCheckInterval) * time.Second
+	}
+	if config.MaxGasPrice != nil {
+		maxGasPrice = config.MaxGasPrice.Int
+	}
+
 	return &MiningWaiter{
 		client,
 		checkInterval,

@@ -223,20 +223,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         )
     }
 
-	checkInterval := cmd.DefaultMiningCheckInterval
-	maxGasFeeCap := cmd.DefaultMaxGasFeeCap
-	if config.MiningCheckInterval != 0 {
-		checkInterval = time.Duration(config.MiningCheckInterval) * time.Second
-	}
-	if config.MaxGasFeeCap != nil {
-		maxGasFeeCap = config.MaxGasFeeCap.Int
-	}
-
-	miningWaiter := chainutil.NewMiningWaiter(
-		client,
-		checkInterval,
-		maxGasFeeCap,
-	)
+	miningWaiter := chainutil.NewMiningWaiter(client, config)
 
 	blockCounter, err := chainutil.NewBlockCounter(client)
 	if err != nil {

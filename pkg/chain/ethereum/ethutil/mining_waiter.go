@@ -5,8 +5,25 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum"
 	"math/big"
 	"time"
+)
+
+var (
+	// DefaultMiningCheckInterval is the default interval in which transaction
+	// mining status is checked. If the transaction is not mined within this
+	// time, the gas price is increased and transaction is resubmitted.
+	// This value can be overwritten in the configuration file.
+	DefaultMiningCheckInterval = 60 * time.Second
+
+	// DefaultMaxGasFeeCap specifies the default maximum gas fee cap the client
+	// is willing to pay for the transaction to be mined. The offered
+	// transaction gas cost can not be higher than the max gas fee cap value.
+	// If the maximum allowed gas fee cap is reached, no further resubmission
+	// attempts are performed. This value can be overwritten in the
+	// configuration file.
+	DefaultMaxGasFeeCap = big.NewInt(500000000000) // 500 Gwei
 )
 
 // MiningWaiter allows to block the execution until the given transaction is
@@ -38,9 +55,17 @@ type MiningWaiter struct {
 // further resubmission attempts are performed.
 func NewMiningWaiter(
 	client EthereumClient,
-	checkInterval time.Duration,
-	maxGasFeeCap *big.Int,
+	config ethereum.Config,
 ) *MiningWaiter {
+	checkInterval := DefaultMiningCheckInterval
+	maxGasFeeCap := DefaultMaxGasFeeCap
+	if config.MiningCheckInterval != 0 {
+		checkInterval = time.Duration(config.MiningCheckInterval) * time.Second
+	}
+	if config.MaxGasFeeCap != nil {
+		maxGasFeeCap = config.MaxGasFeeCap.Int
+	}
+
 	return &MiningWaiter{
 		client,
 		checkInterval,

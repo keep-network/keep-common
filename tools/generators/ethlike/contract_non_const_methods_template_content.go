@@ -77,21 +77,11 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	)
 
 	go {{$contract.ShortVar}}.miningWaiter.ForceMining(
-		&ethlike.Transaction{
-			Hash:      ethlike.Hash(transaction.Hash()),
-			GasPrice:  transaction.GasPrice(),
-			GasFeeCap: transaction.GasFeeCap(),
-			GasTipCap: transaction.GasTipCap(),
-			Type:      ethlike.TxType(transaction.Type()),
-		},
-		func(params *ethlike.ResubmitParams) (*ethlike.Transaction, error) {
-			transactorOptions.GasLimit = transaction.Gas()
-			transactorOptions.GasPrice = params.GasPrice
-			transactorOptions.GasFeeCap = params.GasFeeCap
-			transactorOptions.GasTipCap = params.GasTipCap
-
+		transaction,
+		transactorOptions,
+		func(newTransactorOptions *bind.TransactOpts) (*types.Transaction, error) {
 			transaction, err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(
-		        transactorOptions,
+		        newTransactorOptions,
 		        {{$method.Params}}
 	        )
 	        if err != nil {
@@ -114,13 +104,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 				transaction.Nonce(),
 			)
 
-			return &ethlike.Transaction{
-				Hash:      ethlike.Hash(transaction.Hash()),
-				GasPrice:  transaction.GasPrice(),
-				GasFeeCap: transaction.GasFeeCap(),
-				GasTipCap: transaction.GasTipCap(),
-				Type:      ethlike.TxType(transaction.Type()),
-            }, nil
+			return transaction, nil
 		},
 	)
 

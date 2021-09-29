@@ -15,7 +15,9 @@ type Config struct {
 	// willing to pay for the transaction to be mined. The offered transaction
 	// gas cost can not be higher than the max gas fee cap value. If the maximum
 	// allowed gas fee cap is reached, no further resubmission attempts are
-	// performed.
+	// performed. This value is used for all types of Ethereum transactions.
+	// For legacy transactions, this value works as a maximum gas price
+	// and for EIP-1559 transactions, this value works as max gas fee cap.
 	MaxGasFeeCap *Wei
 
 	// BalanceAlertThreshold defines a minimum value of the operator's

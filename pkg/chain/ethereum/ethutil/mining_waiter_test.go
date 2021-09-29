@@ -1,7 +1,6 @@
 package ethutil
 
 import (
-	"bytes"
 	"context"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -20,7 +19,6 @@ var config = ethereum.Config{
 }
 
 var originalTransactorOptions = &bind.TransactOpts{
-	From:  common.BytesToAddress([]byte{0x01}),
 	Nonce: big.NewInt(100),
 }
 
@@ -84,7 +82,7 @@ func TestForceMining_Legacy_OneResubmission(t *testing.T) {
 
 	resubmission := resubmissions[0]
 
-	assertTransactionOptionsInvariants(t, resubmission)
+	assertNonceUnchanged(t, resubmission)
 
 	if resubmission.GasLimit != originalTransaction.Gas() {
 		t.Fatalf("gas limit should be the same as in original transaction")
@@ -150,7 +148,7 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 	}
 
 	for index, resubmission := range resubmissions {
-		assertTransactionOptionsInvariants(t, resubmission)
+		assertNonceUnchanged(t, resubmission)
 
 		if resubmission.GasLimit != originalTransaction.Gas() {
 			t.Fatalf(
@@ -219,7 +217,7 @@ func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 	}
 
 	for index, resubmission := range resubmissions {
-		assertTransactionOptionsInvariants(t, resubmission)
+		assertNonceUnchanged(t, resubmission)
 
 		if resubmission.GasLimit != originalTransaction.Gas() {
 			t.Fatalf(
@@ -410,7 +408,7 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 
 			resubmission := resubmissions[0]
 
-			assertTransactionOptionsInvariants(t, resubmission)
+			assertNonceUnchanged(t, resubmission)
 
 			if resubmission.GasLimit != originalTransaction.Gas() {
 				t.Fatalf("gas limit should be the same as in original transaction")
@@ -511,7 +509,7 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 	}
 
 	for index, resubmission := range resubmissions {
-		assertTransactionOptionsInvariants(t, resubmission)
+		assertNonceUnchanged(t, resubmission)
 
 		if resubmission.GasLimit != originalTransaction.Gas() {
 			t.Fatalf(
@@ -603,7 +601,7 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 
 	resubmission := resubmissions[0]
 
-	assertTransactionOptionsInvariants(t, resubmission)
+	assertNonceUnchanged(t, resubmission)
 
 	if resubmission.GasLimit != originalTransaction.Gas() {
 		t.Fatalf("gas limit should be the same as in original transaction")
@@ -714,7 +712,7 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 	}
 
 	for index, resubmission := range resubmissions {
-		assertTransactionOptionsInvariants(t, resubmission)
+		assertNonceUnchanged(t, resubmission)
 
 		if resubmission.GasLimit != originalTransaction.Gas() {
 			t.Fatalf(
@@ -800,17 +798,10 @@ func TestForceMining_DynamicFee_OriginalPriceHigherThanMaxAllowed(t *testing.T) 
 	}
 }
 
-func assertTransactionOptionsInvariants(
+func assertNonceUnchanged(
 	t *testing.T,
 	newTransactionOptions *bind.TransactOpts,
 ) {
-	if !bytes.Equal(
-		newTransactionOptions.From.Bytes(),
-		originalTransactorOptions.From.Bytes(),
-	) {
-		t.Fatalf("from address should remain unchanged")
-	}
-
 	if newTransactionOptions.Nonce.Cmp(originalTransactorOptions.Nonce) != 0 {
 		t.Fatalf("nonce should remain unchanged")
 	}

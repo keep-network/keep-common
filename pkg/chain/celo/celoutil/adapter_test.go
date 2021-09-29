@@ -154,9 +154,8 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 type mockAdaptedCeloClient struct {
 	*mockCeloClient
 
-	blocks  []*big.Int
-	receipt *types.Receipt
-	nonces  map[common.Address]uint64
+	blocks []*big.Int
+	nonces map[common.Address]uint64
 }
 
 func (macc *mockAdaptedCeloClient) BlockByNumber(
@@ -188,13 +187,6 @@ func (macc *mockAdaptedCeloClient) SubscribeNewHead(
 		unsubscribeFn: func() {},
 		errChan:       make(chan error),
 	}, nil
-}
-
-func (macc *mockAdaptedCeloClient) TransactionReceipt(
-	ctx context.Context,
-	txHash common.Hash,
-) (*types.Receipt, error) {
-	return macc.receipt, nil
 }
 
 func (macc *mockAdaptedCeloClient) PendingNonceAt(

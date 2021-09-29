@@ -2,6 +2,7 @@ package ethutil
 
 import (
 	"bytes"
+	"context"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,7 +27,7 @@ var originalTransactorOptions = &bind.TransactOpts{
 func TestForceMining_Legacy_NoResubmission(t *testing.T) {
 	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -56,7 +57,7 @@ func TestForceMining_Legacy_NoResubmission(t *testing.T) {
 func TestForceMining_Legacy_OneResubmission(t *testing.T) {
 	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -108,7 +109,7 @@ func TestForceMining_Legacy_OneResubmission(t *testing.T) {
 func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -180,7 +181,7 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 	originalTransaction := createLegacyTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -251,7 +252,7 @@ func TestForceMining_Legacy_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	// is 45 Gwei
 	originalTransaction := createLegacyTransaction(big.NewInt(46000000000))
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -286,7 +287,7 @@ func TestForceMining_DynamicFee_NoResubmission(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	// Base fee remains unchanged.
 	chain.blocks = append(chain.blocks, big.NewInt(1))
@@ -369,7 +370,7 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 				originalGasTipCap,
 			)
 
-			chain := &mockAdaptedEthereumClient{}
+			chain := &mockAdaptedEthereumClientWithReceipt{}
 
 			chain.blocks = append(chain.blocks, big.NewInt(1))
 			chain.blocksBaseFee = append(chain.blocksBaseFee, test.nextBaseFee)
@@ -448,7 +449,7 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	// Base fee remains unchanged.
 	chain.blocks = append(chain.blocks, big.NewInt(1))
@@ -554,7 +555,7 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	// Massive increase of base fee to 30 Gwei. This is needed
 	// to exceed the maximum gas fee cap value.
@@ -641,7 +642,7 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	// Base fee remains unchanged.
 	chain.blocks = append(chain.blocks, big.NewInt(1))
@@ -755,7 +756,7 @@ func TestForceMining_DynamicFee_OriginalPriceHigherThanMaxAllowed(t *testing.T) 
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClient{}
+	chain := &mockAdaptedEthereumClientWithReceipt{}
 
 	// Base fee remains unchanged.
 	chain.blocks = append(chain.blocks, big.NewInt(1))
@@ -816,4 +817,17 @@ func createDynamicFeeTransaction(gasFeeCap, gasTipCap *big.Int) *types.Transacti
 		GasTipCap: gasTipCap,
 		Gas:       35000,
 	})
+}
+
+type mockAdaptedEthereumClientWithReceipt struct {
+	*mockAdaptedEthereumClient
+
+	receipt *types.Receipt
+}
+
+func (maecwr *mockAdaptedEthereumClientWithReceipt) TransactionReceipt(
+	ctx context.Context,
+	txHash common.Hash,
+) (*types.Receipt, error) {
+	return maecwr.receipt, nil
 }

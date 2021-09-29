@@ -2,6 +2,7 @@ package celoutil
 
 import (
 	"bytes"
+	"context"
 	"github.com/celo-org/celo-blockchain/accounts/abi/bind"
 	"github.com/celo-org/celo-blockchain/common"
 	"github.com/celo-org/celo-blockchain/core/types"
@@ -26,7 +27,7 @@ var originalTransactorOptions = &bind.TransactOpts{
 func TestForceMining_NoResubmission(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := &mockAdaptedCeloClient{}
+	chain := &mockAdaptedCeloClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -56,7 +57,7 @@ func TestForceMining_NoResubmission(t *testing.T) {
 func TestForceMining_OneResubmission(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := &mockAdaptedCeloClient{}
+	chain := &mockAdaptedCeloClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -104,7 +105,7 @@ func TestForceMining_OneResubmission(t *testing.T) {
 func TestForceMining_MultipleAttempts(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := &mockAdaptedCeloClient{}
+	chain := &mockAdaptedCeloClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -172,7 +173,7 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 	originalTransaction := createTransaction(big.NewInt(20000000000)) // 20 Gwei
 
-	chain := &mockAdaptedCeloClient{}
+	chain := &mockAdaptedCeloClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -239,7 +240,7 @@ func TestForceMining_OriginalPriceHigherThanMaxAllowed(t *testing.T) {
 	// is 45 Gwei
 	originalTransaction := createTransaction(big.NewInt(46000000000))
 
-	chain := &mockAdaptedCeloClient{}
+	chain := &mockAdaptedCeloClientWithReceipt{}
 
 	var resubmissions []*bind.TransactOpts
 
@@ -292,4 +293,17 @@ func createTransaction(gasPrice *big.Int) *types.Transaction {
 		nil,
 		[]byte{},
 	)
+}
+
+type mockAdaptedCeloClientWithReceipt struct {
+	*mockAdaptedCeloClient
+
+	receipt *types.Receipt
+}
+
+func (maccwr *mockAdaptedCeloClientWithReceipt) TransactionReceipt(
+	ctx context.Context,
+	txHash common.Hash,
+) (*types.Receipt, error) {
+	return maccwr.receipt, nil
 }

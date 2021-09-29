@@ -161,7 +161,6 @@ type mockAdaptedEthereumClient struct {
 
 	blocks        []*big.Int
 	blocksBaseFee []*big.Int
-	receipt       *types.Receipt
 	nonces        map[common.Address]uint64
 }
 
@@ -197,13 +196,6 @@ func (maec *mockAdaptedEthereumClient) SubscribeNewHead(
 		unsubscribeFn: func() {},
 		errChan:       make(chan error),
 	}, nil
-}
-
-func (maec *mockAdaptedEthereumClient) TransactionReceipt(
-	ctx context.Context,
-	txHash common.Hash,
-) (*types.Receipt, error) {
-	return maec.receipt, nil
 }
 
 func (maec *mockAdaptedEthereumClient) PendingNonceAt(

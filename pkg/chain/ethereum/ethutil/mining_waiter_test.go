@@ -287,7 +287,9 @@ func TestForceMining_DynamicFee_NoResubmission(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClientWithReceipt{}
+	chain := &mockAdaptedEthereumClientWithReceipt{
+		mockAdaptedEthereumClient: &mockAdaptedEthereumClient{},
+	}
 
 	// Base fee remains unchanged.
 	chain.blocks = append(chain.blocks, big.NewInt(1))
@@ -370,7 +372,9 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 				originalGasTipCap,
 			)
 
-			chain := &mockAdaptedEthereumClientWithReceipt{}
+			chain := &mockAdaptedEthereumClientWithReceipt{
+				mockAdaptedEthereumClient: &mockAdaptedEthereumClient{},
+			}
 
 			chain.blocks = append(chain.blocks, big.NewInt(1))
 			chain.blocksBaseFee = append(chain.blocksBaseFee, test.nextBaseFee)
@@ -449,7 +453,9 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClientWithReceipt{}
+	chain := &mockAdaptedEthereumClientWithReceipt{
+		mockAdaptedEthereumClient: &mockAdaptedEthereumClient{},
+	}
 
 	// Base fee remains unchanged.
 	chain.blocks = append(chain.blocks, big.NewInt(1))
@@ -555,7 +561,9 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClientWithReceipt{}
+	chain := &mockAdaptedEthereumClientWithReceipt{
+		mockAdaptedEthereumClient: &mockAdaptedEthereumClient{},
+	}
 
 	// Massive increase of base fee to 30 Gwei. This is needed
 	// to exceed the maximum gas fee cap value.
@@ -642,7 +650,9 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClientWithReceipt{}
+	chain := &mockAdaptedEthereumClientWithReceipt{
+		mockAdaptedEthereumClient: &mockAdaptedEthereumClient{},
+	}
 
 	// Base fee remains unchanged.
 	chain.blocks = append(chain.blocks, big.NewInt(1))
@@ -756,7 +766,9 @@ func TestForceMining_DynamicFee_OriginalPriceHigherThanMaxAllowed(t *testing.T) 
 		originalGasTipCap,
 	)
 
-	chain := &mockAdaptedEthereumClientWithReceipt{}
+	chain := &mockAdaptedEthereumClientWithReceipt{
+		mockAdaptedEthereumClient: &mockAdaptedEthereumClient{},
+	}
 
 	// Base fee remains unchanged.
 	chain.blocks = append(chain.blocks, big.NewInt(1))

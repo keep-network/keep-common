@@ -335,7 +335,7 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 			// Base fee decreased to 5 Gwei.
 			nextBaseFee: big.NewInt(5000000000),
 			// Gas fee cap should be computed as: 2 * 5 Gwei + 4.8 Gwei = 14.8 Gwei.
-			// However, this value doesn't fulfill the required fee bump threshold.
+			// However, this value doesn't fulfill the required base fee bump threshold.
 			// In result, the new gas fee value should be bumped up by 10% to
 			// satisfy the condition: 24 Gwei * 1.1 = 26.4 Gwei
 			expectedGasFeeCap: big.NewInt(26400000000),
@@ -346,7 +346,7 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 			// Base fee remains 10 Gwei.
 			nextBaseFee: originalBaseFee,
 			// Gas fee cap should be computed as: 2 * 10 Gwei + 4.8 Gwei = 24.8 Gwei.
-			// However, this value doesn't fulfill the required fee bump threshold.
+			// However, this value doesn't fulfill the required base fee bump threshold.
 			// In result, the new gas fee value should be bumped up by 10% to
 			// satisfy the condition: 24 Gwei * 1.1 = 26.4 Gwei
 			expectedGasFeeCap: big.NewInt(26400000000),
@@ -591,6 +591,10 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 		resubmitFn,
 	)
 
+	// The new gas fee value should be computed as usual:
+	// 2 * 30 Gwei + 4.8 gwei = 64.8 Gwei. However, this value exceeds the
+	// max gas fee cap value of 45 Gwei. In effect, one resubmission with the
+	// maximum value should be made.
 	resubmissionCount := len(resubmissions)
 	if resubmissionCount != 1 {
 		t.Fatalf(

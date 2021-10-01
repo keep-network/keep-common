@@ -397,7 +397,7 @@ func (mw *MiningWaiter) latestBaseFee() (*big.Int, error) {
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not get latest block: [%v]", err)
+		return nil, fmt.Errorf("could not get the latest block: [%v]", err)
 	}
 
 	baseFee := latestBlock.BaseFee()

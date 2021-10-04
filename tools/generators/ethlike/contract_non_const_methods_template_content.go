@@ -87,7 +87,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 			// code, let the the submitter re-estimate the gas limit on each
 			// resubmission.
 			if transactorOptions.GasLimit != 0 {
-				newTransactorOptions.GasLimit = transaction.Gas()
+				newTransactorOptions.GasLimit = transactorOptions.GasLimit
 			}
 
 			transaction, err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(

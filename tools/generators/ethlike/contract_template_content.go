@@ -40,7 +40,7 @@ type {{.Class}} struct {
 	transactorOptions  *bind.TransactOpts
 	errorResolver      *chainutil.ErrorResolver
 	nonceManager       *ethlike.NonceManager
-	miningWaiter       *ethlike.MiningWaiter
+	miningWaiter       *chainutil.MiningWaiter
 	blockCounter	   *ethlike.BlockCounter
 
 	transactionMutex *sync.Mutex
@@ -52,7 +52,7 @@ func New{{.Class}}(
     accountKey *keystore.Key,
     backend bind.ContractBackend,
     nonceManager *ethlike.NonceManager,
-    miningWaiter *ethlike.MiningWaiter,
+    miningWaiter *chainutil.MiningWaiter,
     blockCounter *ethlike.BlockCounter,
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {

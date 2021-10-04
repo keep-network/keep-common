@@ -6,14 +6,6 @@ import (
 	"math/big"
 )
 
-// Hash represents the 32 byte Keccak256 hash of arbitrary data.
-type Hash [32]byte
-
-// TerminalString returns the hash as a console string.
-func (h Hash) TerminalString() string {
-	return fmt.Sprintf("%x…%x", h[:3], h[29:])
-}
-
 // Address represents the 20 byte address of an ETH-like account.
 type Address [20]byte
 
@@ -30,18 +22,6 @@ type Header struct {
 // Block represents an entire block in the ETH-like blockchain.
 type Block struct {
 	*Header
-}
-
-// Transaction represents an ETH-like chain transaction.
-type Transaction struct {
-	Hash     Hash
-	GasPrice *big.Int
-}
-
-// Receipt represents the results of a transaction.
-type Receipt struct {
-	Status      uint64
-	BlockNumber *big.Int
 }
 
 // Subscription represents an event subscription where events are delivered
@@ -71,14 +51,6 @@ type ChainReader interface {
 	) (Subscription, error)
 }
 
-// TransactionReader provides access to past transactions and their receipts.
-type TransactionReader interface {
-	// TransactionReceipt returns the receipt of a mined transaction.
-	// Note that the transaction may not be included in the current canonical
-	// chain even if a receipt exists.
-	TransactionReceipt(ctx context.Context, txHash Hash) (*Receipt, error)
-}
-
 // ContractTransactor defines the methods needed to allow operating with
 // contract on a write only basis.
 type ContractTransactor interface {
@@ -90,6 +62,5 @@ type ContractTransactor interface {
 // Chain represents an ETH-like chain handle.
 type Chain interface {
 	ChainReader
-	TransactionReader
 	ContractTransactor
 }

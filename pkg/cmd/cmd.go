@@ -4,9 +4,6 @@ package cmd
 
 import (
 	"fmt"
-	"math/big"
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/keep-network/keep-common/pkg/cmd/flag"
 	"github.com/urfave/cli"
@@ -43,19 +40,6 @@ var (
 	// interaction. The value, if that flag is passed on the command line, is
 	// stored in this variable.
 	ValueFlagValue *flag.Uint256 = &flag.Uint256{}
-
-	// DefaultMiningCheckInterval is the default interval in which transaction
-	// mining status is checked. If the transaction is not mined within this
-	// time, the gas price is increased and transaction is resubmitted.
-	// This value can be overwritten in the configuration file.
-	DefaultMiningCheckInterval = 60 * time.Second
-
-	// DefaultMaxGasPrice specifies the default maximum gas price the client is
-	// willing to pay for the transaction to be mined. The offered transaction
-	// gas price can not be higher than the max gas price value. If the maximum
-	// allowed gas price is reached, no further resubmission attempts are
-	// performed. This value can be overwritten in the configuration file.
-	DefaultMaxGasPrice = big.NewInt(500000000000) // 500 Gwei
 )
 
 // AvailableCommands is the exported list of generated commands that can be

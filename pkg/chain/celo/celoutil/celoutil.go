@@ -4,10 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"io/ioutil"
-	"math/big"
-	"time"
-
 	"github.com/celo-org/celo-blockchain"
 	"github.com/celo-org/celo-blockchain/accounts/abi"
 	"github.com/celo-org/celo-blockchain/accounts/abi/bind"
@@ -19,6 +15,8 @@ import (
 	"github.com/celo-org/celo-blockchain/rpc"
 	"github.com/ipfs/go-log"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
+	"io/ioutil"
+	"math/big"
 )
 
 var logger = log.Logger("keep-celoutil")
@@ -203,21 +201,6 @@ func EstimateGas(
 // Celo client.
 func NewBlockCounter(client CeloClient) (*ethlike.BlockCounter, error) {
 	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
-}
-
-// NewMiningWaiter creates a new MiningWaiter instance for the provided
-// Celo client. It accepts two parameters setting up monitoring rules
-// of the transaction mining status.
-func NewMiningWaiter(
-	client CeloClient,
-	checkInterval time.Duration,
-	maxGasPrice *big.Int,
-) *ethlike.MiningWaiter {
-	return ethlike.NewMiningWaiter(
-		&ethlikeAdapter{client},
-		checkInterval,
-		maxGasPrice,
-	)
 }
 
 // NewNonceManager creates NonceManager instance for the provided account

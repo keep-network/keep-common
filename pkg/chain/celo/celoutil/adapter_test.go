@@ -122,44 +122,6 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	}
 }
 
-func TestEthlikeAdapter_TransactionReceipt(t *testing.T) {
-	var hash [32]byte
-	copy(hash[:], []byte{255})
-
-	client := &mockAdaptedCeloClient{
-		transactions: map[common.Hash]*types.Receipt{
-			common.BytesToHash(hash[:]): {
-				Status:      1,
-				BlockNumber: big.NewInt(100),
-			},
-		},
-	}
-
-	adapter := &ethlikeAdapter{client}
-
-	receipt, err := adapter.TransactionReceipt(
-		context.Background(),
-		hash,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expectedReceipt := &ethlike.Receipt{
-		Status:      1,
-		BlockNumber: big.NewInt(100),
-	}
-	if !reflect.DeepEqual(expectedReceipt, receipt) {
-		t.Errorf(
-			"unexpected tx receipt\n"+
-				"expected: [%+v]\n"+
-				"actual:   [%+v]",
-			expectedReceipt,
-			receipt,
-		)
-	}
-}
-
 func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 	var address [20]byte
 	copy(address[:], []byte{255})
@@ -192,9 +154,8 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 type mockAdaptedCeloClient struct {
 	*mockCeloClient
 
-	blocks       []*big.Int
-	transactions map[common.Hash]*types.Receipt
-	nonces       map[common.Address]uint64
+	blocks []*big.Int
+	nonces map[common.Address]uint64
 }
 
 func (macc *mockAdaptedCeloClient) BlockByNumber(
@@ -226,17 +187,6 @@ func (macc *mockAdaptedCeloClient) SubscribeNewHead(
 		unsubscribeFn: func() {},
 		errChan:       make(chan error),
 	}, nil
-}
-
-func (macc *mockAdaptedCeloClient) TransactionReceipt(
-	ctx context.Context,
-	txHash common.Hash,
-) (*types.Receipt, error) {
-	if tx, ok := macc.transactions[txHash]; ok {
-		return tx, nil
-	}
-
-	return nil, fmt.Errorf("no tx with given hash")
 }
 
 func (macc *mockAdaptedCeloClient) PendingNonceAt(

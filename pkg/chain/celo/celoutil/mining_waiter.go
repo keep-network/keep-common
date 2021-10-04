@@ -180,7 +180,6 @@ func (mw *MiningWaiter) ForceMining(
 		// Copy transactor options.
 		newTransactorOptions := new(bind.TransactOpts)
 		*newTransactorOptions = *originalTransactorOptions
-		newTransactorOptions.GasLimit = originalTransaction.Gas()
 		newTransactorOptions.GasPrice = gasPrice
 
 		transaction, err = resubmitFn(newTransactorOptions)

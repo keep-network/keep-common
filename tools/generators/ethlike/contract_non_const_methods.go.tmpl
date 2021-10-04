@@ -77,6 +77,16 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 		transaction,
 		transactorOptions,
 		func(newTransactorOptions *bind.TransactOpts) (*types.Transaction, error) {
+			// If original transactor options has a non-zero gas limit, that
+			// means the client code set it on their own. In that case, we
+			// should rewrite the gas limit from the original transaction
+			// for each resubmission. If the gas limit is not set by the client
+			// code, let the the submitter re-estimate the gas limit on each
+			// resubmission.
+			if transactorOptions.GasLimit != 0 {
+				newTransactorOptions.GasLimit = transaction.Gas()
+			}
+
 			transaction, err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(
 		        newTransactorOptions,
 		        {{$method.Params}}

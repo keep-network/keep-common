@@ -225,7 +225,6 @@ func (mw *MiningWaiter) forceMiningLegacyTx(
 		// Copy transactor options.
 		newTransactorOptions := new(bind.TransactOpts)
 		*newTransactorOptions = *originalTransactorOptions
-		newTransactorOptions.GasLimit = originalTransaction.Gas()
 		newTransactorOptions.GasPrice = gasPrice
 
 		transaction, err = resubmitFn(newTransactorOptions)
@@ -375,7 +374,6 @@ func (mw *MiningWaiter) forceMiningDynamicFeeTx(
 		// Copy transactor options.
 		newTransactorOptions := new(bind.TransactOpts)
 		*newTransactorOptions = *originalTransactorOptions
-		newTransactorOptions.GasLimit = originalTransaction.Gas()
 		newTransactorOptions.GasFeeCap = newGasFeeCap
 		newTransactorOptions.GasTipCap = newGasTipCap
 

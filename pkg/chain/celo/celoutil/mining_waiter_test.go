@@ -84,10 +84,6 @@ func TestForceMining_OneResubmission(t *testing.T) {
 
 	assertNonceUnchanged(t, resubmission)
 
-	if resubmission.GasLimit != originalTransaction.Gas() {
-		t.Fatalf("gas limit should be the same as in original transaction")
-	}
-
 	// The original gas price should be bumped up by 20% and be equal to 24 Gwei.
 	expectedGasPrice := big.NewInt(24000000000)
 	if resubmission.GasPrice.Cmp(expectedGasPrice) != 0 {
@@ -147,14 +143,6 @@ func TestForceMining_MultipleAttempts(t *testing.T) {
 	for index, resubmission := range resubmissions {
 		assertNonceUnchanged(t, resubmission)
 
-		if resubmission.GasLimit != originalTransaction.Gas() {
-			t.Fatalf(
-				"resubmission [%v] gas limit should be the same as in "+
-					"original transaction",
-				index,
-			)
-		}
-
 		price := resubmission.GasPrice
 		if price.Cmp(expectedResubmissionGasPrices[index]) != 0 {
 			t.Fatalf(
@@ -211,14 +199,6 @@ func TestForceMining_MaxAllowedPriceReached(t *testing.T) {
 
 	for index, resubmission := range resubmissions {
 		assertNonceUnchanged(t, resubmission)
-
-		if resubmission.GasLimit != originalTransaction.Gas() {
-			t.Fatalf(
-				"resubmission [%v] gas limit should be the same as in "+
-					"original transaction",
-				index,
-			)
-		}
 
 		price := resubmission.GasPrice
 		if price.Cmp(expectedResubmissionGasPrices[index]) != 0 {

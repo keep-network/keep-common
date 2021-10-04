@@ -84,10 +84,6 @@ func TestForceMining_Legacy_OneResubmission(t *testing.T) {
 
 	assertNonceUnchanged(t, resubmission)
 
-	if resubmission.GasLimit != originalTransaction.Gas() {
-		t.Fatalf("gas limit should be the same as in original transaction")
-	}
-
 	if resubmission.GasFeeCap != nil || resubmission.GasTipCap != nil {
 		t.Fatalf("gas fee and tip cap should be nil")
 	}
@@ -150,14 +146,6 @@ func TestForceMining_Legacy_MultipleAttempts(t *testing.T) {
 	for index, resubmission := range resubmissions {
 		assertNonceUnchanged(t, resubmission)
 
-		if resubmission.GasLimit != originalTransaction.Gas() {
-			t.Fatalf(
-				"resubmission [%v] gas limit should be the same as in "+
-					"original transaction",
-				index,
-			)
-		}
-
 		if resubmission.GasFeeCap != nil || resubmission.GasTipCap != nil {
 			t.Fatalf("resubmission [%v] gas fee and tip cap should be nil", index)
 		}
@@ -218,14 +206,6 @@ func TestForceMining_Legacy_MaxAllowedPriceReached(t *testing.T) {
 
 	for index, resubmission := range resubmissions {
 		assertNonceUnchanged(t, resubmission)
-
-		if resubmission.GasLimit != originalTransaction.Gas() {
-			t.Fatalf(
-				"resubmission [%v] gas limit should be the same as in "+
-					"original transaction",
-				index,
-			)
-		}
 
 		if resubmission.GasFeeCap != nil || resubmission.GasTipCap != nil {
 			t.Fatalf("resubmission [%v] gas fee and tip cap should be nil", index)
@@ -410,10 +390,6 @@ func TestForceMining_DynamicFee_OneResubmission(t *testing.T) {
 
 			assertNonceUnchanged(t, resubmission)
 
-			if resubmission.GasLimit != originalTransaction.Gas() {
-				t.Fatalf("gas limit should be the same as in original transaction")
-			}
-
 			if resubmission.GasPrice != nil {
 				t.Fatalf("gas price should be nil")
 			}
@@ -511,14 +487,6 @@ func TestForceMining_DynamicFee_MultipleAttemps(t *testing.T) {
 	for index, resubmission := range resubmissions {
 		assertNonceUnchanged(t, resubmission)
 
-		if resubmission.GasLimit != originalTransaction.Gas() {
-			t.Fatalf(
-				"resubmission [%v] gas limit should be the same as in "+
-					"original transaction",
-				index,
-			)
-		}
-
 		if resubmission.GasPrice != nil {
 			t.Fatalf("resubmission [%v] gas price should be nil", index)
 		}
@@ -606,10 +574,6 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReached(t *testing.T) {
 	resubmission := resubmissions[0]
 
 	assertNonceUnchanged(t, resubmission)
-
-	if resubmission.GasLimit != originalTransaction.Gas() {
-		t.Fatalf("gas limit should be the same as in original transaction")
-	}
 
 	if resubmission.GasPrice != nil {
 		t.Fatalf("gas price should be nil")
@@ -717,14 +681,6 @@ func TestForceMining_DynamicFee_MaxAllowedPriceReachedButBelowThreshold(t *testi
 
 	for index, resubmission := range resubmissions {
 		assertNonceUnchanged(t, resubmission)
-
-		if resubmission.GasLimit != originalTransaction.Gas() {
-			t.Fatalf(
-				"resubmission [%v] gas limit should be the same as in "+
-					"original transaction",
-				index,
-			)
-		}
 
 		if resubmission.GasPrice != nil {
 			t.Fatalf("resubmission [%v] gas price should be nil", index)

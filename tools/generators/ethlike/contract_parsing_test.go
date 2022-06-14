@@ -122,12 +122,16 @@ func TestMethodStability(t *testing.T) {
 	allMethods["sap"] = abi.Method{Name: "sap", RawName: "sap"}
 	allMethods["map"] = abi.Method{Name: "map", RawName: "map", Constant: true}
 	allMethods["map0"] = abi.Method{Name: "map0", RawName: "map"}
+	allMethods["cap0"] = abi.Method{Name: "cap0", RawName: "cap0", StateMutability: "pure"}
+	allMethods["cap1"] = abi.Method{Name: "cap1", RawName: "cap1", StateMutability: "view"}
+	allMethods["nap0"] = abi.Method{Name: "nap0", RawName: "nap0", StateMutability: "nonpayable"}
+	allMethods["nap1"] = abi.Method{Name: "nap1", RawName: "nap1", StateMutability: "payable"}
 
 	payableMethods := make(map[string]struct{})
 	payableMethods["boop"] = struct{}{}
 
-	expectedConstMethodOrder := []string{"bap", "map"}
-	expectedNonConstMethodOrder := []string{"boop", "boop0", "map0", "sap"}
+	expectedConstMethodOrder := []string{"bap", "cap0", "cap1", "map"}
+	expectedNonConstMethodOrder := []string{"boop", "boop0", "map0", "nap0", "nap1", "sap"}
 
 	// Run 50 times to make sure we trigger Go's map key randomization, if
 	// applicable.

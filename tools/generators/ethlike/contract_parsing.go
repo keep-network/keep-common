@@ -203,9 +203,11 @@ func buildMethodInfo(
 		for index, param := range method.Inputs {
 			goType := bindType(param.Type, structs)
 
-			paramName := param.Name
-			if paramName == "" {
-				paramName = fmt.Sprintf("arg%v", index)
+			var paramName string
+			if param.Name == "" {
+				paramName = fmt.Sprintf("arg%d", index)
+			} else {
+				paramName = fmt.Sprintf("arg_%v", param.Name)
 			}
 
 			paramDeclarations += fmt.Sprintf("%v %v,\n", paramName, goType)
@@ -253,11 +255,11 @@ func buildMethodInfo(
 					continue
 				}
 
-				varName := output.Name
-
-				// Generate a name if the output is unnamed.
-				if varName == "" {
+				var varName string
+				if output.Name == "" {
 					varName = fmt.Sprintf("ret%d", index)
+				} else {
+					varName = fmt.Sprintf("ret_%v", output.Name)
 				}
 
 				returned.Vars += fmt.Sprintf("%v,", varName)

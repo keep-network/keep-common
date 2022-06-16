@@ -29,6 +29,9 @@ var (
 //go:linkname bindStructTypeGo github.com/ethereum/go-ethereum/accounts/abi/bind.bindStructTypeGo
 func bindStructTypeGo(kind abi.Type, structs map[string]struct{}) string
 
+//go:linkname structured github.com/ethereum/go-ethereum/accounts/abi/bind.structured
+func structured(args abi.Arguments) bool
+
 func init() {
 	var err error
 	classNameRegexp, err = regexp.Compile("ImplV.*")
@@ -83,7 +86,10 @@ type methodInfo struct {
 }
 
 type returnInfo struct {
-	Multi        bool
+	Multi bool
+	// Methods can return multiple outputs. If all the outputs are named they
+	// are combined into a struct.
+	Structured   bool
 	Type         string
 	Declarations string
 	Vars         string
@@ -230,7 +236,7 @@ func buildMethodInfo(
 			returned.Multi = true
 			returned.Type = strings.Replace(normalizedName, "get", "", 1)
 
-			for _, output := range method.Outputs {
+			for index, output := range method.Outputs {
 				goType := bindType(output.Type, structs)
 
 				returned.Declarations += fmt.Sprintf(
@@ -238,7 +244,23 @@ func buildMethodInfo(
 					uppercaseFirst(output.Name),
 					goType,
 				)
-				returned.Vars += fmt.Sprintf("%v,", output.Name)
+
+				returned.Structured = structured(method.Outputs)
+
+				// For structured outputs return one variable.
+				if returned.Structured {
+					returned.Vars = "ret,"
+					continue
+				}
+
+				varName := output.Name
+
+				// Generate a name if the output is unnamed.
+				if varName == "" {
+					varName = fmt.Sprintf("ret%d", index)
+				}
+
+				returned.Vars += fmt.Sprintf("%v,", varName)
 			}
 		} else if len(method.Outputs) == 0 {
 			returned.Multi = false

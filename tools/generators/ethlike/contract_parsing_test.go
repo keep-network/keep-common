@@ -114,6 +114,7 @@ func TestCamelCase(t *testing.T) {
 	}
 }
 
+// TODO: Implement tests for Inputs and Outputs type bindings including structs.
 func TestMethodStability(t *testing.T) {
 	allMethods := make(map[string]abi.Method)
 	allMethods["boop"] = abi.Method{Name: "boop", RawName: "boop"}
@@ -130,13 +131,15 @@ func TestMethodStability(t *testing.T) {
 	payableMethods := make(map[string]struct{})
 	payableMethods["boop"] = struct{}{}
 
+	structs := make(map[string]struct{})
+
 	expectedConstMethodOrder := []string{"bap", "cap0", "cap1", "map"}
 	expectedNonConstMethodOrder := []string{"boop", "boop0", "map0", "nap0", "nap1", "sap"}
 
 	// Run 50 times to make sure we trigger Go's map key randomization, if
 	// applicable.
 	for i := 0; i < 50; i++ {
-		constMethods, nonConstMethods := buildMethodInfo(payableMethods, allMethods)
+		constMethods, nonConstMethods := buildMethodInfo(payableMethods, allMethods, structs)
 
 		methodNames := []string{}
 		for _, constMethod := range constMethods {
@@ -165,6 +168,7 @@ func TestMethodStability(t *testing.T) {
 	}
 }
 
+// TODO: Implement tests for Inputs type bindings including structs.
 func TestEventStability(t *testing.T) {
 	allEvents := make(map[string]abi.Event)
 	allEvents["boop"] = abi.Event{Name: "boop", RawName: "boop"}
@@ -174,10 +178,12 @@ func TestEventStability(t *testing.T) {
 
 	expectedEventOrder := []string{"bap", "boop", "map", "sap"}
 
+	structs := make(map[string]struct{})
+
 	// Run 50 times to make sure we trigger Go's map key randomization, if
 	// applicable.
 	for i := 0; i < 50; i++ {
-		events := buildEventInfo("b", allEvents)
+		events := buildEventInfo("b", allEvents, structs)
 
 		eventNames := []string{}
 		for _, event := range events {

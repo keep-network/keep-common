@@ -7,6 +7,10 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+
+	_ "unsafe"
+
+	_ "github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
 
 // The extracted name + payability of methods from ABI JSON.
@@ -19,6 +23,11 @@ var (
 	classNameRegexp *regexp.Regexp
 	shortVarRegexp  *regexp.Regexp
 )
+
+// bindStructTypeGo resolves Go bindings for structs. It links to a non-exported
+// method of go-ethereum's bind package that is used for Go bindings generation.
+//go:linkname bindStructTypeGo github.com/ethereum/go-ethereum/accounts/abi/bind.bindStructTypeGo
+func bindStructTypeGo(kind abi.Type, structs map[string]struct{}) string
 
 func init() {
 	var err error
@@ -124,8 +133,10 @@ func buildContractInfo(
 		[]byte(lowercaseFirst(string(goClassName))),
 		[]byte("-$0"),
 	)))
-	constMethods, nonConstMethods := buildMethodInfo(payableMethods, abi.Methods)
-	events := buildEventInfo(shortVar, abi.Events)
+
+	structs := make(map[string]struct{})
+	constMethods, nonConstMethods := buildMethodInfo(payableMethods, abi.Methods, structs)
+	events := buildEventInfo(shortVar, abi.Events, structs)
 
 	return contractInfo{
 		hostChainModule,
@@ -145,6 +156,7 @@ func buildContractInfo(
 func buildMethodInfo(
 	payableMethods map[string]struct{},
 	methodsByName map[string]abi.Method,
+	structs map[string]struct{},
 ) (constMethods []methodInfo, nonConstMethods []methodInfo) {
 	nonConstMethods = make([]methodInfo, 0, len(methodsByName))
 	constMethods = make([]methodInfo, 0, len(methodsByName))
@@ -183,7 +195,8 @@ func buildMethodInfo(
 		paramInfos := make([]paramInfo, 0, 0)
 
 		for index, param := range method.Inputs {
-			goType := param.Type.GetType().String()
+			goType := bindType(param.Type, structs)
+
 			paramName := param.Name
 			if paramName == "" {
 				paramName = fmt.Sprintf("arg%v", index)
@@ -218,7 +231,7 @@ func buildMethodInfo(
 			returned.Type = strings.Replace(normalizedName, "get", "", 1)
 
 			for _, output := range method.Outputs {
-				goType := output.Type.GetType().String()
+				goType := bindType(output.Type, structs)
 
 				returned.Declarations += fmt.Sprintf(
 					"\t%v %v\n",
@@ -231,7 +244,7 @@ func buildMethodInfo(
 			returned.Multi = false
 		} else {
 			returned.Multi = false
-			returned.Type = method.Outputs[0].Type.GetType().String()
+			returned.Type = bindType(method.Outputs[0].Type, structs)
 			returned.Vars += "ret,"
 		}
 
@@ -264,6 +277,7 @@ func buildMethodInfo(
 func buildEventInfo(
 	contractShortVar string,
 	eventsByName map[string]abi.Event,
+	structs map[string]struct{},
 ) []eventInfo {
 	eventInfos := make([]eventInfo, 0, len(eventsByName))
 	for name, event := range eventsByName {
@@ -288,7 +302,7 @@ func buildEventInfo(
 		indexedFilters := ""
 		for _, param := range event.Inputs {
 			upperParam := uppercaseFirst(param.Name)
-			goType := param.Type.GetType().String()
+			goType := bindType(param.Type, structs)
 
 			paramDeclarations += fmt.Sprintf("%v %v,\n", upperParam, goType)
 			paramExtractors += fmt.Sprintf("event.%v,\n", upperParam)
@@ -386,4 +400,17 @@ func isMethodConstant(method abi.Method) bool {
 	return method.StateMutability == "view" ||
 		method.StateMutability == "pure" ||
 		method.Constant
+}
+
+// Converts solidity type to a Go type.
+func bindType(kind abi.Type, structs map[string]struct{}) string {
+	goType := bindStructTypeGo(kind, structs)
+
+	// Bindings for structs are expected to be generated into the `abi` package
+	// by the abigen command.
+	if kind.T == abi.TupleTy {
+		goType = "abi." + goType
+	}
+
+	return goType
 }

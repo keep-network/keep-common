@@ -17,11 +17,14 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ipfs/go-log"
 )
 
 var logger = log.Logger("keep-metrics")
+
+const readHeaderTimeout = 2 * time.Second
 
 type metric interface {
 	expose() string
@@ -55,7 +58,10 @@ func NewRegistry() *Registry {
 // EnableServer enables the metrics server on the given port. Data will
 // be exposed on `/metrics` path.
 func (r *Registry) EnableServer(port int) {
-	server := &http.Server{Addr: ":" + strconv.Itoa(port)}
+	server := &http.Server{
+		Addr:              ":" + strconv.Itoa(port),
+		ReadHeaderTimeout: readHeaderTimeout,
+	}
 
 	http.HandleFunc("/metrics", func(response http.ResponseWriter, _ *http.Request) {
 		if _, err := io.WriteString(response, r.exposeMetrics()); err != nil {

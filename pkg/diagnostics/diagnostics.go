@@ -10,11 +10,14 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/ipfs/go-log"
 )
 
 var logger = log.Logger("keep-diagnostics")
+
+const readHeaderTimeout = 2 * time.Second
 
 // Registry performs all management of diagnostic. Specifically, it allows
 // to registering new diagnostics sources and exposing them through the diagnostics server.
@@ -33,7 +36,10 @@ func NewRegistry() *Registry {
 // EnableServer enables the diagnostics server on the given port. Data will
 // be exposed on `/diagnostics` path in JSON format.
 func (r *Registry) EnableServer(port int) {
-	server := &http.Server{Addr: ":" + strconv.Itoa(port)}
+	server := &http.Server{
+		Addr:              ":" + strconv.Itoa(port),
+		ReadHeaderTimeout: readHeaderTimeout,
+	}
 
 	http.HandleFunc("/diagnostics", func(response http.ResponseWriter, _ *http.Request) {
 		if _, err := io.WriteString(response, r.exposeDiagnostics()); err != nil {

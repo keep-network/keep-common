@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -185,7 +186,7 @@ func EnsureDirectoryExists(dirBasePath, newDirName string) error {
 
 // Write creates and writes data to a file
 func Write(filePath string, data []byte) error {
-	writeFile, err := os.Create(filePath)
+	writeFile, err := os.Create(filepath.Clean(filePath))
 	if err != nil {
 		return err
 	}

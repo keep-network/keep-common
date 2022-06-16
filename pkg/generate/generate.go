@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"golang.org/x/tools/imports"
 )
@@ -37,7 +38,7 @@ func OrganizeImports(codeBuffer *bytes.Buffer, filePath string) error {
 // Returns nil if the file was written successfully, or an error if there was an
 // error writing the file.
 func SaveBufferToFile(buffer *bytes.Buffer, filePath string) error {
-	file, err := os.Create(filePath)
+	file, err := os.Create(filepath.Clean(filePath))
 
 	// #nosec G104 G307 (audit errors not checked & deferring unsafe method)
 	// This line is placed in the auxiliary generator code,

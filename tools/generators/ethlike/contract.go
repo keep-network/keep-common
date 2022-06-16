@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -249,7 +250,7 @@ func organizeImports(outFile string, buf *bytes.Buffer) error {
 
 // Stores the Buffer `buf` content to a file in `filePath`
 func saveBufferToFile(buf *bytes.Buffer, filePath string) error {
-	file, err := os.Create(filePath)
+	file, err := os.Create(filepath.Clean(filePath))
 
 	// #nosec G104 G307 (audit errors not checked & deferring unsafe method)
 	// This line is placed in the auxiliary generator code,

@@ -29,6 +29,11 @@ var (
 //go:linkname bindStructTypeGo github.com/ethereum/go-ethereum/accounts/abi/bind.bindStructTypeGo
 func bindStructTypeGo(kind abi.Type, structs map[string]struct{}) string
 
+// bindStructTypeGo resolves Go bindings for topics. It links to a non-exported
+// method of go-ethereum's bind package that is used for Go bindings generation.
+//go:linkname bindTopicTypeGo github.com/ethereum/go-ethereum/accounts/abi/bind.bindTopicTypeGo
+func bindTopicTypeGo(kind abi.Type, structs map[string]struct{}) string
+
 //go:linkname structured github.com/ethereum/go-ethereum/accounts/abi/bind.structured
 func structured(args abi.Arguments) bool
 
@@ -328,13 +333,19 @@ func buildEventInfo(
 			upperParam := uppercaseFirst(param.Name)
 			goType := bindType(param.Type, structs)
 
-			paramDeclarations += fmt.Sprintf("%v %v,\n", upperParam, goType)
 			paramExtractors += fmt.Sprintf("event.%v,\n", upperParam)
+
 			if param.Indexed {
+				// For event's indexed parameter abigen uses dedicated type binding
+				// for topic.
+				paramDeclarations += fmt.Sprintf("%v %v,\n", upperParam, bindTopicType(param.Type, structs))
+
 				indexedFilterExtractors += fmt.Sprintf("%v.%vFilter,\n", subscriptionShortVar, param.Name)
 				indexedFilterDeclarations += fmt.Sprintf("%vFilter []%v,\n", param.Name, goType)
 				indexedFilterFields += fmt.Sprintf("%vFilter []%v\n", param.Name, goType)
 				indexedFilters += fmt.Sprintf("%vFilter,\n", param.Name)
+			} else {
+				paramDeclarations += fmt.Sprintf("%v %v,\n", upperParam, goType)
 			}
 		}
 
@@ -429,6 +440,19 @@ func isMethodConstant(method abi.Method) bool {
 // Converts solidity type to a Go type.
 func bindType(kind abi.Type, structs map[string]struct{}) string {
 	goType := bindStructTypeGo(kind, structs)
+
+	// Bindings for structs are expected to be generated into the `abi` package
+	// by the abigen command.
+	if kind.T == abi.TupleTy {
+		goType = "abi." + goType
+	}
+
+	return goType
+}
+
+// Converts solidity topic type to a Go type.
+func bindTopicType(kind abi.Type, structs map[string]struct{}) string {
+	goType := bindTopicTypeGo(kind, structs)
 
 	// Bindings for structs are expected to be generated into the `abi` package
 	// by the abigen command.

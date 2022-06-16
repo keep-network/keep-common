@@ -393,7 +393,7 @@ func (eis eventInfoSlice) Swap(i, j int) {
 	eis[i], eis[j] = eis[j], eis[i]
 }
 
-// Verify if a method should be considered as constant based on the modifier.
+// Verifies if a method should be considered as constant based on the modifier.
 // Constants methods are `view` or `pure`. For compatibility with code generated
 // by compilers before v0.6.0 verify also a legacy `Constant` identifier.
 func isMethodConstant(method abi.Method) bool {

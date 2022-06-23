@@ -114,6 +114,7 @@ func TestCamelCase(t *testing.T) {
 	}
 }
 
+// TODO: Implement tests for Inputs and Outputs type bindings including structs.
 func TestMethodStability(t *testing.T) {
 	allMethods := make(map[string]abi.Method)
 	allMethods["boop"] = abi.Method{Name: "boop", RawName: "boop"}
@@ -122,17 +123,23 @@ func TestMethodStability(t *testing.T) {
 	allMethods["sap"] = abi.Method{Name: "sap", RawName: "sap"}
 	allMethods["map"] = abi.Method{Name: "map", RawName: "map", Constant: true}
 	allMethods["map0"] = abi.Method{Name: "map0", RawName: "map"}
+	allMethods["cap0"] = abi.Method{Name: "cap0", RawName: "cap0", StateMutability: "pure"}
+	allMethods["cap1"] = abi.Method{Name: "cap1", RawName: "cap1", StateMutability: "view"}
+	allMethods["nap0"] = abi.Method{Name: "nap0", RawName: "nap0", StateMutability: "nonpayable"}
+	allMethods["nap1"] = abi.Method{Name: "nap1", RawName: "nap1", StateMutability: "payable"}
 
 	payableMethods := make(map[string]struct{})
 	payableMethods["boop"] = struct{}{}
 
-	expectedConstMethodOrder := []string{"bap", "map"}
-	expectedNonConstMethodOrder := []string{"boop", "boop0", "map0", "sap"}
+	structs := make(map[string]struct{})
+
+	expectedConstMethodOrder := []string{"bap", "cap0", "cap1", "map"}
+	expectedNonConstMethodOrder := []string{"boop", "boop0", "map0", "nap0", "nap1", "sap"}
 
 	// Run 50 times to make sure we trigger Go's map key randomization, if
 	// applicable.
 	for i := 0; i < 50; i++ {
-		constMethods, nonConstMethods := buildMethodInfo(payableMethods, allMethods)
+		constMethods, nonConstMethods := buildMethodInfo(payableMethods, allMethods, structs)
 
 		methodNames := []string{}
 		for _, constMethod := range constMethods {
@@ -161,6 +168,7 @@ func TestMethodStability(t *testing.T) {
 	}
 }
 
+// TODO: Implement tests for Inputs type bindings including structs.
 func TestEventStability(t *testing.T) {
 	allEvents := make(map[string]abi.Event)
 	allEvents["boop"] = abi.Event{Name: "boop", RawName: "boop"}
@@ -170,10 +178,12 @@ func TestEventStability(t *testing.T) {
 
 	expectedEventOrder := []string{"bap", "boop", "map", "sap"}
 
+	structs := make(map[string]struct{})
+
 	// Run 50 times to make sure we trigger Go's map key randomization, if
 	// applicable.
 	for i := 0; i < 50; i++ {
-		events := buildEventInfo("b", allEvents)
+		events := buildEventInfo("b", allEvents, structs)
 
 		eventNames := []string{}
 		for _, event := range events {

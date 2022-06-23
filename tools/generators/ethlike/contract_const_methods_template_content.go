@@ -14,11 +14,21 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{$method.ParamDeclarations -}}
 	{{if $method.Payable -}} value *big.Int, {{- end -}}
 ) ({{$method.Return.Type}}, error) {
-	var result {{$method.Return.Type}}
-	result, err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(
+	{{- if and $method.Return.Multi (not $method.Return.Structured) }}	
+	{{$method.Return.Vars}}
+	{{- else }}
+	result,
+	{{- end }} err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(
 		{{$contract.ShortVar}}.callerOptions,
 		{{$method.Params}}
 	)
+	
+	{{ if and $method.Return.Multi (not $method.Return.Structured) }}
+	result := {{$method.Return.Type -}}
+	{
+		{{- $method.Return.Vars -}}
+	}
+	{{- end }}
 
 	if err != nil {
 		return result, {{$contract.ShortVar}}.errorResolver.ResolveError(

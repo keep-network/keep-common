@@ -5,7 +5,7 @@ var contractEventsTemplateContent = `{{- $contract := . -}}
 {{- $logger := (print $contract.ShortVar "Logger") -}}
 {{- range $i, $event := .Events }}
 
-func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}(
+func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$event.CapsName}}Event(
 	opts *ethlike.SubscribeOpts,
 	{{$event.IndexedFilterDeclarations -}}
 ) *{{$event.SubscriptionCapsName}} {

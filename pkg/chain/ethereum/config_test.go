@@ -2,9 +2,10 @@ package ethereum
 
 import (
 	"fmt"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"reflect"
 	"testing"
+
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -48,8 +49,7 @@ func TestContractAddress(t *testing.T) {
 		"missing contract configuration": {
 			contractName:    "Peekaboo",
 			expectedAddress: common.Address{},
-			expectedError: fmt.Errorf("no address information " +
-				"for [Peekaboo] in configuration"),
+			expectedError:   ErrAddressNotConfigured,
 		},
 	}
 	for testName, test := range tests {

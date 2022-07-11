@@ -1,7 +1,9 @@
 package ethereum
 
 import (
+	"errors"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 )
@@ -25,15 +27,16 @@ type Config struct {
 	BalanceAlertThreshold *Wei
 }
 
+// ErrAddressNotConfigured is an error that is returned when an address for the given
+// contract name was not found in the Config.
+var ErrAddressNotConfigured = errors.New("address not configured")
+
 // ContractAddress finds a given contract's address configuration and returns it
 // as Ethereum address.
 func (c *Config) ContractAddress(contractName string) (common.Address, error) {
 	addressString, exists := c.ContractAddresses[contractName]
 	if !exists {
-		return common.Address{}, fmt.Errorf(
-			"no address information for [%v] in configuration",
-			contractName,
-		)
+		return common.Address{}, ErrAddressNotConfigured
 	}
 
 	if !common.IsHexAddress(addressString) {

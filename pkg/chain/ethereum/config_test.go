@@ -49,7 +49,7 @@ func TestContractAddress(t *testing.T) {
 		"missing contract configuration": {
 			contractName:    "Peekaboo",
 			expectedAddress: common.Address{},
-			expectedError:   fmt.Errorf("address not configured"),
+			expectedError:   ErrAddressNotConfigured,
 		},
 	}
 	for testName, test := range tests {

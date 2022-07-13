@@ -3,6 +3,7 @@ package ethereum
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
@@ -11,7 +12,7 @@ import (
 // Config is a struct that contains the configuration needed to connect to an
 // Ethereum node. This information will give access to an Ethereum network.
 type Config struct {
-	ethlike.Config
+	ethlike.Config `mapstructure:",squash"`
 
 	// MaxGasFeeCap specifies the maximum gas fee cap the client is
 	// willing to pay for the transaction to be mined. The offered transaction
@@ -34,7 +35,7 @@ var ErrAddressNotConfigured = errors.New("address not configured")
 // ContractAddress finds a given contract's address configuration and returns it
 // as Ethereum address.
 func (c *Config) ContractAddress(contractName string) (common.Address, error) {
-	addressString, exists := c.ContractAddresses[contractName]
+	addressString, exists := c.ContractAddresses[strings.ToLower(contractName)]
 	if !exists {
 		return common.Address{}, ErrAddressNotConfigured
 	}

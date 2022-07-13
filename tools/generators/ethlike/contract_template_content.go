@@ -60,10 +60,7 @@ func New{{.Class}}(
 		From: accountKey.Address,
 	}
 
-	// FIXME Switch to bind.NewKeyedTransactorWithChainID when
-	// FIXME celo-org/celo-blockchain merges in changes from upstream
-	// FIXME ethereum/go-ethereum beyond v1.9.25.
-	transactorOptions, err := chainutil.NewKeyedTransactorWithChainID(
+	transactorOptions, err := bind.NewKeyedTransactorWithChainID(
 		accountKey.PrivateKey,
 		chainId,
 	)

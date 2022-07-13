@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 )
 
@@ -18,12 +17,12 @@ var Units = map[string]float64{
 // The value can be provided in the text file as e.g.: `1 wei`, `200 Gwei` or
 // `0.5 ether`.
 type Wei struct {
-	ethlike.Token
+	Token
 }
 
 // WrapWei wraps the given integer value in order to represent it as Wei value.
 func WrapWei(value *big.Int) *Wei {
-	return &Wei{ethlike.Token{value}}
+	return &Wei{Token{value}}
 }
 
 // UnmarshalText is a function used to parse a value of Ethers.

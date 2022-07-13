@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 )
 
 // BalanceSource provides a balance info for the given address.
@@ -15,14 +14,14 @@ type BalanceSource func(address common.Address) (*ethereum.Wei, error)
 // BalanceMonitor provides the possibility to monitor balances for given
 // accounts.
 type BalanceMonitor struct {
-	delegate *ethlike.BalanceMonitor
+	delegate *ethereum.BalanceMonitor
 }
 
 // NewBalanceMonitor creates a new instance of the balance monitor.
 func NewBalanceMonitor(balanceSource BalanceSource) *BalanceMonitor {
 	balanceSourceAdapter := func(
-		address ethlike.Address,
-	) (*ethlike.Token, error) {
+		address ethereum.Address,
+	) (*ethereum.Token, error) {
 		balance, err := balanceSource(common.Address(address))
 		if err != nil {
 			return nil, err
@@ -32,7 +31,7 @@ func NewBalanceMonitor(balanceSource BalanceSource) *BalanceMonitor {
 	}
 
 	return &BalanceMonitor{
-		ethlike.NewBalanceMonitor(balanceSourceAdapter),
+		ethereum.NewBalanceMonitor(balanceSourceAdapter),
 	}
 }
 
@@ -49,7 +48,7 @@ func (bm *BalanceMonitor) Observe(
 ) {
 	bm.delegate.Observe(
 		ctx,
-		ethlike.Address(address),
+		ethereum.Address(address),
 		&alertThreshold.Token,
 		tick,
 		retryTimeout,

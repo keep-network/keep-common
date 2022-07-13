@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
-
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -20,11 +18,9 @@ func TestContractAddress(t *testing.T) {
 	invalidHex := "0xZZZ"
 
 	config := &Config{
-		Config: ethlike.Config{
-			ContractAddresses: map[string]string{
-				strings.ToLower(contractName1): validContractAddressString,
-				strings.ToLower(contractName2): invalidHex,
-			},
+		ContractAddresses: map[string]string{
+			strings.ToLower(contractName1): validContractAddressString,
+			strings.ToLower(contractName2): invalidHex,
 		},
 	}
 

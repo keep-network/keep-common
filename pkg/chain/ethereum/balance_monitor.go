@@ -1,4 +1,4 @@
-package ethlike
+package ethereum
 
 import (
 	"context"

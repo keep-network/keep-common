@@ -3,17 +3,19 @@ package ethutil
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"math/big"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+
+	chainEthereum "github.com/keep-network/keep-common/pkg/chain/ethereum"
 )
 
-func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
+func TestEthereumAdapter_BlockByNumber(t *testing.T) {
 	client := &mockAdaptedEthereumClient{
 		blocks: []*big.Int{
 			big.NewInt(0),
@@ -27,7 +29,7 @@ func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
 		},
 	}
 
-	adapter := &ethlikeAdapter{client}
+	adapter := &ethereumAdapter{client}
 
 	blockOne, err := adapter.BlockByNumber(context.Background(), big.NewInt(1))
 	if err != nil {
@@ -62,7 +64,7 @@ func TestEthlikeAdapter_BlockByNumber(t *testing.T) {
 	}
 }
 
-func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
+func TestEthereumAdapter_SubscribeNewHead(t *testing.T) {
 	ctx, cancelCtx := context.WithTimeout(
 		context.Background(),
 		10*time.Millisecond,
@@ -77,11 +79,11 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 		},
 	}
 
-	adapter := &ethlikeAdapter{client}
+	adapter := &ethereumAdapter{client}
 
 	// no more than 3 elements should be put into this
 	// channel by SubscribeNewHead
-	headerChan := make(chan *ethlike.Header, 100)
+	headerChan := make(chan *chainEthereum.Header, 100)
 	_, err := adapter.SubscribeNewHead(ctx, headerChan)
 	if err != nil {
 		t.Fatal(err)
@@ -127,7 +129,7 @@ func TestEthlikeAdapter_SubscribeNewHead(t *testing.T) {
 	}
 }
 
-func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
+func TestEthereumAdapter_PendingNonceAt(t *testing.T) {
 	var address [20]byte
 	copy(address[:], []byte{255})
 
@@ -137,7 +139,7 @@ func TestEthlikeAdapter_PendingNonceAt(t *testing.T) {
 		},
 	}
 
-	adapter := &ethlikeAdapter{client}
+	adapter := &ethereumAdapter{client}
 
 	nonce, err := adapter.PendingNonceAt(context.Background(), address)
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"math/big"
 
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
+	chainEthereum "github.com/keep-network/keep-common/pkg/chain/ethereum"
 
 	"github.com/ipfs/go-log"
 
@@ -187,8 +187,8 @@ func EstimateGas(
 
 // NewBlockCounter creates a new BlockCounter instance for the provided
 // Ethereum client.
-func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
-	return ethlike.CreateBlockCounter(&ethlikeAdapter{client})
+func NewBlockCounter(client EthereumClient) (*chainEthereum.BlockCounter, error) {
+	return chainEthereum.CreateBlockCounter(&ethereumAdapter{client})
 }
 
 // NewNonceManager creates NonceManager instance for the provided account
@@ -196,9 +196,9 @@ func NewBlockCounter(client EthereumClient) (*ethlike.BlockCounter, error) {
 func NewNonceManager(
 	client EthereumClient,
 	account common.Address,
-) *ethlike.NonceManager {
-	return ethlike.NewNonceManager(
-		&ethlikeAdapter{client},
-		ethlike.Address(account),
+) *chainEthereum.NonceManager {
+	return chainEthereum.NewNonceManager(
+		&ethereumAdapter{client},
+		chainEthereum.Address(account),
 	)
 }

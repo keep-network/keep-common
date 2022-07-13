@@ -45,7 +45,7 @@ func main() {
 	hostChainModule := flag.String(
 		"host-chain-module",
 		"github.com/ethereum/go-ethereum",
-		"ETH-like host chain Go module imported from the generated code",
+		"Ethereum host chain Go module imported from the generated code",
 	)
 
 	chainUtilPackage := flag.String(

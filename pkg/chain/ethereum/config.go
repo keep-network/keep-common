@@ -3,6 +3,7 @@ package ethereum
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
@@ -34,7 +35,7 @@ var ErrAddressNotConfigured = errors.New("address not configured")
 // ContractAddress finds a given contract's address configuration and returns it
 // as Ethereum address.
 func (c *Config) ContractAddress(contractName string) (common.Address, error) {
-	addressString, exists := c.ContractAddresses[contractName]
+	addressString, exists := c.ContractAddresses[strings.ToLower(contractName)]
 	if !exists {
 		return common.Address{}, ErrAddressNotConfigured
 	}

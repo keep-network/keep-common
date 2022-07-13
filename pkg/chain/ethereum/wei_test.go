@@ -120,10 +120,6 @@ func TestUnmarshalTextValue(t *testing.T) {
 			value:         "6 ETH",
 			expectedError: fmt.Errorf("invalid unit: ETH; please use one of: ether, gwei, wei"),
 		},
-		"invalid unit: CELO": {
-			value:         "6 CELO",
-			expectedError: fmt.Errorf("invalid unit: CELO; please use one of: ether, gwei, wei"),
-		},
 		"invalid unit: weinot": {
 			value:         "100 weinot",
 			expectedError: fmt.Errorf("invalid unit: weinot; please use one of: ether, gwei, wei"),

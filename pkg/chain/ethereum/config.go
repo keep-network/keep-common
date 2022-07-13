@@ -12,7 +12,7 @@ import (
 // Config is a struct that contains the configuration needed to connect to an
 // Ethereum node. This information will give access to an Ethereum network.
 type Config struct {
-	ethlike.Config
+	ethlike.Config `mapstructure:",squash"`
 
 	// MaxGasFeeCap specifies the maximum gas fee cap the client is
 	// willing to pay for the transaction to be mined. The offered transaction

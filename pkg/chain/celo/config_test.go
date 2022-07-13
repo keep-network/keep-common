@@ -2,9 +2,10 @@ package celo
 
 import (
 	"fmt"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 	"reflect"
 	"testing"
+
+	"github.com/keep-network/keep-common/pkg/chain/ethlike"
 
 	"github.com/celo-org/celo-blockchain/common"
 )

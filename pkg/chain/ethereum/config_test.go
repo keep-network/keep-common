@@ -3,6 +3,7 @@ package ethereum
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/keep-network/keep-common/pkg/chain/ethlike"
@@ -21,8 +22,8 @@ func TestContractAddress(t *testing.T) {
 	config := &Config{
 		Config: ethlike.Config{
 			ContractAddresses: map[string]string{
-				contractName1: validContractAddressString,
-				contractName2: invalidHex,
+				strings.ToLower(contractName1): validContractAddressString,
+				strings.ToLower(contractName2): invalidHex,
 			},
 		},
 	}

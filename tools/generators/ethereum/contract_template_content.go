@@ -21,7 +21,7 @@ import (
 	"github.com/ipfs/go-log"
 
 	chainutil "{{.ChainUtilPackage}}"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum"
 	"github.com/keep-network/keep-common/pkg/subscription"
 )
 
@@ -39,9 +39,9 @@ type {{.Class}} struct {
 	callerOptions      *bind.CallOpts
 	transactorOptions  *bind.TransactOpts
 	errorResolver      *chainutil.ErrorResolver
-	nonceManager       *ethlike.NonceManager
+	nonceManager       *ethereum.NonceManager
 	miningWaiter       *chainutil.MiningWaiter
-	blockCounter	   *ethlike.BlockCounter
+	blockCounter	   *ethereum.BlockCounter
 
 	transactionMutex *sync.Mutex
 }
@@ -51,9 +51,9 @@ func New{{.Class}}(
     chainId *big.Int,
     accountKey *keystore.Key,
     backend bind.ContractBackend,
-    nonceManager *ethlike.NonceManager,
+    nonceManager *ethereum.NonceManager,
     miningWaiter *chainutil.MiningWaiter,
-    blockCounter *ethlike.BlockCounter,
+    blockCounter *ethereum.BlockCounter,
     transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{

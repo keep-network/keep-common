@@ -2,20 +2,18 @@ package ethutil
 
 import (
 	"context"
+	"math/big"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
-	"math/big"
-	"testing"
 )
 
 var config = ethereum.Config{
-	Config: ethlike.Config{
-		MiningCheckInterval: 1,
-	},
-	MaxGasFeeCap: ethereum.WrapWei(big.NewInt(45000000000)), // 45 Gwei
+	MiningCheckInterval: 1,
+	MaxGasFeeCap:        ethereum.WrapWei(big.NewInt(45000000000)), // 45 Gwei
 }
 
 var originalTransactorOptions = &bind.TransactOpts{

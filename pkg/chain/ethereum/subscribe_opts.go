@@ -1,9 +1,9 @@
-package ethlike
+package ethereum
 
 import "time"
 
 // SubscribeOpts specifies optional configuration options that can be passed
-// when creating ETH-like event subscription.
+// when creating Ethereum event subscription.
 type SubscribeOpts struct {
 
 	// Tick is the duration with which subscription monitoring mechanism

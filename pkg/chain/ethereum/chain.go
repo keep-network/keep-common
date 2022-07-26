@@ -1,4 +1,4 @@
-package ethlike
+package ethereum
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"math/big"
 )
 
-// Address represents the 20 byte address of an ETH-like account.
+// Address represents the 20 byte address of an Ethereum account.
 type Address [20]byte
 
 // TerminalString returns the address as a console string.
@@ -14,12 +14,12 @@ func (a Address) TerminalString() string {
 	return fmt.Sprintf("%x…%x", a[:3], a[17:])
 }
 
-// Header represents a block header in the ETH-like blockchain.
+// Header represents a block header in the Ethereum blockchain.
 type Header struct {
 	Number *big.Int
 }
 
-// Block represents an entire block in the ETH-like blockchain.
+// Block represents an entire block in the Ethereum blockchain.
 type Block struct {
 	*Header
 }
@@ -59,7 +59,7 @@ type ContractTransactor interface {
 	PendingNonceAt(ctx context.Context, account Address) (uint64, error)
 }
 
-// Chain represents an ETH-like chain handle.
+// Chain represents an Ethereum chain handle.
 type Chain interface {
 	ChainReader
 	ContractTransactor

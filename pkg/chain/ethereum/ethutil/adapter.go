@@ -2,36 +2,38 @@ package ethutil
 
 import (
 	"context"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/keep-network/keep-common/pkg/chain/ethlike"
-	"math/big"
+
+	chainEthereum "github.com/keep-network/keep-common/pkg/chain/ethereum"
 )
 
-type ethlikeAdapter struct {
+type ethereumAdapter struct {
 	delegate EthereumClient
 }
 
-func (ea *ethlikeAdapter) BlockByNumber(
+func (ea *ethereumAdapter) BlockByNumber(
 	ctx context.Context,
 	number *big.Int,
-) (*ethlike.Block, error) {
+) (*chainEthereum.Block, error) {
 	block, err := ea.delegate.BlockByNumber(ctx, number)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ethlike.Block{
-		Header: &ethlike.Header{
+	return &chainEthereum.Block{
+		Header: &chainEthereum.Header{
 			Number: block.Number(),
 		},
 	}, nil
 }
 
-func (ea *ethlikeAdapter) SubscribeNewHead(
+func (ea *ethereumAdapter) SubscribeNewHead(
 	ctx context.Context,
-	headersChan chan<- *ethlike.Header,
-) (ethlike.Subscription, error) {
+	headersChan chan<- *chainEthereum.Header,
+) (chainEthereum.Subscription, error) {
 	internalHeadersChan := make(chan *types.Header)
 
 	subscription, err := ea.delegate.SubscribeNewHead(ctx, internalHeadersChan)
@@ -45,7 +47,7 @@ func (ea *ethlikeAdapter) SubscribeNewHead(
 		for {
 			select {
 			case header := <-internalHeadersChan:
-				headersChan <- &ethlike.Header{
+				headersChan <- &chainEthereum.Header{
 					Number: header.Number,
 				}
 			case <-stop:
@@ -76,9 +78,9 @@ func (sw *subscriptionWrapper) Err() <-chan error {
 	return sw.errChan
 }
 
-func (ea *ethlikeAdapter) PendingNonceAt(
+func (ea *ethereumAdapter) PendingNonceAt(
 	ctx context.Context,
-	account ethlike.Address,
+	account chainEthereum.Address,
 ) (uint64, error) {
 	return ea.delegate.PendingNonceAt(ctx, common.Address(account))
 }

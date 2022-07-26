@@ -1,4 +1,4 @@
-package ethlike
+package ethereum
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type Token struct {
 	*big.Int
 }
 
-// UnmarshalToken is a function used to parse an ETH-like token.
+// UnmarshalToken is a function used to parse an Ethereum token.
 func (t *Token) UnmarshalToken(text []byte, units map[string]float64) error {
 	re := regexp.MustCompile(`^(\d+[\.]?[\d]*)[ ]?([\w]*)$`)
 	matched := re.FindSubmatch(text)

@@ -14,7 +14,7 @@ type Token struct {
 }
 
 // UnmarshalToken is a function used to parse an Ethereum token.
-func (t *Token) UnmarshalToken(text []byte, units map[string]float64) error {
+func (t *Token) UnmarshalToken(text []byte, units map[string]int64) error {
 	re := regexp.MustCompile(`^(\d+[\.]?[\d]*)[ ]?([\w]*)$`)
 	matched := re.FindSubmatch(text)
 
@@ -46,7 +46,7 @@ func (t *Token) UnmarshalToken(text []byte, units map[string]float64) error {
 	}
 
 	if factor, ok := units[strings.ToLower(string(unit))]; ok {
-		number.Mul(number, big.NewFloat(factor))
+		number.Mul(number, new(big.Float).SetInt64(factor))
 		t.Int, _ = number.Int(nil)
 		return nil
 	}
@@ -63,4 +63,48 @@ func (t *Token) UnmarshalToken(text []byte, units map[string]float64) error {
 		unit,
 		strings.Join(unitNames, ", "),
 	)
+}
+
+// MarshalToken is a function used to marshall an Ethereum token.
+func (t *Token) MarshalToken(units map[string]int64) string {
+	if t.Int == nil {
+		return ""
+	}
+
+	sortedUnits := make([]string, 0, len(units))
+	for unit := range units {
+		sortedUnits = append(sortedUnits, unit)
+	}
+
+	sort.Slice(sortedUnits, func(i, j int) bool {
+		return units[sortedUnits[i]] > units[sortedUnits[j]]
+	})
+
+	result := t.Int.String()
+	for _, unit := range sortedUnits {
+		unitInt := big.NewInt(units[unit])
+
+		if t.Int.Cmp(unitInt) >= 0 {
+			truncated := big.NewInt(0)
+			reminder := big.NewInt(0)
+
+			truncated.QuoRem(t.Int, unitInt, reminder)
+
+			if reminder.Cmp(big.NewInt(0)) > 0 {
+				result = fmt.Sprintf(
+					"%s.%s %s",
+					truncated.String(),
+					strings.TrimRight(reminder.String(), "0"),
+					unit,
+				)
+
+			} else {
+				result = fmt.Sprintf("%s %s", truncated.String(), unit)
+			}
+
+			break
+		}
+	}
+
+	return result
 }

@@ -5,7 +5,7 @@ import (
 )
 
 // Units defines denominations of the Ether token.
-var Units = map[string]float64{
+var Units = map[string]int64{
 	"wei":   1, // default unit
 	"gwei":  1e9,
 	"ether": 1e18,
@@ -28,4 +28,8 @@ func WrapWei(value *big.Int) *Wei {
 // UnmarshalText is a function used to parse a value of Ethers.
 func (w *Wei) UnmarshalText(text []byte) error {
 	return w.UnmarshalToken(text, Units)
+}
+
+func (w *Wei) String() string {
+	return w.Token.MarshalToken(Units)
 }

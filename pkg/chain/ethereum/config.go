@@ -48,11 +48,11 @@ type Config struct {
 	// performed. This value is used for all types of Ethereum transactions.
 	// For legacy transactions, this value works as a maximum gas price
 	// and for EIP-1559 transactions, this value works as max gas fee cap.
-	MaxGasFeeCap *Wei
+	MaxGasFeeCap Wei
 
 	// BalanceAlertThreshold defines a minimum value of the operator's
 	// account balance below which an alert will be triggered.
-	BalanceAlertThreshold *Wei
+	BalanceAlertThreshold Wei
 }
 
 // Account is a struct that contains the configuration for accessing an

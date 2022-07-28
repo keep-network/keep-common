@@ -12,7 +12,7 @@ import (
 // Config is a struct that contains the configuration needed to connect to an
 // Ethereum node. This information will give access to an Ethereum network.
 type Config struct {
-	Account Account
+	Account `mapstructure:",squash"`
 
 	// Example: "ws://192.168.0.157:8546".
 	URL string

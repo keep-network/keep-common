@@ -60,7 +60,7 @@ func NewMiningWaiter(
 	checkInterval := DefaultMiningCheckInterval
 	maxGasFeeCap := DefaultMaxGasFeeCap
 	if config.MiningCheckInterval != 0 {
-		checkInterval = time.Duration(config.MiningCheckInterval) * time.Second
+		checkInterval = config.MiningCheckInterval
 	}
 	if config.MaxGasFeeCap != nil {
 		maxGasFeeCap = config.MaxGasFeeCap.Int

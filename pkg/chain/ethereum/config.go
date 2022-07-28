@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -26,7 +27,7 @@ type Config struct {
 	// MiningCheckInterval is the interval in which transaction
 	// mining status is checked. If the transaction is not mined within this
 	// time, the gas price is increased and transaction is resubmitted.
-	MiningCheckInterval int
+	MiningCheckInterval time.Duration
 
 	// RequestsPerSecondLimit sets the maximum average number of requests
 	// per second which can be executed against the Ethereum node.

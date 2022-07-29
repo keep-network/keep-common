@@ -2,9 +2,20 @@ package rate
 
 import (
 	"context"
+	"time"
+
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
-	"time"
+)
+
+var (
+	// DefaultRequestsPerSecondLimit specifies the default maximum average number
+	// of requests per second.
+	DefaultRequestsPerSecondLimit = 150
+
+	// DefaultConcurrencyLimit specifies the default number of concurrent requests
+	// which can be executed against the target at the same time.
+	DefaultConcurrencyLimit = 30
 )
 
 // Limiter is a helper tool which allows controlling the number and

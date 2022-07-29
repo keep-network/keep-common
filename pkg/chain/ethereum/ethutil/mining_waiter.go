@@ -3,11 +3,12 @@ package ethutil
 import (
 	"context"
 	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum"
-	"math/big"
-	"time"
 )
 
 var (
@@ -23,7 +24,7 @@ var (
 	// If the maximum allowed gas fee cap is reached, no further resubmission
 	// attempts are performed. This value can be overwritten in the
 	// configuration file.
-	DefaultMaxGasFeeCap = big.NewInt(500000000000) // 500 Gwei
+	DefaultMaxGasFeeCap = *ethereum.WrapWei(big.NewInt(500000000000)) // 500 Gwei
 )
 
 // MiningWaiter allows to block the execution until the given transaction is
@@ -60,10 +61,10 @@ func NewMiningWaiter(
 	checkInterval := DefaultMiningCheckInterval
 	maxGasFeeCap := DefaultMaxGasFeeCap
 	if config.MiningCheckInterval != 0 {
-		checkInterval = time.Duration(config.MiningCheckInterval) * time.Second
+		checkInterval = config.MiningCheckInterval
 	}
-	if config.MaxGasFeeCap != nil {
-		maxGasFeeCap = config.MaxGasFeeCap.Int
+	if config.MaxGasFeeCap.Int != nil {
+		maxGasFeeCap = config.MaxGasFeeCap
 	}
 
 	logger.Infof("using [%v] mining check interval", checkInterval)
@@ -72,7 +73,7 @@ func NewMiningWaiter(
 	return &MiningWaiter{
 		client,
 		checkInterval,
-		maxGasFeeCap,
+		maxGasFeeCap.Int,
 	}
 }
 

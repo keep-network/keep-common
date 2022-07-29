@@ -13,7 +13,7 @@ import (
 
 var config = ethereum.Config{
 	MiningCheckInterval: 1,
-	MaxGasFeeCap:        ethereum.WrapWei(big.NewInt(45000000000)), // 45 Gwei
+	MaxGasFeeCap:        *ethereum.WrapWei(big.NewInt(45000000000)), // 45 Gwei
 }
 
 var originalTransactorOptions = &bind.TransactOpts{

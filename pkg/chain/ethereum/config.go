@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -11,7 +12,7 @@ import (
 // Config is a struct that contains the configuration needed to connect to an
 // Ethereum node. This information will give access to an Ethereum network.
 type Config struct {
-	Account Account
+	Account `mapstructure:",squash"`
 
 	// Example: "ws://192.168.0.157:8546".
 	URL string
@@ -26,7 +27,7 @@ type Config struct {
 	// MiningCheckInterval is the interval in which transaction
 	// mining status is checked. If the transaction is not mined within this
 	// time, the gas price is increased and transaction is resubmitted.
-	MiningCheckInterval int
+	MiningCheckInterval time.Duration
 
 	// RequestsPerSecondLimit sets the maximum average number of requests
 	// per second which can be executed against the Ethereum node.
@@ -47,11 +48,11 @@ type Config struct {
 	// performed. This value is used for all types of Ethereum transactions.
 	// For legacy transactions, this value works as a maximum gas price
 	// and for EIP-1559 transactions, this value works as max gas fee cap.
-	MaxGasFeeCap *Wei
+	MaxGasFeeCap Wei
 
 	// BalanceAlertThreshold defines a minimum value of the operator's
 	// account balance below which an alert will be triggered.
-	BalanceAlertThreshold *Wei
+	BalanceAlertThreshold Wei
 }
 
 // Account is a struct that contains the configuration for accessing an

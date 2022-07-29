@@ -7,9 +7,9 @@ import (
 	"testing"
 )
 
-func TestUnmarshalTextValue(t *testing.T) {
-	int5000ether, _ := new(big.Int).SetString("5000000000000000000000", 10)
+var int5000ether, _ = new(big.Int).SetString("5000000000000000000000", 10)
 
+func TestUnmarshalTextValue(t *testing.T) {
 	var tests = map[string]struct {
 		value          string
 		expectedResult *big.Int
@@ -158,6 +158,75 @@ func TestUnmarshalTextValue(t *testing.T) {
 					"invalid value\nexpected: %v\nactual:   %v",
 					test.expectedResult.String(),
 					w.Int.String(),
+				)
+			}
+		})
+	}
+}
+
+func TestMarshallTextValue(t *testing.T) {
+	// Test units are defined not in order to verify if the MarshallText function
+	// sorts them correctly.
+	var testUnits = map[string]int64{
+		"wei":   1, // default unit
+		"ether": 1e18,
+		"gwei":  1e9,
+	}
+
+	var tests = map[string]struct {
+		value          *big.Int
+		expectedResult string
+		expectedError  error
+	}{
+		"zero": {
+			value:          big.NewInt(0),
+			expectedResult: "0",
+		},
+		"wei min": {
+			value:          big.NewInt(1),
+			expectedResult: "1 wei",
+		},
+		"wei max": {
+			value:          big.NewInt(999_999_999),
+			expectedResult: "999999999 wei",
+		},
+		"gwei min": {
+			value:          big.NewInt(1e9),
+			expectedResult: "1 gwei",
+		},
+		"gwei max": {
+			value:          big.NewInt(999999999000000000),
+			expectedResult: "999999999 gwei",
+		},
+		"gwei max with remainder": {
+			value:          big.NewInt(999999999999999999),
+			expectedResult: "999999999.999999999 gwei",
+		},
+		"ether min": {
+			value:          big.NewInt(1e18),
+			expectedResult: "1 ether",
+		},
+		"ether with remainder": {
+			value:          big.NewInt(7654300000000000000),
+			expectedResult: "7.6543 ether",
+		},
+		"ether 5000": {
+			value:          int5000ether,
+			expectedResult: "5000 ether",
+		},
+	}
+
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			w := &Wei{Token: Token{test.value}}
+
+			result := w.MarshalToken(testUnits)
+
+			if test.expectedResult != result {
+				t.Errorf(
+					"invalid result\nexpected: %v\nactual:   %v",
+					test.expectedResult,
+					result,
 				)
 			}
 		})

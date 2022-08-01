@@ -93,3 +93,9 @@ func (c *Config) ContractAddress(contractName string) (common.Address, error) {
 	address := common.HexToAddress(addressString)
 	return address, nil
 }
+
+// SetContractAddress sets address for a contract in the contracts addresses
+// mapping.
+func (c *Config) SetContractAddress(contractName string, address string) {
+	c.ContractAddresses[strings.ToLower(contractName)] = address
+}

@@ -77,7 +77,7 @@ var ErrAddressNotConfigured = errors.New("address not configured")
 // as Ethereum address.
 func (c *Config) ContractAddress(contractName string) (common.Address, error) {
 	addressString, exists := c.ContractAddresses[strings.ToLower(contractName)]
-	if !exists {
+	if !exists || addressString == "" {
 		return common.Address{}, ErrAddressNotConfigured
 	}
 

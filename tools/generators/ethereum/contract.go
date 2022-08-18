@@ -35,7 +35,7 @@ import (
 // that can be used to add command-line interaction with the specified contract
 // by adding the relevant commands to a top-level urfave/cli.App object. The
 // file's initializer will currently append the command object to an exported
-// package variable named AvailableCommands in the same package that the command
+// package variable named Command in the same package that the command
 // itself is in. This variable is NOT generated; instead, it is expected that it
 // will be set up out-of-band in the package.
 //

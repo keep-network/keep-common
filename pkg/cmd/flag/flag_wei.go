@@ -14,7 +14,7 @@ func WeiVarFlag(f *pflag.FlagSet, p *ethereum.Wei, name string, value ethereum.W
 // WeiVarPFlag is a custom flag to handle `ethereum.Wei` type, that is not supported
 // by `pflag.FlagSet`.
 func WeiVarPFlag(f *pflag.FlagSet, p *ethereum.Wei, name string, short string, value ethereum.Wei, usage string) {
-	f.VarP(newWeiValue(value, p), short, name, usage)
+	f.VarP(newWeiValue(value, p), name, short, usage)
 }
 
 type weiValue ethereum.Wei

@@ -84,7 +84,7 @@ func TestUnmarshalTextValue(t *testing.T) {
 			expectedError: fmt.Errorf("failed to parse value: [3 wei ]"),
 		},
 
-		"invalid comma delimeter": {
+		"invalid comma delimiter": {
 			value:         "3,5 ether",
 			expectedError: fmt.Errorf("failed to parse value: [3,5 ether]"),
 		},

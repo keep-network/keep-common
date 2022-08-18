@@ -247,7 +247,14 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
 		)
 	}
 
-    address := common.HexToAddress(config.ContractAddresses["{{.Class}}"])
+    address, err := cfg.ContractAddress("{{.Class}}")
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get %s address: [%w]",
+            "{{.Class}}",
+			err,
+		)
+	}
 
     return contract.New{{.Class}}(
         address,

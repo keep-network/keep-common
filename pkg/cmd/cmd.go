@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	blockFlag        string = "block"
-	blockShort       string = "b"
+	blockFlag  string = "block"
+	blockShort string = "b"
+	// BlockLatest is the default value for transaction submission at block.
+	BlockLatest      string = "latest"
 	transactionFlag  string = "transaction"
 	transactionShort string = "t"
 	// SubmitFlag allows for urfave/cli definition and lookup of a boolean
@@ -64,7 +66,7 @@ func InitConstFlags(cmd *cobra.Command) {
 		&BlockFlagValue,
 		blockFlag,
 		blockShort,
-		"",
+		BlockLatest,
 		"Retrieve the result of calling this method on `BLOCK`.",
 	)
 	cmd.Flags().StringVarP(

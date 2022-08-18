@@ -195,6 +195,6 @@ func PrintOutput(output interface{}) {
 	case common.Hash:
 		fmt.Println(out.Hex())
 	default:
-		fmt.Println(output)
+		fmt.Printf("%+v\n", out)
 	}
 }

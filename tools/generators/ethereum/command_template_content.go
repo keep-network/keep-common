@@ -12,6 +12,7 @@ import (
     "{{.HostChainModule}}/common"
     "{{.HostChainModule}}/common/hexutil"
     "{{.HostChainModule}}/core/types"
+    "{{.HostChainModule}}/ethclient"
 
     chainutil "{{.ChainUtilPackage}}"
     "github.com/keep-network/keep-common/pkg/cmd"
@@ -211,7 +212,7 @@ func initialize{{.Class}}(c *cli.Context) (*contract.{{.Class}}, error) {
         return nil, fmt.Errorf("error reading config from file: [%v]", err)
     }
 
-    client, _, _, err := chainutil.ConnectClients(config.URL, config.URLRPC)
+    client, err := ethclient.Dial(cfg.URL)
     if err != nil {
         return nil, fmt.Errorf("error connecting to host chain node: [%v]", err)
     }

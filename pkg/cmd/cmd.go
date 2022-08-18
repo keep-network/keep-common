@@ -47,14 +47,6 @@ var (
 	ValueFlagValue ethereum.Wei
 )
 
-// AvailableCommands is the exported list of generated commands that can be
-// installed on a CLI app. Generated contract command files set up init
-// functions that add the contract's command and subcommands to this global
-// variable, and any top-level command that wishes to include these commands can
-// reference this variable and expect it to contain all generated contract
-// commands.
-var AvailableCommands []cli.Command
-
 // InitConstFlags provides a slice of flags useful for constant contract
 // interactions, meaning contract interactions that do not require
 // transaction submission and are used for inspecting chain state. These

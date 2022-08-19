@@ -33,10 +33,6 @@ var {{.FullVar}}Description = ` + "`" + `The {{.DashedName}} command allows call
 	All subcommands can be called against a specific block by passing the
 	-b/--block flag.
 
-	All subcommands can be used to investigate the result of a previous
-	transaction that called that same method by passing the -t/--transaction
-	flag with the transaction hash.
-
 	Subcommands for mutating methods may be submitted as a mutating transaction
 	by passing the -s/--submit flag. In this mode, this command will terminate
 	successfully once the transaction has been submitted, but will not wait for

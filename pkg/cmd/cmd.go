@@ -13,10 +13,8 @@ import (
 )
 
 const (
-	blockFlag        string = "block"
-	blockShort       string = "b"
-	transactionFlag  string = "transaction"
-	transactionShort string = "t"
+	blockFlag  string = "block"
+	blockShort string = "b"
 	// SubmitFlag allows for urfave/cli definition and lookup of a boolean
 	// `--submit` command-line flag indicating that a given contract interaction
 	// should be submitted as a paid, mutating interaction to the configured
@@ -28,11 +26,6 @@ const (
 )
 
 var (
-	// TransactionFlagValue allows for reading the transaction hash flag
-	// included in ConstFlags, which represents a transaction hash from which to
-	// retrieve an already-executed contract interaction. The value, if that
-	// flag is passed on the command line, is stored in this variable.
-	TransactionFlagValue string
 	// BlockFlagValue allows for reading the block flag included in ConstFlags,
 	// which represents the block at which to execute a contract interaction.
 	// The value, if that flag is passed on the command line, is stored in this
@@ -49,8 +42,7 @@ var (
 // interactions, meaning contract interactions that do not require
 // transaction submission and are used for inspecting chain state. These
 // flags include the --block flag to check an interaction's result value at
-// a specific block and the --transaction flag to check an interaction's
-// already-evaluated result value from a given transaction.
+// a specific block.
 func InitConstFlags(cmd *cobra.Command) {
 	flag.BigIntVarPFlag(
 		cmd.Flags(),
@@ -59,13 +51,6 @@ func InitConstFlags(cmd *cobra.Command) {
 		blockShort,
 		nil,
 		"Retrieve the result of calling this method on `BLOCK`.",
-	)
-	cmd.Flags().StringVarP(
-		&TransactionFlagValue,
-		transactionFlag,
-		transactionShort,
-		"",
-		"Retrieve the already-evaluated result of this method in `TRANSACTION`.",
 	)
 }
 
@@ -140,7 +125,6 @@ var (
 
 	submittedArgChecker ComposableArgChecker = func(c *cobra.Command, args []string) error {
 		c.MarkFlagsMutuallyExclusive(SubmitFlag, blockFlag)
-		c.MarkFlagsMutuallyExclusive(SubmitFlag, transactionFlag)
 
 		return nil
 	}

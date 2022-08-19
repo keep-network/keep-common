@@ -33,6 +33,7 @@ func newBigIntValue(val *big.Int, p *BigIntFlagValue) *BigIntFlagValue {
 	return p
 }
 
+// Set sets the flag value from a string.
 func (b *BigIntFlagValue) Set(s string) error {
 	v := &big.Int{}
 	v, ok := v.SetString(s, 0)
@@ -44,10 +45,13 @@ func (b *BigIntFlagValue) Set(s string) error {
 	return nil
 }
 
+// Type returns the type name handled by the flag.
 func (b *BigIntFlagValue) Type() string {
 	return "big.Int"
 }
 
+// String outputs the flag value as a string. If the value is `nil` it returns
+// an empty string.
 func (b *BigIntFlagValue) String() string {
 	if b.Int == nil {
 		return ""

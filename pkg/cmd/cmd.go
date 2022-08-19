@@ -13,10 +13,8 @@ import (
 )
 
 const (
-	blockFlag  string = "block"
-	blockShort string = "b"
-	// BlockLatest is the default value for transaction submission at block.
-	BlockLatest      string = "latest"
+	blockFlag        string = "block"
+	blockShort       string = "b"
 	transactionFlag  string = "transaction"
 	transactionShort string = "t"
 	// SubmitFlag allows for urfave/cli definition and lookup of a boolean
@@ -39,7 +37,7 @@ var (
 	// which represents the block at which to execute a contract interaction.
 	// The value, if that flag is passed on the command line, is stored in this
 	// variable.
-	BlockFlagValue string
+	BlockFlagValue flag.BigIntFlagValue
 	// ValueFlagValue allows for reading the value flag included in
 	// PayableFlags, which represents an amount of ETH to send with a contract
 	// interaction. The value, if that flag is passed on the command line, is
@@ -54,11 +52,12 @@ var (
 // a specific block and the --transaction flag to check an interaction's
 // already-evaluated result value from a given transaction.
 func InitConstFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(
+	flag.BigIntVarPFlag(
+		cmd.Flags(),
 		&BlockFlagValue,
 		blockFlag,
 		blockShort,
-		BlockLatest,
+		nil,
 		"Retrieve the result of calling this method on `BLOCK`.",
 	)
 	cmd.Flags().StringVarP(

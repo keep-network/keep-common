@@ -103,14 +103,9 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
    	}
    	{{ end }}
 
-	var blockNumber *big.Int
-	if cmd.BlockFlagValue != cmd.BlockLatest {
-		blockNumber, _ = blockNumber.SetString(cmd.BlockFlagValue, 0)
-	}
-
     result, err := contract.{{$method.CapsName}}AtBlock(
         {{ $method.Params -}}
-        blockNumber,
+        cmd.BlockFlagValue.Int,
     )
 
     if err != nil {
@@ -187,16 +182,11 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 
         cmd.PrintOutput(transaction.Hash())
     } else {
-        var blockNumber *big.Int
-        if cmd.BlockFlagValue != cmd.BlockLatest {
-            blockNumber, _ = blockNumber.SetString(cmd.BlockFlagValue, 0)
-        }
-
         // Do a call.
         {{ if gt (len $method.Return.Type) 0 -}} result, {{ end -}} err = contract.Call{{$method.CapsName}}(
             {{$method.Params}}
             {{- if $method.Payable -}} cmd.ValueFlagValue.Int(), {{- end -}}
-            blockNumber,
+            cmd.BlockFlagValue.Int,
         )
         if err != nil {
             return err

@@ -15,10 +15,9 @@ import (
 const (
 	blockFlag  string = "block"
 	blockShort string = "b"
-	// SubmitFlag allows for urfave/cli definition and lookup of a boolean
-	// `--submit` command-line flag indicating that a given contract interaction
-	// should be submitted as a paid, mutating interaction to the configured
-	// Ethereum chain.
+	// SubmitFlag allows for definition and lookup of a boolean `--submit`
+	// command-line flag indicating that a given contract interaction should be
+	// submitted as a paid, mutating interaction to the configured Ethereum chain.
 	SubmitFlag  string = "submit"
 	submitShort string = "s"
 	valueFlag   string = "value"
@@ -88,8 +87,8 @@ func InitPayableFlags(cmd *cobra.Command) {
 	)
 }
 
-// ComposableArgChecker is a type that allows multiple urfave/cli BeforeFuncs to
-// be chained. See AndThen for more.
+// ComposableArgChecker is a type that allows multiple spf13/cobra Before functions
+// to be chained. See AndThen for more.
 type ComposableArgChecker func(*cobra.Command, []string) error
 
 // AndThen on a ComposableArgChecker allows composing a ComposableArgChecker

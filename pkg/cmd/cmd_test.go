@@ -5,21 +5,21 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
 func TestComposableArgCheckerComposesOnSuccess(t *testing.T) {
 	var seenFunctions []int
 
-	firstComposer := ComposableArgChecker(func(c *cli.Context) error {
+	firstComposer := ComposableArgChecker(func(*cobra.Command, []string) error {
 		seenFunctions = append(seenFunctions, 1)
 		return nil
 	})
-	secondComposer := ComposableArgChecker(func(c *cli.Context) error {
+	secondComposer := ComposableArgChecker(func(*cobra.Command, []string) error {
 		seenFunctions = append(seenFunctions, 2)
 		return nil
 	})
-	thirdComposer := ComposableArgChecker(func(c *cli.Context) error {
+	thirdComposer := ComposableArgChecker(func(*cobra.Command, []string) error {
 		seenFunctions = append(seenFunctions, 3)
 		return nil
 	})
@@ -45,7 +45,7 @@ func TestComposableArgCheckerComposesOnSuccess(t *testing.T) {
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
 			seenFunctions = []int{}
-			result := test.composed(nil)
+			result := test.composed(nil, []string{})
 
 			if !reflect.DeepEqual(seenFunctions, test.sequence) {
 				t.Errorf(
@@ -69,19 +69,19 @@ func TestComposableArgCheckerComposesOnSuccess(t *testing.T) {
 func TestComposableArgCheckerShortCircuitsOnFailure(t *testing.T) {
 	var seenFunctions []int
 
-	firstComposer := ComposableArgChecker(func(c *cli.Context) error {
+	firstComposer := ComposableArgChecker(func(*cobra.Command, []string) error {
 		seenFunctions = append(seenFunctions, 1)
 		return nil
 	})
-	secondComposer := ComposableArgChecker(func(c *cli.Context) error {
+	secondComposer := ComposableArgChecker(func(*cobra.Command, []string) error {
 		seenFunctions = append(seenFunctions, 2)
 		return nil
 	})
-	thirdComposer := ComposableArgChecker(func(c *cli.Context) error {
+	thirdComposer := ComposableArgChecker(func(*cobra.Command, []string) error {
 		seenFunctions = append(seenFunctions, 3)
 		return nil
 	})
-	errorComposer := ComposableArgChecker(func(c *cli.Context) error {
+	errorComposer := ComposableArgChecker(func(*cobra.Command, []string) error {
 		return fmt.Errorf("ohai")
 	})
 
@@ -120,7 +120,7 @@ func TestComposableArgCheckerShortCircuitsOnFailure(t *testing.T) {
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
 			seenFunctions = []int{}
-			err := test.composed(nil)
+			err := test.composed(nil, []string{})
 
 			if !reflect.DeepEqual(seenFunctions, test.sequence) {
 				t.Errorf(

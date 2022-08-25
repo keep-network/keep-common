@@ -4,20 +4,20 @@ package cmd
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum"
 	"github.com/keep-network/keep-common/pkg/cmd/flag"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
 const (
-	blockFlag        string = "block"
-	blockShort       string = "b"
-	transactionFlag  string = "transaction"
-	transactionShort string = "t"
-	// SubmitFlag allows for urfave/cli definition and lookup of a boolean
-	// `--submit` command-line flag indicating that a given contract interaction
-	// should be submitted as a paid, mutating interaction to the configured
-	// Ethereum chain.
+	blockFlag  string = "block"
+	blockShort string = "b"
+	// SubmitFlag allows for definition and lookup of a boolean `--submit`
+	// command-line flag indicating that a given contract interaction should be
+	// submitted as a paid, mutating interaction to the configured Ethereum chain.
 	SubmitFlag  string = "submit"
 	submitShort string = "s"
 	valueFlag   string = "value"
@@ -25,85 +25,71 @@ const (
 )
 
 var (
-	// TransactionFlagValue allows for reading the transaction hash flag
-	// included in ConstFlags, which represents a transaction hash from which to
-	// retrieve an already-executed contract interaction. The value, if that
-	// flag is passed on the command line, is stored in this variable.
-	TransactionFlagValue *flag.TransactionHash = &flag.TransactionHash{}
 	// BlockFlagValue allows for reading the block flag included in ConstFlags,
 	// which represents the block at which to execute a contract interaction.
 	// The value, if that flag is passed on the command line, is stored in this
 	// variable.
-	BlockFlagValue *flag.Uint256 = &flag.Uint256{}
+	BlockFlagValue flag.BigIntFlagValue
 	// ValueFlagValue allows for reading the value flag included in
 	// PayableFlags, which represents an amount of ETH to send with a contract
 	// interaction. The value, if that flag is passed on the command line, is
 	// stored in this variable.
-	ValueFlagValue *flag.Uint256 = &flag.Uint256{}
+	ValueFlagValue ethereum.Wei
 )
 
-// AvailableCommands is the exported list of generated commands that can be
-// installed on a CLI app. Generated contract command files set up init
-// functions that add the contract's command and subcommands to this global
-// variable, and any top-level command that wishes to include these commands can
-// reference this variable and expect it to contain all generated contract
-// commands.
-var AvailableCommands []cli.Command
-
-var (
-	// ConstFlags provides a slice of flags useful for constant contract
-	// interactions, meaning contract interactions that do not require
-	// transaction submission and are used for inspecting chain state. These
-	// flags include the --block flag to check an interaction's result value at
-	// a specific block and the --transaction flag to check an interaction's
-	// already-evaluated result value from a given transaction.
-	ConstFlags = []cli.Flag{
-		&cli.GenericFlag{
-			Name:  blockFlag + ", " + blockShort,
-			Usage: "Retrieve the result of calling this method on `BLOCK`.",
-			Value: BlockFlagValue,
-		},
-		&cli.GenericFlag{
-			Name:  transactionFlag + ", " + transactionShort,
-			Usage: "Retrieve the already-evaluated result of this method in `TRANSACTION`.",
-			Value: TransactionFlagValue,
-		},
-	}
-	// NonConstFlags provides a slice of flags useful for non-constant contract
-	// interactions, meaning contract interactions that can be submitted as
-	// transactions and are used for modifying chain state. These flags include
-	// the --submit flag to submit an interaction as a transaction, as well as
-	// all flags in ConstFlags.
-	NonConstFlags = append(
-		[]cli.Flag{
-			&cli.BoolFlag{
-				Name:  SubmitFlag + ", " + submitShort,
-				Usage: "Submit this call as a gas-spending network transaction.",
-			},
-		},
-		ConstFlags...,
+// InitConstFlags initializes flags useful for constant contract interactions,
+// meaning contract interactions that do not require transaction submission and
+// are used for inspecting chain state. These flags include:
+//   --block flag to check an interaction's result value at a specific block.
+func InitConstFlags(cmd *cobra.Command) {
+	flag.BigIntVarPFlag(
+		cmd.Flags(),
+		&BlockFlagValue,
+		blockFlag,
+		blockShort,
+		nil,
+		"Retrieve the result of calling this method on `BLOCK`.",
 	)
-	// PayableFlags provides a slice of flags useful for payable contract
-	// interactions, meaning contract interactions that can be submitted as
-	// transactions and are used for modifying chain state with a payload that
-	// includes ETH. These flags include the --value flag to specify the ETH
-	// amount to send with the interaction, as well as all flags in
-	// NonConstFlags.
-	PayableFlags = append(
-		[]cli.Flag{
-			&cli.GenericFlag{
-				Name:  valueFlag + ", " + valueShort,
-				Usage: "Send `VALUE` ether with this call.",
-				Value: ValueFlagValue,
-			},
-		},
-		NonConstFlags...,
-	)
-)
+}
 
-// ComposableArgChecker is a type that allows multiple urfave/cli BeforeFuncs to
-// be chained. See AndThen for more.
-type ComposableArgChecker cli.BeforeFunc
+// InitNonConstFlags initializes flags useful for non-constant contract interactions,
+// meaning contract interactions that can be submitted as transactions and are
+// used for modifying chain state. These flags include:
+//   --submit flag to submit an interaction as a transaction,
+// as well as all flags in ConstFlags.
+func InitNonConstFlags(cmd *cobra.Command) {
+	InitConstFlags(cmd)
+
+	cmd.Flags().BoolP(
+		SubmitFlag,
+		submitShort,
+		false,
+		"Submit this call as a gas-spending network transaction.",
+	)
+}
+
+// InitPayableFlags initializes flags useful for payable contract interactions,
+// meaning contract interactions that can be submitted as transactions and are
+// used for modifying chain state with a payload that includes ETH. These flags
+// include:
+//   --value flag to specify the ETH amount to send with the interaction,
+// as well as all flags in NonConstFlags.
+func InitPayableFlags(cmd *cobra.Command) {
+	InitNonConstFlags(cmd)
+
+	flag.WeiVarPFlag(
+		cmd.Flags(),
+		&ValueFlagValue,
+		valueFlag,
+		valueShort,
+		*ethereum.WrapWei(big.NewInt(0)),
+		"Send `VALUE` ether with this call.",
+	)
+}
+
+// ComposableArgChecker is a type that allows multiple spf13/cobra Before functions
+// to be chained. See AndThen for more.
+type ComposableArgChecker func(*cobra.Command, []string) error
 
 // AndThen on a ComposableArgChecker allows composing a ComposableArgChecker
 // with another one, such that this ComposableArgChecker runs and, if it
@@ -116,33 +102,27 @@ type ComposableArgChecker cli.BeforeFunc
 // The resulting ComposableArgChecker will run checkFlagAValue and, if it
 // passes, checkFlagBValue.
 func (cac ComposableArgChecker) AndThen(nextChecker ComposableArgChecker) ComposableArgChecker {
-	return func(c *cli.Context) error {
-		cacErr := cac(c)
+	return func(c *cobra.Command, args []string) error {
+		cacErr := cac(c, args)
 		if cacErr != nil {
 			return cacErr
 		}
 
-		return nextChecker(c)
+		return nextChecker(c, args)
 	}
 }
 
 var (
-	valueArgChecker ComposableArgChecker = func(c *cli.Context) error {
-		if !c.IsSet(valueFlag) {
-			return fmt.Errorf("expected value for this payable method")
+	valueArgChecker ComposableArgChecker = func(c *cobra.Command, args []string) error {
+		if err := c.MarkFlagRequired(valueFlag); err != nil {
+			return fmt.Errorf("failed to mark %s flag required: %w", valueFlag, err)
 		}
 
 		return nil
 	}
-	submittedArgChecker ComposableArgChecker = func(c *cli.Context) error {
-		if c.Bool(SubmitFlag) {
-			if c.IsSet(blockFlag) {
-				return fmt.Errorf("cannot specify --block for a submitted transaction")
-			}
-			if c.IsSet(transactionFlag) {
-				return fmt.Errorf("cannot specify --transaction for a submitted transaction")
-			}
-		}
+
+	submittedArgChecker ComposableArgChecker = func(c *cobra.Command, args []string) error {
+		c.MarkFlagsMutuallyExclusive(SubmitFlag, blockFlag)
 
 		return nil
 	}
@@ -164,13 +144,13 @@ var (
 
 // ArgCountChecker provides a consistent error in case the number of arguments
 // passed on the command-line is incorrect.
-func ArgCountChecker(expectedArgCount int) func(*cli.Context) error {
-	return func(c *cli.Context) error {
-		if c.NArg() != expectedArgCount {
+func ArgCountChecker(expectedArgCount int) func(*cobra.Command, []string) error {
+	return func(c *cobra.Command, args []string) error {
+		if len(args) != expectedArgCount {
 			return fmt.Errorf(
-				"Expected [%v] arguments but got [%v]",
+				"expected [%d] arguments but got [%d]",
 				expectedArgCount,
-				c.NArg(),
+				len(args),
 			)
 		}
 
@@ -188,6 +168,6 @@ func PrintOutput(output interface{}) {
 	case common.Hash:
 		fmt.Println(out.Hex())
 	default:
-		fmt.Println(output)
+		fmt.Printf("%+v\n", out)
 	}
 }

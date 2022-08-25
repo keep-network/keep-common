@@ -12,13 +12,5 @@ const (
 )
 
 func (n Network) String() string {
-	switch n {
-	case Mainnet:
-		return "mainnet"
-	case Goerli:
-		return "goerli"
-	case Developer:
-		return "developer"
-	}
-	return "unknown"
+	return []string{"unknown", "mainnet", "goerli", "developer"}[n]
 }

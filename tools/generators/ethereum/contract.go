@@ -24,7 +24,7 @@ import (
 
 // Main function. Expects to be invoked as:
 //
-//   <executable> <input.abi> contract/<contract_output.go> cmd/<cmd_output.go>
+//	<executable> <input.abi> contract/<contract_output.go> cmd/<cmd_output.go>
 //
 // The first file will receive a contract binding that is slightly higher-level
 // than abigen's output, including an event-based interface for contract event
@@ -52,12 +52,6 @@ func main() {
 		"chain-util-package",
 		"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil",
 		"Host chain utils package imported from the generated code",
-	)
-
-	configReader := flag.String(
-		"config-func",
-		"config.ReadEthereumConfig",
-		"A config function that will return an ethereum.Config object given a config file name.",
 	)
 
 	flag.Parse()
@@ -120,7 +114,6 @@ func main() {
 	contractInfo := buildContractInfo(
 		*hostChainModule,
 		*chainUtilPackage,
-		*configReader,
 		abiClassName,
 		&abi,
 		payableInfo,

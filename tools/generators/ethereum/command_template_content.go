@@ -62,7 +62,7 @@ func init() {
         {{- end }}
     )
 
-    Command.AddCommand({{.Class}}Command)
+    ModuleCommand.AddCommand({{.Class}}Command)
 }
 
 /// ------------------- Const methods -------------------
@@ -208,10 +208,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 /// ------------------- Initialization -------------------
 
 func initialize{{.Class}}(c *cobra.Command) (*contract.{{.Class}}, error) {
-    cfg, err := {{.ConfigReader}}(c.Flags())
-    if err != nil {
-        return nil, fmt.Errorf("error reading config from file: [%v]", err)
-    }
+	cfg := *ModuleCommand.GetConfig()
 
     client, err := ethclient.Dial(cfg.URL)
     if err != nil {

@@ -26,11 +26,13 @@ var (
 
 // bindStructTypeGo resolves Go bindings for structs. It links to a non-exported
 // method of go-ethereum's bind package that is used for Go bindings generation.
+//
 //go:linkname bindStructTypeGo github.com/ethereum/go-ethereum/accounts/abi/bind.bindStructTypeGo
 func bindStructTypeGo(kind abi.Type, structs map[string]struct{}) string
 
 // bindStructTypeGo resolves Go bindings for topics. It links to a non-exported
 // method of go-ethereum's bind package that is used for Go bindings generation.
+//
 //go:linkname bindTopicTypeGo github.com/ethereum/go-ethereum/accounts/abi/bind.bindTopicTypeGo
 func bindTopicTypeGo(kind abi.Type, structs map[string]struct{}) string
 
@@ -60,7 +62,6 @@ func init() {
 type contractInfo struct {
 	HostChainModule  string
 	ChainUtilPackage string
-	ConfigReader     string
 	Class            string
 	AbiClass         string
 	FullVar          string
@@ -117,7 +118,6 @@ type eventInfo struct {
 func buildContractInfo(
 	hostChainModule string,
 	chainUtilPackage string,
-	configReader string,
 	abiClassName string,
 	abi *abi.ABI,
 	payableInfo []methodPayableInfo,
@@ -152,7 +152,6 @@ func buildContractInfo(
 	return contractInfo{
 		hostChainModule,
 		chainUtilPackage,
-		configReader,
 		string(goClassName),
 		abiClassName,
 		lowercaseFirst(string(goClassName)),

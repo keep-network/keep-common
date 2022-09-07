@@ -190,7 +190,9 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
             {{- range $i, $param := .ParamInfos }}
             {{ $param.Name }},
             {{- end }}
-            {{- if $method.Payable -}} cmd.ValueFlagValue.Int(), {{- end -}}
+            {{- if $method.Payable }}
+            cmd.ValueFlagValue.Int(),
+            {{- end }}
         )
         if err != nil {
             return err
@@ -203,7 +205,9 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
             {{- range $i, $param := .ParamInfos }}
             {{ $param.Name }},
             {{- end }}
-            {{- if $method.Payable -}} cmd.ValueFlagValue.Int(), {{- end -}}
+            {{- if $method.Payable }}
+            cmd.ValueFlagValue.Int(),
+            {{- end }}
             cmd.BlockFlagValue.Int,
         )
         if err != nil {

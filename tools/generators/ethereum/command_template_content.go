@@ -93,6 +93,12 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
     }
 
    	{{ range $i, $param := .ParamInfos }}
+    {{ if $param.Structured }}
+        {{ $param.Name }} := {{ $param.GoType }}{}
+        if err:= json.Unmarshal([]byte(args[{{ $i }}]), &{{ $param.Name }}); err != nil {
+            return fmt.Errorf("failed to unmarshal {{ $param.Name }} to {{ $param.GoType }}: %w", err)
+        }
+    {{- else -}}
    	{{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
    	if err != nil {
 		return fmt.Errorf(
@@ -100,10 +106,13 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 			args[{{$i}}],
 		)
    	}
+   	{{- end }}
     {{- end }}
 
     result, err := contract.{{$method.CapsName}}AtBlock(
-        {{ $method.Params -}}
+        {{- range $i, $param := .ParamInfos }}
+        {{ $param.Name }},
+        {{- end }}
         cmd.BlockFlagValue.Int,
     )
 
@@ -152,6 +161,12 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
     }
 
    	{{ range $i, $param := .ParamInfos }}
+    {{ if $param.Structured }}
+        {{ $param.Name }} := {{ $param.GoType }}{}
+        if err:= json.Unmarshal([]byte(args[{{ $i }}]), &{{ $param.Name }}); err != nil {
+            return fmt.Errorf("failed to unmarshal {{ $param.Name }} to {{ $param.GoType }}: %w", err)
+        }
+    {{- else -}}
    	{{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
    	if err != nil {
 		return fmt.Errorf(
@@ -159,6 +174,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 			args[{{$i}}],
 		)
    	}
+   	{{- end }}
     {{- end }}
 
     var (
@@ -171,7 +187,9 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
     if shouldSubmit, _ := c.Flags().GetBool(cmd.SubmitFlag); shouldSubmit {
         // Do a regular submission. Take payable into account.
         transaction, err = contract.{{$method.CapsName}}(
-            {{$method.Params}}
+            {{- range $i, $param := .ParamInfos }}
+            {{ $param.Name }},
+            {{- end }}
             {{- if $method.Payable -}} cmd.ValueFlagValue.Int(), {{- end -}}
         )
         if err != nil {
@@ -182,7 +200,9 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
     } else {
         // Do a call.
         {{ if gt (len $method.Return.Type) 0 -}} result, {{ end -}} err = contract.Call{{$method.CapsName}}(
-            {{$method.Params}}
+            {{- range $i, $param := .ParamInfos }}
+            {{ $param.Name }},
+            {{- end }}
             {{- if $method.Payable -}} cmd.ValueFlagValue.Int(), {{- end -}}
             cmd.BlockFlagValue.Int,
         )

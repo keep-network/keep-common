@@ -73,9 +73,11 @@ type contractInfo struct {
 }
 
 type paramInfo struct {
-	Name      string
-	Type      string
-	ParsingFn string
+	Name       string
+	Type       string
+	GoType     string
+	ParsingFn  string
+	Structured bool
 }
 
 type methodInfo struct {
@@ -218,36 +220,45 @@ func buildMethodInfo(
 			params += fmt.Sprintf("%v,\n", paramName)
 
 			parsingFn := ""
-			switch goType {
-			case "[]byte":
-				parsingFn = "hexutil.Decode(%s)"
-			case "common.Address":
-				parsingFn = "chainutil.AddressFromHex(%s)"
-			case "*big.Int":
-				parsingFn = "hexutil.DecodeBig(%s)"
-			case "bool":
-				parsingFn = "strconv.ParseBool(%s)"
-			case "uint64":
-				parsingFn = fmt.Sprintf("strconv.ParseUint(%%s, 10, 64)")
-			default:
-				fmt.Printf(
-					"WARNING: Unsupported param type for method %s:\n"+
-						"  ABI Type: %s\n"+
-						"  Go Type:  %s\n"+
-						"  the method won't be callable with 'ethereum' command\n",
-					name,
-					param.Type,
-					goType,
-				)
-				commandCallable = false
+
+			paramStructured := false
+			if param.Type.TupleType != nil {
+				paramName += "_json"
+				paramStructured = true
+			} else {
+				switch goType {
+				case "[]byte":
+					parsingFn = "hexutil.Decode(%s)"
+				case "common.Address":
+					parsingFn = "chainutil.AddressFromHex(%s)"
+				case "*big.Int":
+					parsingFn = "hexutil.DecodeBig(%s)"
+				case "bool":
+					parsingFn = "strconv.ParseBool(%s)"
+				case "uint64":
+					parsingFn = fmt.Sprintf("strconv.ParseUint(%%s, 10, 64)")
+				default:
+					fmt.Printf(
+						"WARNING: Unsupported param type for method %s:\n"+
+							"  ABI Type: %s\n"+
+							"  Go Type:  %s\n"+
+							"  the method won't be callable with 'ethereum' command\n",
+						name,
+						param.Type,
+						goType,
+					)
+					commandCallable = false
+				}
 			}
 
 			paramInfos = append(
 				paramInfos,
 				paramInfo{
-					Name:      paramName,
-					Type:      param.Type.String(),
-					ParsingFn: parsingFn,
+					Name:       paramName,
+					Type:       param.Type.String(),
+					GoType:     goType,
+					ParsingFn:  parsingFn,
+					Structured: paramStructured,
 				})
 		}
 

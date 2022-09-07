@@ -92,15 +92,15 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
         return err
     }
 
-   	{{- range $i, $param := .ParamInfos }}
-   	{{$param.Name}}, err := {{$param.ParsingFn}}(args[{{$i}}])
+   	{{ range $i, $param := .ParamInfos }}
+   	{{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
    	if err != nil {
 		return fmt.Errorf(
 			"couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
 			args[{{$i}}],
 		)
    	}
-   	{{ end }}
+    {{- end }}
 
     result, err := contract.{{$method.CapsName}}AtBlock(
         {{ $method.Params -}}
@@ -151,16 +151,15 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
         return err
     }
 
-    {{ range $i, $param := .ParamInfos }}
-    {{$param.Name}}, err := {{$param.ParsingFn}}(args[{{$i}}])
-    if err != nil {
-        return fmt.Errorf(
-            "couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
-            args[{{$i}}],
-        )
-    }
-
-    {{ end -}}
+   	{{ range $i, $param := .ParamInfos }}
+   	{{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
+   	if err != nil {
+		return fmt.Errorf(
+			"couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
+			args[{{$i}}],
+		)
+   	}
+    {{- end }}
 
     var (
         transaction *types.Transaction

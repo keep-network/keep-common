@@ -187,7 +187,7 @@ func parseTemplates() (*template.Template, error) {
 		// FIXME blocks itself.
 		combinedTemplate, err = combinedTemplate.Parse("{{define \"" + name + "\"}}" + content + "{{end}}")
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse template %s: %w", name, err)
 		}
 	}
 	return combinedTemplate, nil

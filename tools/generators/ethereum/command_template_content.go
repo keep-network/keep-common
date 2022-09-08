@@ -23,23 +23,23 @@ import (
 var {{.Class}}Command *cobra.Command
 
 var {{.FullVar}}Description = ` + "`" + `The {{.DashedName}} command allows calling the {{.Class}} contract on an
-	Ethereum network. It has subcommands corresponding to each contract method,
-	which respectively each take parameters based on the contract method's
-	parameters.
+    Ethereum network. It has subcommands corresponding to each contract method,
+    which respectively each take parameters based on the contract method's
+    parameters.
 
-	Subcommands will submit a non-mutating call to the network and output the
-	result.
+    Subcommands will submit a non-mutating call to the network and output the
+    result.
 
-	All subcommands can be called against a specific block by passing the
-	-b/--block flag.
+    All subcommands can be called against a specific block by passing the
+    -b/--block flag.
 
-	Subcommands for mutating methods may be submitted as a mutating transaction
-	by passing the -s/--submit flag. In this mode, this command will terminate
-	successfully once the transaction has been submitted, but will not wait for
-	the transaction to be included in a block. They return the transaction hash.
+    Subcommands for mutating methods may be submitted as a mutating transaction
+    by passing the -s/--submit flag. In this mode, this command will terminate
+    successfully once the transaction has been submitted, but will not wait for
+    the transaction to be included in a block. They return the transaction hash.
 
-	Calls that require ether to be paid will get 0 ether by default, which can
-	be changed by passing the -v/--value flag.` + "`" + `
+    Calls that require ether to be paid will get 0 ether by default, which can
+    be changed by passing the -v/--value flag.` + "`" + `
 
 func init() {
     {{.Class}}Command := &cobra.Command{
@@ -72,18 +72,18 @@ func init() {
 {{- if $method.CommandCallable }}
 
 func {{$contract.ShortVar}}{{$method.CapsName}}Command() *cobra.Command {
-		c := &cobra.Command{
-				Use: "{{$method.DashedName}}{{ range $i, $param := $method.ParamInfos }} [{{$param.Name}}]{{ end }}",
-				Short: "Calls the {{$method.Modifiers -}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
+        c := &cobra.Command{
+                Use: "{{$method.DashedName}}{{ range $i, $param := $method.ParamInfos }} [{{$param.Name}}]{{ end }}",
+                Short: "Calls the {{$method.Modifiers -}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
                 Args: cmd.ArgCountChecker({{$method.ParamInfos | len}}),
-				RunE: {{$contract.ShortVar}}{{$method.CapsName}},
+                RunE: {{$contract.ShortVar}}{{$method.CapsName}},
                 SilenceUsage: true,
-				DisableFlagsInUseLine: true,
-			}
+                DisableFlagsInUseLine: true,
+            }
 
-		cmd.InitConstFlags(c)
+        cmd.InitConstFlags(c)
 
-		return c
+        return c
 }
 
 func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string) error {
@@ -92,21 +92,21 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
         return err
     }
 
-   	{{ range $i, $param := .ParamInfos }}
+    {{ range $i, $param := .ParamInfos }}
     {{ if $param.Structured }}
         {{ $param.Name }} := {{ $param.GoType }}{}
         if err:= json.Unmarshal([]byte(args[{{ $i }}]), &{{ $param.Name }}); err != nil {
             return fmt.Errorf("failed to unmarshal {{ $param.Name }} to {{ $param.GoType }}: %w", err)
         }
     {{- else -}}
-   	{{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
-   	if err != nil {
-		return fmt.Errorf(
-			"couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
-			args[{{$i}}],
-		)
-   	}
-   	{{- end }}
+       {{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
+       if err != nil {
+        return fmt.Errorf(
+            "couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
+            args[{{$i}}],
+        )
+       }
+       {{- end }}
     {{- end }}
 
     result, err := contract.{{$method.CapsName}}AtBlock(
@@ -117,7 +117,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
     )
 
     if err != nil {
-    	return err
+        return err
     }
 
     cmd.PrintOutput(result)
@@ -134,14 +134,14 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 {{- if $method.CommandCallable }}
 
 func {{$contract.ShortVar}}{{$method.CapsName}}Command() *cobra.Command {
-		c := &cobra.Command{
-				Use: "{{$method.DashedName}}{{ range $i, $param := $method.ParamInfos }} [{{$param.Name}}]{{ end }}",
-				Short: "Calls the {{$method.Modifiers -}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
+        c := &cobra.Command{
+                Use: "{{$method.DashedName}}{{ range $i, $param := $method.ParamInfos }} [{{$param.Name}}]{{ end }}",
+                Short: "Calls the {{$method.Modifiers -}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
                 Args: cmd.ArgCountChecker({{$method.ParamInfos | len}}),
-				RunE: {{$contract.ShortVar}}{{$method.CapsName}},
+                RunE: {{$contract.ShortVar}}{{$method.CapsName}},
                 SilenceUsage: true,
-				DisableFlagsInUseLine: true,
-			}
+                DisableFlagsInUseLine: true,
+            }
 
         {{if $method.Payable -}}
         c.PreRunE = cmd.PayableArgsChecker
@@ -151,7 +151,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}Command() *cobra.Command {
         cmd.InitNonConstFlags(c)
         {{- end }}
 
-		return c
+        return c
 }
 
 func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string) error {
@@ -160,21 +160,21 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
         return err
     }
 
-   	{{ range $i, $param := .ParamInfos }}
+       {{ range $i, $param := .ParamInfos }}
     {{ if $param.Structured }}
         {{ $param.Name }} := {{ $param.GoType }}{}
         if err:= json.Unmarshal([]byte(args[{{ $i }}]), &{{ $param.Name }}); err != nil {
             return fmt.Errorf("failed to unmarshal {{ $param.Name }} to {{ $param.GoType }}: %w", err)
         }
     {{- else -}}
-   	{{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
-   	if err != nil {
-		return fmt.Errorf(
-			"couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
-			args[{{$i}}],
-		)
-   	}
-   	{{- end }}
+       {{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
+       if err != nil {
+        return fmt.Errorf(
+            "couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
+            args[{{$i}}],
+        )
+       }
+       {{- end }}
     {{- end }}
 
     var (
@@ -231,20 +231,20 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 /// ------------------- Initialization -------------------
 
 func initialize{{.Class}}(c *cobra.Command) (*contract.{{.Class}}, error) {
-	cfg := *ModuleCommand.GetConfig()
+    cfg := *ModuleCommand.GetConfig()
 
     client, err := ethclient.Dial(cfg.URL)
     if err != nil {
         return nil, fmt.Errorf("error connecting to host chain node: [%v]", err)
     }
 
-   	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to resolve host chain id: [%v]",
-			err,
-		)
-	}
+    chainID, err := client.ChainID(context.Background())
+    if err != nil {
+        return nil, fmt.Errorf(
+            "failed to resolve host chain id: [%v]",
+            err,
+        )
+    }
 
     key, err := chainutil.DecryptKeyFile(
         cfg.Account.KeyFile,
@@ -258,24 +258,24 @@ func initialize{{.Class}}(c *cobra.Command) (*contract.{{.Class}}, error) {
         )
     }
 
-	miningWaiter := chainutil.NewMiningWaiter(client, cfg)
+    miningWaiter := chainutil.NewMiningWaiter(client, cfg)
 
-	blockCounter, err := chainutil.NewBlockCounter(client)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to create block counter: [%v]",
-			err,
-		)
-	}
+    blockCounter, err := chainutil.NewBlockCounter(client)
+    if err != nil {
+        return nil, fmt.Errorf(
+            "failed to create block counter: [%v]",
+            err,
+        )
+    }
 
     address, err := cfg.ContractAddress("{{.Class}}")
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to get %s address: [%w]",
+    if err != nil {
+        return nil, fmt.Errorf(
+            "failed to get %s address: [%w]",
             "{{.Class}}",
-			err,
-		)
-	}
+            err,
+        )
+    }
 
     return contract.New{{.Class}}(
         address,

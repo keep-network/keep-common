@@ -226,6 +226,7 @@ func buildMethodInfo(
 				paramName += "_json"
 				paramStructured = true
 			} else {
+			goTypeSwitch:
 				switch goType {
 				case "[]byte":
 					parsingFn = "hexutil.Decode(%s)"
@@ -235,9 +236,23 @@ func buildMethodInfo(
 					parsingFn = "hexutil.DecodeBig(%s)"
 				case "bool":
 					parsingFn = "strconv.ParseBool(%s)"
-				case "uint64":
-					parsingFn = "strconv.ParseUint(%s, 10, 64)"
 				default:
+					intParts := regexp.MustCompile(`^(u|)int([0-9]*)$`).FindStringSubmatch(goType)
+					if len(intParts) > 0 {
+						switch intParts[2] {
+						case "8", "16", "32", "64":
+							var template string
+							if intParts[1] == "u" {
+								template = "decode.ParseUint[uint%s](%%s, %s)"
+							} else {
+								template = "decode.ParseInt[int%s](%%s, %s)"
+							}
+
+							parsingFn = fmt.Sprintf(template, intParts[2], intParts[2])
+							break goTypeSwitch
+						}
+					}
+
 					// TODO: Add support for more types, i.a. slices, arrays.
 					fmt.Printf(
 						"WARNING: Unsupported param type for method %s:\n"+

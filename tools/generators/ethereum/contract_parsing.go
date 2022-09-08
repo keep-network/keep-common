@@ -236,7 +236,7 @@ func buildMethodInfo(
 				case "bool":
 					parsingFn = "strconv.ParseBool(%s)"
 				case "uint64":
-					parsingFn = fmt.Sprintf("strconv.ParseUint(%%s, 10, 64)")
+					parsingFn = "strconv.ParseUint(%s, 10, 64)"
 				default:
 					// TODO: Add support for more types, i.a. slices, arrays.
 					fmt.Printf(

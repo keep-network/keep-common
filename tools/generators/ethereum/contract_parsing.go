@@ -72,7 +72,7 @@ type contractInfo struct {
 	Events           []eventInfo
 }
 
-type argInfo struct {
+type cmdArgInfo struct {
 	Name       string
 	Type       string
 	GoType     string
@@ -89,7 +89,7 @@ type methodInfo struct {
 	CommandCallable   bool
 	Params            string
 	ParamDeclarations string
-	CmdArgInfos       []argInfo
+	CmdArgInfos       []cmdArgInfo
 	Return            returnInfo
 }
 
@@ -204,7 +204,7 @@ func buildMethodInfo(
 
 		paramDeclarations := ""
 		params := ""
-		CmdArgInfos := make([]argInfo, 0, 0)
+		cmdArgInfos := make([]cmdArgInfo, 0, 0)
 
 		for index, param := range method.Inputs {
 			goType := bindType(param.Type, structs)
@@ -219,7 +219,7 @@ func buildMethodInfo(
 			paramDeclarations += fmt.Sprintf("%v %v,\n", paramName, goType)
 			params += fmt.Sprintf("%v,\n", paramName)
 
-			// Build CmdArgsInfo used for CLI code generator
+			// Build cmdArgInfos used for CLI code generator
 			cmdParamName := paramName
 			cmdParamStructured := param.Type.TupleType != nil
 			cmdParsingFn := ""
@@ -268,9 +268,9 @@ func buildMethodInfo(
 				}
 			}
 
-			CmdArgInfos = append(
-				CmdArgInfos,
-				argInfo{
+			cmdArgInfos = append(
+				cmdArgInfos,
+				cmdArgInfo{
 					Name:       cmdParamName,
 					Type:       param.Type.String(),
 					GoType:     goType,
@@ -327,7 +327,7 @@ func buildMethodInfo(
 			commandCallable,
 			params,
 			paramDeclarations,
-			CmdArgInfos,
+			cmdArgInfos,
 			returned,
 		}
 

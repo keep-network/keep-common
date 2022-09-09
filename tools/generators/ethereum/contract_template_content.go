@@ -47,14 +47,14 @@ type {{.Class}} struct {
 }
 
 func New{{.Class}}(
-    contractAddress common.Address,
-    chainId *big.Int,
-    accountKey *keystore.Key,
-    backend bind.ContractBackend,
-    nonceManager *ethereum.NonceManager,
-    miningWaiter *chainutil.MiningWaiter,
-    blockCounter *ethereum.BlockCounter,
-    transactionMutex *sync.Mutex,
+	contractAddress common.Address,
+	chainId *big.Int,
+	accountKey *keystore.Key,
+	backend bind.ContractBackend,
+	nonceManager *ethereum.NonceManager,
+	miningWaiter *chainutil.MiningWaiter,
+	blockCounter *ethereum.BlockCounter,
+	transactionMutex *sync.Mutex,
 ) (*{{.Class}}, error) {
 	callerOptions := &bind.CallOpts{
 		From: accountKey.Address,

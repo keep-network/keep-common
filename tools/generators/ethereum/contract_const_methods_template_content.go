@@ -6,7 +6,7 @@ var contractConstMethodsTemplateContent = `{{- $contract := . -}}
 
 {{- if $method.Return.Multi }}
 type {{$method.Return.Type}} struct {
-       {{$method.Return.Declarations}}
+		{{$method.Return.Declarations}}
 }
 {{- end }}
 
@@ -14,7 +14,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	{{$method.ParamDeclarations -}}
 	{{if $method.Payable -}} value *big.Int, {{- end -}}
 ) ({{$method.Return.Type}}, error) {
-	{{- if and $method.Return.Multi (not $method.Return.Structured) }}	
+	{{- if and $method.Return.Multi (not $method.Return.Structured) }}
 	{{$method.Return.Vars}}
 	{{- else }}
 	result,
@@ -22,7 +22,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 		{{$contract.ShortVar}}.callerOptions,
 		{{$method.Params}}
 	)
-	
+
 	{{ if and $method.Return.Multi (not $method.Return.Structured) }}
 	result := {{$method.Return.Type -}}
 	{

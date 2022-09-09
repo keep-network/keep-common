@@ -48,7 +48,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) OnEvent(
 			case <-ctx.Done():
 				return
 			case event := <- eventChan:
-			    handler(
+				handler(
 					{{$event.ParamExtractors}}
 				)
 			}
@@ -71,7 +71,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 		defer ticker.Stop()
 		for {
 			select {
-			case <-ctx.Done():				
+			case <-ctx.Done():
 				return
 			case <-ticker.C:
 				lastBlock, err := {{$event.SubscriptionShortVar}}.contract.blockCounter.CurrentBlock()
@@ -85,7 +85,7 @@ func ({{$event.SubscriptionShortVar}} *{{$event.SubscriptionCapsName}}) Pipe(
 
 				{{$logger}}.Infof(
 					"subscription monitoring fetching past {{$event.CapsName}} events " +
-					    "starting from block [%v]",
+						"starting from block [%v]",
 					fromBlock,
 				)
 				events, err := {{$event.SubscriptionShortVar}}.contract.Past{{$event.CapsName}}Events(

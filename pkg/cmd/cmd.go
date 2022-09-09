@@ -7,20 +7,21 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/spf13/cobra"
+
 	"github.com/keep-network/keep-common/pkg/chain/ethereum"
 	"github.com/keep-network/keep-common/pkg/cmd/flag"
-	"github.com/spf13/cobra"
 )
 
 const (
-	blockFlag  string = "block"
+			blockFlag  string = "block"
 	blockShort string = "b"
 	// SubmitFlag allows for definition and lookup of a boolean `--submit`
 	// command-line flag indicating that a given contract interaction should be
 	// submitted as a paid, mutating interaction to the configured Ethereum chain.
 	SubmitFlag  string = "submit"
 	submitShort string = "s"
-	valueFlag   string = "value"
+	valueFlag   			string = "value"
 	valueShort  string = "v"
 )
 
@@ -44,6 +45,7 @@ var (
 func InitConstFlags(cmd *cobra.Command) {
 	flag.BigIntVarPFlag(
 		cmd.Flags(),
+		
 		&BlockFlagValue,
 		blockFlag,
 		blockShort,

@@ -7,17 +7,17 @@ var commandTemplateContent = `// Code generated - DO NOT EDIT.
 package cmd
 
 import (
-    "sync"
+	"sync"
 
-    "{{.HostChainModule}}/common"
-    "{{.HostChainModule}}/common/hexutil"
-    "{{.HostChainModule}}/core/types"
-    "{{.HostChainModule}}/ethclient"
+	"{{.HostChainModule}}/common"
+	"{{.HostChainModule}}/common/hexutil"
+	"{{.HostChainModule}}/core/types"
+	"{{.HostChainModule}}/ethclient"
 
-    chainutil "{{.ChainUtilPackage}}"
-    "github.com/keep-network/keep-common/pkg/cmd"
+	chainutil "{{.ChainUtilPackage}}"
+	"github.com/keep-network/keep-common/pkg/cmd"
 
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
 )
 
 var {{.Class}}Command *cobra.Command
@@ -42,27 +42,27 @@ var {{.FullVar}}Description = ` + "`" + `The {{.DashedName}} command allows call
 	be changed by passing the -v/--value flag.` + "`" + `
 
 func init() {
-    {{.Class}}Command := &cobra.Command{
-        Use:        "{{.DashedName}}",
-        Short:       ` + "`" + `Provides access to the {{.Class}} contract.` + "`" + `,
-        Long: {{.FullVar}}Description,
-    }
+	{{.Class}}Command := &cobra.Command{
+		Use:        "{{.DashedName}}",
+		Short:      ` + "`" + `Provides access to the {{.Class}} contract.` + "`" + `,
+		Long: {{.FullVar}}Description,
+	}
 
-    {{.Class}}Command.AddCommand(
-        {{- $contract := . -}}
-        {{- range $i, $method := .ConstMethods }}
-        {{- if $method.CommandCallable }}
-            {{$contract.ShortVar}}{{$method.CapsName}}Command(),
-        {{- end -}}
-        {{- end -}}
-        {{- range $i, $method := .NonConstMethods }}
-        {{- if $method.CommandCallable }}
-            {{$contract.ShortVar}}{{$method.CapsName}}Command(),
-        {{- end -}}
-        {{- end }}
-    )
+	{{.Class}}Command.AddCommand(
+		{{- $contract := . -}}
+		{{- range $i, $method := .ConstMethods }}
+		{{- if $method.CommandCallable }}
+			{{$contract.ShortVar}}{{$method.CapsName}}Command(),
+		{{- end -}}
+		{{- end -}}
+		{{- range $i, $method := .NonConstMethods }}
+		{{- if $method.CommandCallable }}
+			{{$contract.ShortVar}}{{$method.CapsName}}Command(),
+		{{- end -}}
+		{{- end }}
+	)
 
-    ModuleCommand.AddCommand({{.Class}}Command)
+	ModuleCommand.AddCommand({{.Class}}Command)
 }
 
 /// ------------------- Const methods -------------------
@@ -73,11 +73,11 @@ func init() {
 
 func {{$contract.ShortVar}}{{$method.CapsName}}Command() *cobra.Command {
 		c := &cobra.Command{
-				Use: "{{$method.DashedName}}{{ range $i, $param := $method.ParamInfos }} [{{$param.Name}}]{{ end }}",
+				Use: "{{$method.DashedName}}{{ range $i, $param := $method.CmdArgInfos }} [{{$param.Name}}]{{ end }}",
 				Short: "Calls the {{$method.Modifiers -}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
-                Args: cmd.ArgCountChecker({{$method.ParamInfos | len}}),
+				Args: cmd.ArgCountChecker({{$method.CmdArgInfos | len}}),
 				RunE: {{$contract.ShortVar}}{{$method.CapsName}},
-                SilenceUsage: true,
+				SilenceUsage: true,
 				DisableFlagsInUseLine: true,
 			}
 
@@ -87,33 +87,42 @@ func {{$contract.ShortVar}}{{$method.CapsName}}Command() *cobra.Command {
 }
 
 func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string) error {
-    contract, err := initialize{{$contract.Class}}(c)
-    if err != nil {
-        return err
-    }
+	contract, err := initialize{{$contract.Class}}(c)
+	if err != nil {
+		return err
+	}
 
-   	{{- range $i, $param := .ParamInfos }}
-   	{{$param.Name}}, err := {{$param.ParsingFn}}(args[{{$i}}])
-   	if err != nil {
-		return fmt.Errorf(
-			"couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
-			args[{{$i}}],
-		)
-   	}
-   	{{ end }}
+	{{ range $i, $param := .CmdArgInfos }}
+	{{ if $param.Structured }}
+	{{ $param.Name }} := {{ $param.GoType }}{}
+	if err:= json.Unmarshal([]byte(args[{{ $i }}]), &{{ $param.Name }}); err != nil {
+		return fmt.Errorf("failed to unmarshal {{ $param.Name }} to {{ $param.GoType }}: %w", err)
+	}
+	{{- else -}}
+	{{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
+	if err != nil {
+	return fmt.Errorf(
+		"couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
+		args[{{$i}}],
+	)
+	}
+	{{- end }}
+	{{- end }}
 
-    result, err := contract.{{$method.CapsName}}AtBlock(
-        {{ $method.Params -}}
-        cmd.BlockFlagValue.Int,
-    )
+	result, err := contract.{{$method.CapsName}}AtBlock(
+		{{- range $i, $param := .CmdArgInfos }}
+		{{ $param.Name }},
+		{{- end }}
+		cmd.BlockFlagValue.Int,
+	)
 
-    if err != nil {
-    	return err
-    }
+	if err != nil {
+		return err
+	}
 
-    cmd.PrintOutput(result)
+	cmd.PrintOutput(result)
 
-    return nil
+	return nil
 }
 
 {{- end -}}
@@ -126,80 +135,94 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 
 func {{$contract.ShortVar}}{{$method.CapsName}}Command() *cobra.Command {
 		c := &cobra.Command{
-				Use: "{{$method.DashedName}}{{ range $i, $param := $method.ParamInfos }} [{{$param.Name}}]{{ end }}",
+				Use: "{{$method.DashedName}}{{ range $i, $param := $method.CmdArgInfos }} [{{$param.Name}}]{{ end }}",
 				Short: "Calls the {{$method.Modifiers -}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
-                Args: cmd.ArgCountChecker({{$method.ParamInfos | len}}),
+				Args: cmd.ArgCountChecker({{$method.CmdArgInfos | len}}),
 				RunE: {{$contract.ShortVar}}{{$method.CapsName}},
-                SilenceUsage: true,
+				SilenceUsage: true,
 				DisableFlagsInUseLine: true,
 			}
 
-        {{if $method.Payable -}}
-        c.PreRunE = cmd.PayableArgsChecker
-        cmd.InitPayableFlags(c)
-        {{- else -}}
-        c.PreRunE = cmd.NonConstArgsChecker
-        cmd.InitNonConstFlags(c)
-        {{- end }}
+		{{if $method.Payable -}}
+		c.PreRunE = cmd.PayableArgsChecker
+		cmd.InitPayableFlags(c)
+		{{- else -}}
+		c.PreRunE = cmd.NonConstArgsChecker
+		cmd.InitNonConstFlags(c)
+		{{- end }}
 
 		return c
 }
 
 func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string) error {
-    contract, err := initialize{{$contract.Class}}(c)
-    if err != nil {
-        return err
-    }
+	contract, err := initialize{{$contract.Class}}(c)
+	if err != nil {
+		return err
+	}
 
-    {{ range $i, $param := .ParamInfos }}
-    {{$param.Name}}, err := {{$param.ParsingFn}}(args[{{$i}}])
-    if err != nil {
-        return fmt.Errorf(
-            "couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
-            args[{{$i}}],
-        )
-    }
+	{{ range $i, $param := .CmdArgInfos }}
+	{{ if $param.Structured }}
+	{{ $param.Name }} := {{ $param.GoType }}{}
+	if err:= json.Unmarshal([]byte(args[{{ $i }}]), &{{ $param.Name }}); err != nil {
+		return fmt.Errorf("failed to unmarshal {{ $param.Name }} to {{ $param.GoType }}: %w", err)
+	}
+	{{- else -}}
+	{{ $param.Name }}, err := {{ printf "args[%d]" $i | printf $param.ParsingFn }}
+	if err != nil {
+	return fmt.Errorf(
+		"couldn't parse parameter {{$param.Name}}, a {{$param.Type}}, from passed value %v",
+		args[{{$i}}],
+	)
+	}
+	{{- end }}
+	{{- end }}
 
-    {{ end -}}
+	var (
+		transaction *types.Transaction
+		{{ if gt (len $method.Return.Type) 0 -}}
+		result {{$method.Return.Type}}
+		{{ end -}}
+	)
 
-    var (
-        transaction *types.Transaction
-        {{ if gt (len $method.Return.Type) 0 -}}
-        result {{$method.Return.Type}}
-        {{ end -}}
-    )
+	if shouldSubmit, _ := c.Flags().GetBool(cmd.SubmitFlag); shouldSubmit {
+		// Do a regular submission. Take payable into account.
+		transaction, err = contract.{{$method.CapsName}}(
+			{{- range $i, $param := .CmdArgInfos }}
+			{{ $param.Name }},
+			{{- end }}
+			{{- if $method.Payable }}
+			cmd.ValueFlagValue.Int(),
+			{{- end }}
+		)
+		if err != nil {
+			return err
+		}
 
-    if shouldSubmit, _ := c.Flags().GetBool(cmd.SubmitFlag); shouldSubmit {
-        // Do a regular submission. Take payable into account.
-        transaction, err = contract.{{$method.CapsName}}(
-            {{$method.Params}}
-            {{- if $method.Payable -}} cmd.ValueFlagValue.Int(), {{- end -}}
-        )
-        if err != nil {
-            return err
-        }
+		cmd.PrintOutput(transaction.Hash())
+	} else {
+		// Do a call.
+		{{ if gt (len $method.Return.Type) 0 -}} result, {{ end -}} err = contract.Call{{$method.CapsName}}(
+			{{- range $i, $param := .CmdArgInfos }}
+			{{ $param.Name }},
+			{{- end }}
+			{{- if $method.Payable }}
+			cmd.ValueFlagValue.Int(),
+			{{- end }}
+			cmd.BlockFlagValue.Int,
+		)
+		if err != nil {
+			return err
+		}
 
-        cmd.PrintOutput(transaction.Hash())
-    } else {
-        // Do a call.
-        {{ if gt (len $method.Return.Type) 0 -}} result, {{ end -}} err = contract.Call{{$method.CapsName}}(
-            {{$method.Params}}
-            {{- if $method.Payable -}} cmd.ValueFlagValue.Int(), {{- end -}}
-            cmd.BlockFlagValue.Int,
-        )
-        if err != nil {
-            return err
-        }
-
-        {{ if gt (len $method.Return.Type) 0 -}}
-        cmd.PrintOutput(result)
-        {{- else -}}
-        cmd.PrintOutput("success")
-        {{- end }}
-    }
+		{{ if gt (len $method.Return.Type) 0 -}}
+		cmd.PrintOutput(result)
+		{{- else -}}
+		cmd.PrintOutput("success")
+		{{- end }}
+	}
 
 
-    return nil
+	return nil
 }
 
 {{- end -}}
@@ -210,12 +233,12 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 func initialize{{.Class}}(c *cobra.Command) (*contract.{{.Class}}, error) {
 	cfg := *ModuleCommand.GetConfig()
 
-    client, err := ethclient.Dial(cfg.URL)
-    if err != nil {
-        return nil, fmt.Errorf("error connecting to host chain node: [%v]", err)
-    }
+	client, err := ethclient.Dial(cfg.URL)
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to host chain node: [%v]", err)
+	}
 
-   	chainID, err := client.ChainID(context.Background())
+	chainID, err := client.ChainID(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to resolve host chain id: [%v]",
@@ -223,17 +246,17 @@ func initialize{{.Class}}(c *cobra.Command) (*contract.{{.Class}}, error) {
 		)
 	}
 
-    key, err := chainutil.DecryptKeyFile(
-        cfg.Account.KeyFile,
-        cfg.Account.KeyFilePassword,
-    )
-    if err != nil {
-        return nil, fmt.Errorf(
-            "failed to read KeyFile: %s: [%v]",
-            cfg.Account.KeyFile,
-            err,
-        )
-    }
+	key, err := chainutil.DecryptKeyFile(
+		cfg.Account.KeyFile,
+		cfg.Account.KeyFilePassword,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to read KeyFile: %s: [%v]",
+			cfg.Account.KeyFile,
+			err,
+		)
+	}
 
 	miningWaiter := chainutil.NewMiningWaiter(client, cfg)
 
@@ -245,24 +268,24 @@ func initialize{{.Class}}(c *cobra.Command) (*contract.{{.Class}}, error) {
 		)
 	}
 
-    address, err := cfg.ContractAddress("{{.Class}}")
+	address, err := cfg.ContractAddress("{{.Class}}")
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to get %s address: [%w]",
-            "{{.Class}}",
+			"{{.Class}}",
 			err,
 		)
 	}
 
-    return contract.New{{.Class}}(
-        address,
-        chainID,
-        key,
-        client,
-        chainutil.NewNonceManager(client, key.Address),
-        miningWaiter,
-        blockCounter,
-        &sync.Mutex{},
-    )
+	return contract.New{{.Class}}(
+		address,
+		chainID,
+		key,
+		client,
+		chainutil.NewNonceManager(client, key.Address),
+		miningWaiter,
+		blockCounter,
+		&sync.Mutex{},
+	)
 }
 `

@@ -27,12 +27,12 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 	defer {{$contract.ShortVar}}.transactionMutex.Unlock()
 
 	// create a copy
-    transactorOptions := new(bind.TransactOpts)
-    *transactorOptions = *{{$contract.ShortVar}}.transactorOptions
+	transactorOptions := new(bind.TransactOpts)
+	*transactorOptions = *{{$contract.ShortVar}}.transactorOptions
 
-    {{if $method.Payable -}}
-    transactorOptions.Value = value
-    {{- end }}
+	{{if $method.Payable -}}
+	transactorOptions.Value = value
+	{{- end }}
 
 	if len(transactionOptions) > 1 {
 		return nil, fmt.Errorf(
@@ -88,21 +88,21 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) {{$method.CapsName}}(
 			}
 
 			transaction, err := {{$contract.ShortVar}}.contract.{{$method.CapsName}}(
-		        newTransactorOptions,
-		        {{$method.Params}}
-	        )
-	        if err != nil {
-	        	return nil, {{$contract.ShortVar}}.errorResolver.ResolveError(
-	        		err,
-	        		{{$contract.ShortVar}}.transactorOptions.From,
-	        		{{if $method.Payable -}}
-	        		value
-	        		{{- else -}}
-	        		nil
-	        		{{- end -}},
-	        		"{{$method.LowerName}}",
-	        		{{$method.Params}}
-	        	)
+				newTransactorOptions,
+				{{$method.Params}}
+			)
+			if err != nil {
+				return nil, {{$contract.ShortVar}}.errorResolver.ResolveError(
+					err,
+					{{$contract.ShortVar}}.transactorOptions.From,
+					{{if $method.Payable -}}
+					value
+					{{- else -}}
+					nil
+					{{- end -}},
+					"{{$method.LowerName}}",
+					{{$method.Params}}
+				)
 			}
 
 			{{$logger}}.Infof(

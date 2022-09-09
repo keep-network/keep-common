@@ -72,10 +72,12 @@ type contractInfo struct {
 	Events           []eventInfo
 }
 
-type paramInfo struct {
-	Name      string
-	Type      string
-	ParsingFn string
+type cmdArgInfo struct {
+	Name       string
+	Type       string
+	GoType     string
+	ParsingFn  string
+	Structured bool
 }
 
 type methodInfo struct {
@@ -87,7 +89,7 @@ type methodInfo struct {
 	CommandCallable   bool
 	Params            string
 	ParamDeclarations string
-	ParamInfos        []paramInfo
+	CmdArgInfos       []cmdArgInfo
 	Return            returnInfo
 }
 
@@ -202,7 +204,7 @@ func buildMethodInfo(
 
 		paramDeclarations := ""
 		params := ""
-		paramInfos := make([]paramInfo, 0, 0)
+		cmdArgInfos := make([]cmdArgInfo, 0, 0)
 
 		for index, param := range method.Inputs {
 			goType := bindType(param.Type, structs)
@@ -217,23 +219,63 @@ func buildMethodInfo(
 			paramDeclarations += fmt.Sprintf("%v %v,\n", paramName, goType)
 			params += fmt.Sprintf("%v,\n", paramName)
 
-			parsingFn := ""
-			switch param.Type.String() {
-			case "bytes":
-				parsingFn = "hexutil.Decode"
-			case "address":
-				parsingFn = "chainutil.AddressFromHex"
-			case "uint256":
-				parsingFn = "hexutil.DecodeBig"
-			default:
-				commandCallable = false
+			// Build cmdArgInfos used for CLI code generator
+			cmdParamName := paramName
+			cmdParamStructured := param.Type.TupleType != nil
+			cmdParsingFn := ""
+
+			if cmdParamStructured {
+				cmdParamName += "_json"
+			} else {
+			goTypeSwitch:
+				switch goType {
+				case "[]byte":
+					cmdParsingFn = "hexutil.Decode(%s)"
+				case "common.Address":
+					cmdParsingFn = "chainutil.AddressFromHex(%s)"
+				case "*big.Int":
+					cmdParsingFn = "hexutil.DecodeBig(%s)"
+				case "bool":
+					cmdParsingFn = "strconv.ParseBool(%s)"
+				default:
+					intParts := regexp.MustCompile(`^(u|)int([0-9]*)$`).FindStringSubmatch(goType)
+					if len(intParts) > 0 {
+						switch intParts[2] {
+						case "8", "16", "32", "64":
+							var template string
+							if intParts[1] == "u" {
+								template = "decode.ParseUint[uint%s](%%s, %s)"
+							} else {
+								template = "decode.ParseInt[int%s](%%s, %s)"
+							}
+
+							cmdParsingFn = fmt.Sprintf(template, intParts[2], intParts[2])
+							break goTypeSwitch
+						}
+					}
+
+					// TODO: Add support for more types, i.a. slices, arrays.
+					fmt.Printf(
+						"WARNING: Unsupported param type for method %s:\n"+
+							"  ABI Type: %s\n"+
+							"  Go Type:  %s\n"+
+							"  the method won't be callable with 'ethereum' command\n",
+						name,
+						param.Type,
+						goType,
+					)
+					commandCallable = false
+				}
 			}
-			paramInfos = append(
-				paramInfos,
-				paramInfo{
-					Name:      paramName,
-					Type:      param.Type.String(),
-					ParsingFn: parsingFn,
+
+			cmdArgInfos = append(
+				cmdArgInfos,
+				cmdArgInfo{
+					Name:       cmdParamName,
+					Type:       param.Type.String(),
+					GoType:     goType,
+					ParsingFn:  cmdParsingFn,
+					Structured: cmdParamStructured,
 				})
 		}
 
@@ -285,7 +327,7 @@ func buildMethodInfo(
 			commandCallable,
 			params,
 			paramDeclarations,
-			paramInfos,
+			cmdArgInfos,
 			returned,
 		}
 

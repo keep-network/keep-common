@@ -12,7 +12,7 @@ type unumber interface {
 	uint8 | uint16 | uint32 | uint64
 }
 
-// ParseInt parses string tp int of the given bit size.
+// ParseInt parses string to int of the given bit size.
 func ParseInt[K number](str string, bitSize int) (K, error) {
 	val64, err := strconv.ParseInt(str, 10, bitSize)
 	if err != nil {

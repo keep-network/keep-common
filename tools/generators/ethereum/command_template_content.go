@@ -73,9 +73,9 @@ func init() {
 
 func {{$contract.ShortVar}}{{$method.CapsName}}Command() *cobra.Command {
         c := &cobra.Command{
-                Use: "{{$method.DashedName}}{{ range $i, $param := $method.ParamInfos }} [{{$param.Name}}]{{ end }}",
+                Use: "{{$method.DashedName}}{{ range $i, $param := $method.CmdArgInfos }} [{{$param.Name}}]{{ end }}",
                 Short: "Calls the {{$method.Modifiers -}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
-                Args: cmd.ArgCountChecker({{$method.ParamInfos | len}}),
+                Args: cmd.ArgCountChecker({{$method.CmdArgInfos | len}}),
                 RunE: {{$contract.ShortVar}}{{$method.CapsName}},
                 SilenceUsage: true,
                 DisableFlagsInUseLine: true,
@@ -92,7 +92,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
         return err
     }
 
-    {{ range $i, $param := .ParamInfos }}
+    {{ range $i, $param := .CmdArgInfos }}
     {{ if $param.Structured }}
         {{ $param.Name }} := {{ $param.GoType }}{}
         if err:= json.Unmarshal([]byte(args[{{ $i }}]), &{{ $param.Name }}); err != nil {
@@ -110,7 +110,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
     {{- end }}
 
     result, err := contract.{{$method.CapsName}}AtBlock(
-        {{- range $i, $param := .ParamInfos }}
+        {{- range $i, $param := .CmdArgInfos }}
         {{ $param.Name }},
         {{- end }}
         cmd.BlockFlagValue.Int,
@@ -135,9 +135,9 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 
 func {{$contract.ShortVar}}{{$method.CapsName}}Command() *cobra.Command {
         c := &cobra.Command{
-                Use: "{{$method.DashedName}}{{ range $i, $param := $method.ParamInfos }} [{{$param.Name}}]{{ end }}",
+                Use: "{{$method.DashedName}}{{ range $i, $param := $method.CmdArgInfos }} [{{$param.Name}}]{{ end }}",
                 Short: "Calls the {{$method.Modifiers -}} method {{$method.LowerName}} on the {{$contract.Class}} contract.",
-                Args: cmd.ArgCountChecker({{$method.ParamInfos | len}}),
+                Args: cmd.ArgCountChecker({{$method.CmdArgInfos | len}}),
                 RunE: {{$contract.ShortVar}}{{$method.CapsName}},
                 SilenceUsage: true,
                 DisableFlagsInUseLine: true,
@@ -160,7 +160,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
         return err
     }
 
-       {{ range $i, $param := .ParamInfos }}
+       {{ range $i, $param := .CmdArgInfos }}
     {{ if $param.Structured }}
         {{ $param.Name }} := {{ $param.GoType }}{}
         if err:= json.Unmarshal([]byte(args[{{ $i }}]), &{{ $param.Name }}); err != nil {
@@ -187,7 +187,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
     if shouldSubmit, _ := c.Flags().GetBool(cmd.SubmitFlag); shouldSubmit {
         // Do a regular submission. Take payable into account.
         transaction, err = contract.{{$method.CapsName}}(
-            {{- range $i, $param := .ParamInfos }}
+            {{- range $i, $param := .CmdArgInfos }}
             {{ $param.Name }},
             {{- end }}
             {{- if $method.Payable }}
@@ -202,7 +202,7 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
     } else {
         // Do a call.
         {{ if gt (len $method.Return.Type) 0 -}} result, {{ end -}} err = contract.Call{{$method.CapsName}}(
-            {{- range $i, $param := .ParamInfos }}
+            {{- range $i, $param := .CmdArgInfos }}
             {{ $param.Name }},
             {{- end }}
             {{- if $method.Payable }}

@@ -72,7 +72,7 @@ type contractInfo struct {
 	Events           []eventInfo
 }
 
-type paramInfo struct {
+type argInfo struct {
 	Name       string
 	Type       string
 	GoType     string
@@ -89,7 +89,7 @@ type methodInfo struct {
 	CommandCallable   bool
 	Params            string
 	ParamDeclarations string
-	ParamInfos        []paramInfo
+	CmdArgInfos       []argInfo
 	Return            returnInfo
 }
 
@@ -204,7 +204,7 @@ func buildMethodInfo(
 
 		paramDeclarations := ""
 		params := ""
-		paramInfos := make([]paramInfo, 0, 0)
+		CmdArgInfos := make([]argInfo, 0, 0)
 
 		for index, param := range method.Inputs {
 			goType := bindType(param.Type, structs)
@@ -219,23 +219,24 @@ func buildMethodInfo(
 			paramDeclarations += fmt.Sprintf("%v %v,\n", paramName, goType)
 			params += fmt.Sprintf("%v,\n", paramName)
 
-			parsingFn := ""
+			// Build CmdArgsInfo used for CLI code generator
+			cmdParamName := paramName
+			cmdParamStructured := param.Type.TupleType != nil
+			cmdParsingFn := ""
 
-			paramStructured := false
-			if param.Type.TupleType != nil {
-				paramName += "_json"
-				paramStructured = true
+			if cmdParamStructured {
+				cmdParamName += "_json"
 			} else {
 			goTypeSwitch:
 				switch goType {
 				case "[]byte":
-					parsingFn = "hexutil.Decode(%s)"
+					cmdParsingFn = "hexutil.Decode(%s)"
 				case "common.Address":
-					parsingFn = "chainutil.AddressFromHex(%s)"
+					cmdParsingFn = "chainutil.AddressFromHex(%s)"
 				case "*big.Int":
-					parsingFn = "hexutil.DecodeBig(%s)"
+					cmdParsingFn = "hexutil.DecodeBig(%s)"
 				case "bool":
-					parsingFn = "strconv.ParseBool(%s)"
+					cmdParsingFn = "strconv.ParseBool(%s)"
 				default:
 					intParts := regexp.MustCompile(`^(u|)int([0-9]*)$`).FindStringSubmatch(goType)
 					if len(intParts) > 0 {
@@ -248,7 +249,7 @@ func buildMethodInfo(
 								template = "decode.ParseInt[int%s](%%s, %s)"
 							}
 
-							parsingFn = fmt.Sprintf(template, intParts[2], intParts[2])
+							cmdParsingFn = fmt.Sprintf(template, intParts[2], intParts[2])
 							break goTypeSwitch
 						}
 					}
@@ -267,14 +268,14 @@ func buildMethodInfo(
 				}
 			}
 
-			paramInfos = append(
-				paramInfos,
-				paramInfo{
-					Name:       paramName,
+			CmdArgInfos = append(
+				CmdArgInfos,
+				argInfo{
+					Name:       cmdParamName,
 					Type:       param.Type.String(),
 					GoType:     goType,
-					ParsingFn:  parsingFn,
-					Structured: paramStructured,
+					ParsingFn:  cmdParsingFn,
+					Structured: cmdParamStructured,
 				})
 		}
 
@@ -326,7 +327,7 @@ func buildMethodInfo(
 			commandCallable,
 			params,
 			paramDeclarations,
-			paramInfos,
+			CmdArgInfos,
 			returned,
 		}
 

@@ -221,11 +221,9 @@ func buildMethodInfo(
 
 			parsingFn := ""
 
-			paramStructured := false
-			if param.Type.TupleType != nil {
-				paramName += "_json"
-				paramStructured = true
-			} else {
+			paramStructured := param.Type.TupleType != nil
+
+			if !paramStructured {
 			goTypeSwitch:
 				switch goType {
 				case "[]byte":

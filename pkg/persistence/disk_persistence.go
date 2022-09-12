@@ -149,6 +149,13 @@ func (ds *diskPersistence) Archive(directory string) error {
 	return moveAll(from, to)
 }
 
+func (ds *diskPersistence) Delete(dirName string, fileName string) error {
+	dirPath := ds.getStorageCurrentDirPath()
+	filePath := filepath.Join(dirPath, dirName, fileName)
+
+	return remove(filePath)
+}
+
 func (ds *diskPersistence) getStorageCurrentDirPath() string {
 	return fmt.Sprintf("%s/%s", ds.dataDir, currentDir)
 }
@@ -177,7 +184,12 @@ func EnsureDirectoryExists(dirBasePath, newDirName string) error {
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.Mkdir(dirPath, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("error occurred while creating a dir: [%v]", err)
+			return fmt.Errorf(
+				"error occurred while creating a dir: [%w]; "+
+					"please make sure the parent directory [%s] exists",
+				err,
+				dirBasePath,
+			)
 		}
 	}
 
@@ -224,6 +236,11 @@ func Read(filePath string) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+// remove a file from a file system
+func remove(filePath string) error {
+	return os.Remove(filePath)
 }
 
 func closeFile(file *os.File) {

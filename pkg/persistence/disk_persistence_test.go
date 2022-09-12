@@ -499,3 +499,55 @@ func TestDiskPersistence_AppendToArchive(t *testing.T) {
 
 	cleanup()
 }
+
+func TestDiskPersistence_Delete(t *testing.T) {
+	diskPersistence, _ := NewDiskHandle(dataDir)
+	path := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
+
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	diskPersistence.Save(bytesToTest, dirName1, fileName11)
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if err != nil {
+			t.Fatalf("Dir [%+v] was supposed to be created", path)
+		}
+	}
+
+	err := diskPersistence.Delete(dirName1, fileName11)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		if err != nil {
+			t.Fatalf("Dir [%+v] was supposed to be moved", path)
+		}
+	}
+
+	cleanup()
+}
+
+func TestDiskPersistence_RefuseDelete(t *testing.T) {
+	diskPersistence, _ := NewDiskHandle(dataDir)
+	expectedError := fmt.Errorf(
+		"remove %s/%s/%s: no such file or directory",
+		dirCurrent,
+		dirName1,
+		fileName11,
+	)
+
+	err := diskPersistence.Delete(dirName1, fileName11)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if expectedError.Error() != err.Error() {
+		t.Fatalf(
+			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+			errDirectoryNameLength.Error(),
+			err.Error(),
+		)
+	}
+
+	cleanup()
+}

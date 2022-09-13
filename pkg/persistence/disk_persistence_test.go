@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -25,9 +26,9 @@ var (
 	dirName2   = "0x777777"
 	fileName21 = "file21"
 
-	pathToCurrent  = fmt.Sprintf("%s/%s", dataDir, dirCurrent)
-	pathToArchive  = fmt.Sprintf("%s/%s", dataDir, dirArchive)
-	pathToSnapshot = fmt.Sprintf("%s/%s", dataDir, dirSnapshot)
+	pathToCurrent  = filepath.Join(dataDir, dirCurrent)
+	pathToArchive  = filepath.Join(dataDir, dirArchive)
+	pathToSnapshot = filepath.Join(dataDir, dirSnapshot)
 
 	errExpectedRead  = fmt.Errorf("cannot read from the storage directory: ")
 	errExpectedWrite = fmt.Errorf("cannot write to the storage directory: ")
@@ -56,11 +57,9 @@ func TestDiskPersistence_Save(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pathToFile := fmt.Sprintf("%s/%s/%s", pathToCurrent, dirName1, fileName11)
+	pathToFile := filepath.Join(pathToCurrent, dirName1, fileName11)
 
-	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
-		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
-	}
+	assertExist(t, pathToFile, "check file after save")
 
 	cleanup()
 }
@@ -74,11 +73,9 @@ func TestDiskPersistence_SaveMaxAllowed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pathToFile := fmt.Sprintf("%s/%s/%s", pathToCurrent, maxAllowedName, maxAllowedName)
+	pathToFile := filepath.Join(pathToCurrent, maxAllowedName, maxAllowedName)
 
-	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
-		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
-	}
+	assertExist(t, pathToFile, "check file after save")
 
 	cleanup()
 }
@@ -131,38 +128,29 @@ func TestDiskPersistence_Snapshot(t *testing.T) {
 		}
 	}
 
-	pathToFile := fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile := filepath.Join(
 		pathToSnapshot,
 		dirName1,
 		fileName11+".1",
 	)
 
-	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
-		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
-	}
+	assertExist(t, pathToFile, "check file 1 after snapshot")
 
-	pathToFile = fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile = filepath.Join(
 		pathToSnapshot,
 		dirName1,
 		fileName11+".2",
 	)
 
-	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
-		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
-	}
+	assertExist(t, pathToFile, "check file 2 after snapshot")
 
-	pathToFile = fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile = filepath.Join(
 		pathToSnapshot,
 		dirName1,
 		fileName11+".3",
 	)
 
-	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
-		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
-	}
+	assertExist(t, pathToFile, "check file 3 after snapshot")
 
 	cleanup()
 }
@@ -182,16 +170,13 @@ func TestDiskPersistence_SnapshotMaxAllowed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pathToFile := fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile := filepath.Join(
 		pathToSnapshot,
 		maxAllowedName,
 		maxAllowedSnapshotName+snapshotSuffix,
 	)
 
-	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
-		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
-	}
+	assertExist(t, pathToFile, "check file after snapshot")
 
 	cleanup()
 }
@@ -256,16 +241,13 @@ func TestDiskPersistence_RefuseSnapshot_NameCollision(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pathToFile := fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile := filepath.Join(
 		pathToSnapshot,
 		dirName1,
 		fileName11+snapshotSuffix,
 	)
 
-	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
-		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
-	}
+	assertExist(t, pathToFile, "check file after snapshot")
 
 	err = diskHandle.Snapshot(bytesToTest, dirName1, fileName11)
 
@@ -376,38 +358,20 @@ func TestDiskPersistence_ReadAll(t *testing.T) {
 func TestDiskPersistence_Archive(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
 
-	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
-	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, dirName1)
+	pathMoveFrom := filepath.Join(pathToCurrent, dirName1)
+	pathMoveTo := filepath.Join(pathToArchive, dirName1)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
 	diskPersistence.Save(bytesToTest, dirName1, fileName11)
 
-	if _, err := os.Stat(pathMoveFrom); os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be created", pathMoveFrom)
-		}
-	}
-
-	if _, err := os.Stat(pathMoveTo); !os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be empty", pathMoveTo)
-		}
-	}
+	assertExist(t, pathMoveFrom, "check path from before archive")
+	assertNotExist(t, pathMoveTo, "check path to before archive")
 
 	diskPersistence.Archive(dirName1)
 
-	if _, err := os.Stat(pathMoveFrom); !os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be moved", pathMoveFrom)
-		}
-	}
-
-	if _, err := os.Stat(pathMoveTo); os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be created", pathMoveTo)
-		}
-	}
+	assertNotExist(t, pathMoveFrom, "check path from after archive")
+	assertExist(t, pathMoveTo, "check path to after archive")
 
 	cleanup()
 }
@@ -415,41 +379,23 @@ func TestDiskPersistence_Archive(t *testing.T) {
 func TestDiskPersistence_ArchiveMaxAllowed(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
 
-	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, maxAllowedName)
-	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, maxAllowedName)
+	pathMoveFrom := filepath.Join(pathToCurrent, maxAllowedName)
+	pathMoveTo := filepath.Join(pathToArchive, maxAllowedName)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
 	diskPersistence.Save(bytesToTest, maxAllowedName, maxAllowedName)
 
-	if _, err := os.Stat(pathMoveFrom); os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be created", pathMoveFrom)
-		}
-	}
-
-	if _, err := os.Stat(pathMoveTo); !os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be empty", pathMoveTo)
-		}
-	}
+	assertExist(t, pathMoveFrom, "check path from before archive")
+	assertNotExist(t, pathMoveTo, "check path to before archive")
 
 	err := diskPersistence.Archive(maxAllowedName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := os.Stat(pathMoveFrom); !os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be moved", pathMoveFrom)
-		}
-	}
-
-	if _, err := os.Stat(pathMoveTo); os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be created", pathMoveTo)
-		}
-	}
+	assertNotExist(t, pathMoveFrom, "check path from after archive")
+	assertExist(t, pathMoveTo, "check path to after archive")
 
 	cleanup()
 }
@@ -475,8 +421,8 @@ func TestDiskPersistence_RefuseArchive(t *testing.T) {
 func TestDiskPersistence_AppendToArchive(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
 
-	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
-	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, dirName1)
+	pathMoveFrom := filepath.Join(pathToCurrent, dirName1)
+	pathMoveTo := filepath.Join(pathToArchive, dirName1)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
@@ -488,9 +434,7 @@ func TestDiskPersistence_AppendToArchive(t *testing.T) {
 	diskPersistence.Save(bytesToTest, dirName1, "/file14")
 	diskPersistence.Archive(dirName1)
 
-	if _, err := os.Stat(pathMoveFrom); !os.IsNotExist(err) {
-		t.Fatalf("Dir [%+v] was supposed to be removed", pathMoveFrom)
-	}
+	assertNotExist(t, pathMoveFrom, "check path from after archive")
 
 	files, _ := ioutil.ReadDir(pathMoveTo)
 	if len(files) != 4 {
@@ -498,4 +442,72 @@ func TestDiskPersistence_AppendToArchive(t *testing.T) {
 	}
 
 	cleanup()
+}
+
+func TestDiskPersistence_Delete(t *testing.T) {
+	diskPersistence, _ := NewDiskHandle(dataDir)
+	pathToDir := filepath.Join(pathToCurrent, dirName1)
+	pathToFile := filepath.Join(pathToDir, fileName11)
+
+	bytesToTest := []byte{115, 111, 109, 101, 10}
+
+	diskPersistence.Save(bytesToTest, dirName1, fileName11)
+
+	assertExist(t, pathToDir, "check directory before delete")
+	assertExist(t, pathToFile, "check file before delete")
+
+	if err := diskPersistence.Delete(dirName1, fileName11); err != nil {
+		t.Fatalf("unexpected error for Delete call: %v", err)
+	}
+
+	assertExist(t, pathToDir, "check directory after delete")
+	assertNotExist(t, pathToFile, "check file after delete")
+
+	cleanup()
+}
+
+func TestDiskPersistence_RefuseDelete(t *testing.T) {
+	diskPersistence, _ := NewDiskHandle(dataDir)
+	expectedError := fmt.Errorf(
+		"remove %s/%s/%s: no such file or directory",
+		dirCurrent,
+		dirName1,
+		fileName11,
+	)
+
+	err := diskPersistence.Delete(dirName1, fileName11)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if expectedError.Error() != err.Error() {
+		t.Fatalf(
+			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+			errDirectoryNameLength.Error(),
+			err.Error(),
+		)
+	}
+
+	cleanup()
+}
+
+func assertExist(t *testing.T, path string, message string) {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			t.Fatalf("%s: path [%s] does not exist, but is expected to exist", message, path)
+		}
+		t.Fatalf("%s: unexpected error for path [%s]: %v", message, path, err)
+	}
+}
+
+func assertNotExist(t *testing.T, path string, message string) {
+	_, err := os.Stat(path)
+	if err == nil {
+		t.Fatalf("%s: path [%s] exist, but is expected to does not exist", message, path)
+	}
+
+	if os.IsNotExist(err) {
+		return
+	}
+	t.Fatalf("%s: unexpected error for path [%s]: %v", message, path, err)
 }

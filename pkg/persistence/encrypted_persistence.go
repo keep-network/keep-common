@@ -86,3 +86,7 @@ func (ep *encryptedPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) 
 func (ep *encryptedPersistence) Archive(directory string) error {
 	return ep.delegate.Archive(directory)
 }
+
+func (ep *encryptedPersistence) Delete(directory string, name string) error {
+	return ep.delegate.Delete(directory, name)
+}

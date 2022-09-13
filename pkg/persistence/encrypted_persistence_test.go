@@ -117,6 +117,11 @@ func (dpm *delegatePersistenceMock) Archive(directory string) error {
 	return nil
 }
 
+func (dpm *delegatePersistenceMock) Delete(directory string, name string) error {
+	// noop
+	return nil
+}
+
 type testDataDescriptor struct {
 	name      string
 	directory string

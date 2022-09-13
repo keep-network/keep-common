@@ -32,6 +32,10 @@ type Handle interface {
 	// Archive marks the entire directory with the name provided as archived
 	// so that the data in that directory is not returned from ReadAll.
 	Archive(directory string) error
+
+	// Delete removes a file under the given name in the provided directory
+	// appropriate for the given persistent storage implementation.
+	Delete(directory string, name string) error
 }
 
 // DataDescriptor is an interface representing data saved in the persistence

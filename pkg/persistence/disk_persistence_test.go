@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -25,9 +26,9 @@ var (
 	dirName2   = "0x777777"
 	fileName21 = "file21"
 
-	pathToCurrent  = fmt.Sprintf("%s/%s", dataDir, dirCurrent)
-	pathToArchive  = fmt.Sprintf("%s/%s", dataDir, dirArchive)
-	pathToSnapshot = fmt.Sprintf("%s/%s", dataDir, dirSnapshot)
+	pathToCurrent  = filepath.Join(dataDir, dirCurrent)
+	pathToArchive  = filepath.Join(dataDir, dirArchive)
+	pathToSnapshot = filepath.Join(dataDir, dirSnapshot)
 
 	errExpectedRead  = fmt.Errorf("cannot read from the storage directory: ")
 	errExpectedWrite = fmt.Errorf("cannot write to the storage directory: ")
@@ -56,7 +57,7 @@ func TestDiskPersistence_Save(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pathToFile := fmt.Sprintf("%s/%s/%s", pathToCurrent, dirName1, fileName11)
+	pathToFile := filepath.Join(pathToCurrent, dirName1, fileName11)
 
 	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
 		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
@@ -74,7 +75,7 @@ func TestDiskPersistence_SaveMaxAllowed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pathToFile := fmt.Sprintf("%s/%s/%s", pathToCurrent, maxAllowedName, maxAllowedName)
+	pathToFile := filepath.Join(pathToCurrent, maxAllowedName, maxAllowedName)
 
 	if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
 		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
@@ -131,8 +132,7 @@ func TestDiskPersistence_Snapshot(t *testing.T) {
 		}
 	}
 
-	pathToFile := fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile := filepath.Join(
 		pathToSnapshot,
 		dirName1,
 		fileName11+".1",
@@ -142,8 +142,7 @@ func TestDiskPersistence_Snapshot(t *testing.T) {
 		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
 	}
 
-	pathToFile = fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile = filepath.Join(
 		pathToSnapshot,
 		dirName1,
 		fileName11+".2",
@@ -153,8 +152,7 @@ func TestDiskPersistence_Snapshot(t *testing.T) {
 		t.Fatalf("file [%+v] was supposed to be created", pathToFile)
 	}
 
-	pathToFile = fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile = filepath.Join(
 		pathToSnapshot,
 		dirName1,
 		fileName11+".3",
@@ -182,8 +180,7 @@ func TestDiskPersistence_SnapshotMaxAllowed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pathToFile := fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile := filepath.Join(
 		pathToSnapshot,
 		maxAllowedName,
 		maxAllowedSnapshotName+snapshotSuffix,
@@ -256,8 +253,7 @@ func TestDiskPersistence_RefuseSnapshot_NameCollision(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pathToFile := fmt.Sprintf(
-		"%s/%s/%s",
+	pathToFile := filepath.Join(
 		pathToSnapshot,
 		dirName1,
 		fileName11+snapshotSuffix,
@@ -376,8 +372,8 @@ func TestDiskPersistence_ReadAll(t *testing.T) {
 func TestDiskPersistence_Archive(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
 
-	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
-	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, dirName1)
+	pathMoveFrom := filepath.Join(pathToCurrent, dirName1)
+	pathMoveTo := filepath.Join(pathToArchive, dirName1)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
@@ -415,8 +411,8 @@ func TestDiskPersistence_Archive(t *testing.T) {
 func TestDiskPersistence_ArchiveMaxAllowed(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
 
-	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, maxAllowedName)
-	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, maxAllowedName)
+	pathMoveFrom := filepath.Join(pathToCurrent, maxAllowedName)
+	pathMoveTo := filepath.Join(pathToArchive, maxAllowedName)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
@@ -475,8 +471,8 @@ func TestDiskPersistence_RefuseArchive(t *testing.T) {
 func TestDiskPersistence_AppendToArchive(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
 
-	pathMoveFrom := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
-	pathMoveTo := fmt.Sprintf("%s/%s", pathToArchive, dirName1)
+	pathMoveFrom := filepath.Join(pathToCurrent, dirName1)
+	pathMoveTo := filepath.Join(pathToArchive, dirName1)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
@@ -502,7 +498,7 @@ func TestDiskPersistence_AppendToArchive(t *testing.T) {
 
 func TestDiskPersistence_Delete(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
-	path := fmt.Sprintf("%s/%s", pathToCurrent, dirName1)
+	path := filepath.Join(pathToCurrent, dirName1)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 

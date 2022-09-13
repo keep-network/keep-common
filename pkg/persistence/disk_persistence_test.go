@@ -498,28 +498,22 @@ func TestDiskPersistence_AppendToArchive(t *testing.T) {
 
 func TestDiskPersistence_Delete(t *testing.T) {
 	diskPersistence, _ := NewDiskHandle(dataDir)
-	path := filepath.Join(pathToCurrent, dirName1)
+	pathToDir := filepath.Join(pathToCurrent, dirName1)
+	pathToFile := filepath.Join(pathToDir, fileName11)
 
 	bytesToTest := []byte{115, 111, 109, 101, 10}
 
 	diskPersistence.Save(bytesToTest, dirName1, fileName11)
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be created", path)
-		}
+	assertExist(t, pathToDir, "check directory before delete")
+	assertExist(t, pathToFile, "check file before delete")
+
+	if err := diskPersistence.Delete(dirName1, fileName11); err != nil {
+		t.Fatalf("unexpected error for Delete call: %v", err)
 	}
 
-	err := diskPersistence.Delete(dirName1, fileName11)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		if err != nil {
-			t.Fatalf("Dir [%+v] was supposed to be moved", path)
-		}
-	}
+	assertExist(t, pathToDir, "check directory after delete")
+	assertNotExist(t, pathToFile, "check file after delete")
 
 	cleanup()
 }
@@ -546,4 +540,26 @@ func TestDiskPersistence_RefuseDelete(t *testing.T) {
 	}
 
 	cleanup()
+}
+
+func assertExist(t *testing.T, path string, message string) {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			t.Fatalf("%s: path [%s] does not exist, but is expected to exist", message, path)
+		}
+		t.Fatalf("%s: unexpected error for path [%s]: %v", message, path, err)
+	}
+}
+
+func assertNotExist(t *testing.T, path string, message string) {
+	_, err := os.Stat(path)
+	if err == nil {
+		t.Fatalf("%s: path [%s] exist, but is expected to does not exist", message, path)
+	}
+
+	if os.IsNotExist(err) {
+		return
+	}
+	t.Fatalf("%s: unexpected error for path [%s]: %v", message, path, err)
 }

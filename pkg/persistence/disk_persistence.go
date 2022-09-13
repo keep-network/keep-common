@@ -40,7 +40,7 @@ func NewDiskHandle(path string) (Handle, error) {
 	}
 
 	snapshotSuffixGenerator := func() string {
-		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+		timestamp := time.Now().UnixMilli()
 		return fmt.Sprintf(".%d", timestamp)
 	}
 

@@ -80,7 +80,7 @@ func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
 		return err
 	}
 
-	return Write(fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName), data)
+	return Write(filepath.Join(dirPath, dirName, fileName), data)
 }
 
 func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error {
@@ -106,13 +106,13 @@ func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error
 	ds.snapshotMutex.Lock()
 	defer ds.snapshotMutex.Unlock()
 
-	dirPath := fmt.Sprintf("%s/%s", ds.dataDir, snapshotDir)
+	dirPath := filepath.Join(ds.dataDir, snapshotDir)
 	err := EnsureDirectoryExists(dirPath, dirName)
 	if err != nil {
 		return err
 	}
 
-	filePath := fmt.Sprintf("%s/%s/%s", dirPath, dirName, fileName+snapshotSuffix)
+	filePath := filepath.Join(dirPath, dirName, fileName+snapshotSuffix)
 
 	// very unlikely but better fail than overwrite an existing file
 	if !isNonExistingFile(filePath) {
@@ -143,8 +143,8 @@ func (ds *diskPersistence) Archive(directory string) error {
 		)
 	}
 
-	from := fmt.Sprintf("%s/%s/%s", ds.dataDir, currentDir, directory)
-	to := fmt.Sprintf("%s/%s/%s", ds.dataDir, archiveDir, directory)
+	from := filepath.Join(ds.dataDir, currentDir, directory)
+	to := filepath.Join(ds.dataDir, archiveDir, directory)
 
 	return moveAll(from, to)
 }
@@ -157,7 +157,7 @@ func (ds *diskPersistence) Delete(dirName string, fileName string) error {
 }
 
 func (ds *diskPersistence) getStorageCurrentDirPath() string {
-	return fmt.Sprintf("%s/%s", ds.dataDir, currentDir)
+	return filepath.Join(ds.dataDir, currentDir)
 }
 
 // CheckStoragePermission returns an error if we don't have both read and write access to a directory.
@@ -180,7 +180,7 @@ func CheckStoragePermission(dirBasePath string) error {
 // EnsureDirectoryExists creates a new directory in a base path if it doesn't
 // exist, returns nil if it does, and errors out if the base path doesn't exist.
 func EnsureDirectoryExists(dirBasePath, newDirName string) error {
-	dirPath := fmt.Sprintf("%s/%s", dirBasePath, newDirName)
+	dirPath := filepath.Join(dirBasePath, newDirName)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.Mkdir(dirPath, os.ModePerm)
 		if err != nil {
@@ -275,7 +275,7 @@ func readAll(directoryPath string) (<-chan DataDescriptor, <-chan error) {
 
 		for _, file := range files {
 			if file.IsDir() {
-				dir, err := ioutil.ReadDir(fmt.Sprintf("%s/%s", directoryPath, file.Name()))
+				dir, err := ioutil.ReadDir(filepath.Join(directoryPath, file.Name()))
 				if err != nil {
 					errorChannel <- fmt.Errorf(
 						"could not read the directory [%s/%s]: [%v]",
@@ -291,8 +291,7 @@ func readAll(directoryPath string) (<-chan DataDescriptor, <-chan error) {
 					fileName := dirFile.Name()
 
 					readFunc := func() ([]byte, error) {
-						return Read(fmt.Sprintf(
-							"%s/%s/%s",
+						return Read(filepath.Join(
 							directoryPath,
 							dirName,
 							fileName,
@@ -332,8 +331,8 @@ func moveAll(directoryFromPath, directoryToPath string) error {
 		return fmt.Errorf("could not read directory [%v]: [%v]", directoryFromPath, err)
 	}
 	for _, file := range files {
-		from := fmt.Sprintf("%s/%s", directoryFromPath, file.Name())
-		to := fmt.Sprintf("%s/%s", directoryToPath, file.Name())
+		from := filepath.Join(directoryFromPath, file.Name())
+		to := filepath.Join(directoryToPath, file.Name())
 		err := os.Rename(from, to)
 		if err != nil {
 			return err

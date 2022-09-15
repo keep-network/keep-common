@@ -13,8 +13,6 @@ import (
 )
 
 var (
-	dataDir = "./"
-
 	dirCurrent  = "current"
 	dirArchive  = "archive"
 	dirSnapshot = "snapshot"
@@ -26,9 +24,7 @@ var (
 	dirName2   = "0x777777"
 	fileName21 = "file21"
 
-	pathToCurrent  = filepath.Join(dataDir, dirCurrent)
-	pathToArchive  = filepath.Join(dataDir, dirArchive)
-	pathToSnapshot = filepath.Join(dataDir, dirSnapshot)
+	fileContent = []byte{115, 111, 109, 101, 10}
 
 	errExpectedRead  = fmt.Errorf("cannot read from the storage directory: ")
 	errExpectedWrite = fmt.Errorf("cannot write to the storage directory: ")
@@ -42,155 +38,163 @@ var (
 	errFileNameLength      = fmt.Errorf("the maximum file name length of [128] exceeded for [%v]", notAllowedName)
 )
 
-func cleanup() {
-	os.RemoveAll(pathToCurrent)
-	os.RemoveAll(pathToArchive)
-	os.RemoveAll(pathToSnapshot)
-}
-
 func TestDiskPersistence_Save(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
-	bytesToTest := []byte{115, 111, 109, 101, 10}
-
-	err := diskPersistence.Save(bytesToTest, dirName1, fileName11)
-	if err != nil {
-		t.Fatal(err)
+	var tests = map[string]struct {
+		initDiskPersistenceFn func(t *testing.T) (RWHandle, string)
+		expectedFilePath      string
+	}{
+		"basic disk persistence": {
+			initDiskPersistenceFn: func(t *testing.T) (RWHandle, string) { return initBasicDiskPersistence(t) },
+			expectedFilePath:      filepath.Join(dirName1, fileName11),
+		},
+		"protected disk persistence": {
+			initDiskPersistenceFn: func(t *testing.T) (RWHandle, string) { return initProtectedDiskPersistence(t) },
+			expectedFilePath:      filepath.Join(dirCurrent, dirName1, fileName11),
+		},
 	}
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			diskHandle, dataDir := test.initDiskPersistenceFn(t)
 
-	pathToFile := filepath.Join(pathToCurrent, dirName1, fileName11)
+			if err := diskHandle.Save(fileContent, dirName1, fileName11); err != nil {
+				t.Fatal(err)
+			}
 
-	assertExist(t, pathToFile, "check file after save")
-
-	cleanup()
+			assertExist(t, dataDir, test.expectedFilePath, "check file after save")
+		})
+	}
 }
 
 func TestDiskPersistence_SaveMaxAllowed(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
-	bytesToTest := []byte{115, 111, 109, 101, 10}
-
-	err := diskPersistence.Save(bytesToTest, maxAllowedName, maxAllowedName)
-	if err != nil {
-		t.Fatal(err)
+	var tests = map[string]struct {
+		initDiskPersistenceFn func(t *testing.T) (RWHandle, string)
+		expectedFilePath      string
+	}{
+		"basic disk persistence": {
+			initDiskPersistenceFn: func(t *testing.T) (RWHandle, string) { return initBasicDiskPersistence(t) },
+			expectedFilePath:      filepath.Join(maxAllowedName, maxAllowedName),
+		},
+		"protected disk persistence": {
+			initDiskPersistenceFn: func(t *testing.T) (RWHandle, string) { return initProtectedDiskPersistence(t) },
+			expectedFilePath:      filepath.Join(dirCurrent, maxAllowedName, maxAllowedName),
+		},
 	}
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			diskHandle, dataDir := test.initDiskPersistenceFn(t)
 
-	pathToFile := filepath.Join(pathToCurrent, maxAllowedName, maxAllowedName)
+			if err := diskHandle.Save(fileContent, maxAllowedName, maxAllowedName); err != nil {
+				t.Fatal(err)
+			}
 
-	assertExist(t, pathToFile, "check file after save")
-
-	cleanup()
+			assertExist(t, dataDir, test.expectedFilePath, "check file after save")
+		})
+	}
 }
 
 func TestDiskPersistence_RefuseSave(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+	var tests = map[string]struct {
+		initDiskPersistenceFn func(t *testing.T) (RWHandle, string)
+	}{
+		"basic disk persistence": {
+			initDiskPersistenceFn: func(t *testing.T) (RWHandle, string) { return initBasicDiskPersistence(t) },
+		},
+		"protected disk persistence": {
+			initDiskPersistenceFn: func(t *testing.T) (RWHandle, string) { return initProtectedDiskPersistence(t) },
+		},
+	}
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			diskHandle, _ := test.initDiskPersistenceFn(t)
 
-	err := diskPersistence.Save(bytesToTest, notAllowedName, fileName11)
-	if err == nil {
-		t.Fatalf("expected error")
-	}
-	if errDirectoryNameLength.Error() != err.Error() {
-		t.Fatalf(
-			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
-			errDirectoryNameLength.Error(),
-			err.Error(),
-		)
-	}
+			err := diskHandle.Save(fileContent, notAllowedName, fileName11)
+			if err == nil {
+				t.Fatalf("expected error")
+			}
+			if errDirectoryNameLength.Error() != err.Error() {
+				t.Fatalf(
+					"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+					errDirectoryNameLength.Error(),
+					err.Error(),
+				)
+			}
 
-	err = diskPersistence.Save(bytesToTest, dirName1, notAllowedName)
-	if err == nil {
-		t.Fatalf("expected error")
+			err = diskHandle.Save(fileContent, dirName1, notAllowedName)
+			if err == nil {
+				t.Fatalf("expected error")
+			}
+			if errFileNameLength.Error() != err.Error() {
+				t.Fatalf(
+					"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
+					errFileNameLength.Error(),
+					err.Error(),
+				)
+			}
+		})
 	}
-	if errFileNameLength.Error() != err.Error() {
-		t.Fatalf(
-			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
-			errFileNameLength.Error(),
-			err.Error(),
-		)
-	}
-
-	cleanup()
 }
 
-func TestDiskPersistence_Snapshot(t *testing.T) {
-	diskHandle, _ := NewDiskHandle(dataDir)
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+func TestProtectedDiskPersistence_Snapshot(t *testing.T) {
+	diskHandle, dataDir := initProtectedDiskPersistence(t)
 
 	counter := 0
-	diskHandle.(*diskPersistence).snapshotSuffixGenerator = func() string {
+	diskHandle.snapshotSuffixGenerator = func() string {
 		counter++
 		return fmt.Sprintf(".%d", counter)
 	}
 
 	for i := 0; i < 3; i++ {
-		err := diskHandle.Snapshot(bytesToTest, dirName1, fileName11)
+		err := diskHandle.Snapshot(fileContent, dirName1, fileName11)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	pathToFile := filepath.Join(
-		pathToSnapshot,
-		dirName1,
-		fileName11+".1",
-	)
+	pathToFile := filepath.Join(dirSnapshot, dirName1, fileName11+".1")
 
-	assertExist(t, pathToFile, "check file 1 after snapshot")
+	assertExist(t, dataDir, pathToFile, "check file 1 after snapshot")
 
-	pathToFile = filepath.Join(
-		pathToSnapshot,
-		dirName1,
-		fileName11+".2",
-	)
+	pathToFile = filepath.Join(dirSnapshot, dirName1, fileName11+".2")
 
-	assertExist(t, pathToFile, "check file 2 after snapshot")
+	assertExist(t, dataDir, pathToFile, "check file 2 after snapshot")
 
-	pathToFile = filepath.Join(
-		pathToSnapshot,
-		dirName1,
-		fileName11+".3",
-	)
+	pathToFile = filepath.Join(dirSnapshot, dirName1, fileName11+".3")
 
-	assertExist(t, pathToFile, "check file 3 after snapshot")
-
-	cleanup()
+	assertExist(t, dataDir, pathToFile, "check file 3 after snapshot")
 }
 
-func TestDiskPersistence_SnapshotMaxAllowed(t *testing.T) {
-	diskHandle, _ := NewDiskHandle(dataDir)
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+func TestProtectedDiskPersistence_SnapshotMaxAllowed(t *testing.T) {
+	diskHandle, dataDir := initProtectedDiskPersistence(t)
 
 	snapshotSuffix := ".suffix"
-	diskHandle.(*diskPersistence).snapshotSuffixGenerator = func() string {
+	diskHandle.snapshotSuffixGenerator = func() string {
 		return snapshotSuffix
 	}
 
 	maxAllowedSnapshotName := maxAllowedName[0 : len(maxAllowedName)-len(snapshotSuffix)]
-	err := diskHandle.Snapshot(bytesToTest, maxAllowedName, maxAllowedSnapshotName)
+	err := diskHandle.Snapshot(fileContent, maxAllowedName, maxAllowedSnapshotName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	pathToFile := filepath.Join(
-		pathToSnapshot,
+		dirSnapshot,
 		maxAllowedName,
 		maxAllowedSnapshotName+snapshotSuffix,
 	)
 
-	assertExist(t, pathToFile, "check file after snapshot")
-
-	cleanup()
+	assertExist(t, dataDir, pathToFile, "check file after snapshot")
 }
 
-func TestDiskPersistence_RefuseSnapshot_MaxAllowedExceeded(t *testing.T) {
-	diskHandle, _ := NewDiskHandle(dataDir)
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+func TestProtectedDiskPersistence_RefuseSnapshot_MaxAllowedExceeded(t *testing.T) {
+	diskHandle, _ := initProtectedDiskPersistence(t)
 
 	snapshotSuffix := ".suffix"
-	diskHandle.(*diskPersistence).snapshotSuffixGenerator = func() string {
+	diskHandle.snapshotSuffixGenerator = func() string {
 		return snapshotSuffix
 	}
 
-	err := diskHandle.Snapshot(bytesToTest, notAllowedName, fileName11)
+	err := diskHandle.Snapshot(fileContent, notAllowedName, fileName11)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -203,7 +207,7 @@ func TestDiskPersistence_RefuseSnapshot_MaxAllowedExceeded(t *testing.T) {
 		)
 	}
 
-	err = diskHandle.Snapshot(bytesToTest, dirName1, notAllowedName)
+	err = diskHandle.Snapshot(fileContent, dirName1, notAllowedName)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -222,34 +226,32 @@ func TestDiskPersistence_RefuseSnapshot_MaxAllowedExceeded(t *testing.T) {
 		)
 	}
 
-	cleanup()
 }
 
-func TestDiskPersistence_RefuseSnapshot_NameCollision(t *testing.T) {
-	diskHandle, _ := NewDiskHandle(dataDir)
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+func TestProtectedDiskPersistence_RefuseSnapshot_NameCollision(t *testing.T) {
+	diskHandle, dataDir := initProtectedDiskPersistence(t)
 
 	// snapshot suffix generator return always the same suffix in order to
 	// cause name collision.
 	snapshotSuffix := ".suffix"
-	diskHandle.(*diskPersistence).snapshotSuffixGenerator = func() string {
+	diskHandle.snapshotSuffixGenerator = func() string {
 		return snapshotSuffix
 	}
 
-	err := diskHandle.Snapshot(bytesToTest, dirName1, fileName11)
+	err := diskHandle.Snapshot(fileContent, dirName1, fileName11)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	pathToFile := filepath.Join(
-		pathToSnapshot,
+		dirSnapshot,
 		dirName1,
 		fileName11+snapshotSuffix,
 	)
 
-	assertExist(t, pathToFile, "check file after snapshot")
+	assertExist(t, dataDir, pathToFile, "check file after snapshot")
 
-	err = diskHandle.Snapshot(bytesToTest, dirName1, fileName11)
+	err = diskHandle.Snapshot(fileContent, dirName1, fileName11)
 
 	expectedDuplicateError := fmt.Errorf(
 		"could not create unique snapshot; " +
@@ -262,148 +264,165 @@ func TestDiskPersistence_RefuseSnapshot_NameCollision(t *testing.T) {
 			err,
 		)
 	}
-
-	cleanup()
 }
 
 func TestDiskPersistence_StoragePermission(t *testing.T) {
-	tempDir := "./data_storage"
-
-	err := os.Mkdir(tempDir, 0000) // d---------
-	if _, err := os.Stat(tempDir); os.IsNotExist(err) {
-		t.Fatalf("dir [%+v] was supposed to be created", tempDir)
+	var tests = map[string]struct {
+		newDiskPersistenceFn func(dataDir string) (RWHandle, error)
+	}{
+		"basic disk persistence": {
+			newDiskPersistenceFn: func(dataDir string) (RWHandle, error) { return NewBasicDiskHandle(dataDir) },
+		},
+		"protected disk persistence": {
+			newDiskPersistenceFn: func(dataDir string) (RWHandle, error) { return NewProtectedDiskHandle(dataDir) },
+		},
 	}
-	defer os.RemoveAll(tempDir)
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			tempDir := filepath.Join(t.TempDir(), "data_storage")
 
-	_, err = NewDiskHandle(tempDir)
-	if err == nil || !strings.Contains(err.Error(), errExpectedRead.Error()) {
-		t.Fatalf("error on read was supposed to be returned")
+			err := os.Mkdir(tempDir, 0000) // d---------
+			if _, err := os.Stat(tempDir); os.IsNotExist(err) {
+				t.Fatalf("dir [%+v] was supposed to be created", tempDir)
+			}
+
+			_, err = test.newDiskPersistenceFn(tempDir)
+			if err == nil || !strings.Contains(err.Error(), errExpectedRead.Error()) {
+				t.Fatalf("error on read was supposed to be returned")
+			}
+
+			os.Chmod(tempDir, 0444) // dr--r--r
+
+			_, err = NewProtectedDiskHandle(tempDir)
+			if err == nil || !strings.Contains(err.Error(), errExpectedWrite.Error()) {
+				t.Fatalf("error on write was supposed to be returned")
+			}
+		})
 	}
-
-	os.Chmod(tempDir, 0444) // dr--r--r
-
-	_, err = NewDiskHandle(tempDir)
-	if err == nil || !strings.Contains(err.Error(), errExpectedWrite.Error()) {
-		t.Fatalf("error on write was supposed to be returned")
-	}
-
-	cleanup()
 }
 
 func TestDiskPersistence_ReadAll(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
-
-	bytesToTest := []byte{115, 111, 109, 101, 10}
-	expectedBytes := [][]byte{bytesToTest, bytesToTest, bytesToTest}
-
-	diskPersistence.Save(bytesToTest, dirName1, fileName11)
-	diskPersistence.Save(bytesToTest, dirName1, fileName12)
-	diskPersistence.Save(bytesToTest, dirName2, fileName21)
-
-	dataChannel, errChannel := diskPersistence.ReadAll()
-
-	var descriptors []DataDescriptor
-	var errors []error
-
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go func() {
-		for e := range errChannel {
-			errors = append(errors, e)
-		}
-		wg.Done()
-	}()
-
-	go func() {
-		for d := range dataChannel {
-			descriptors = append(descriptors, d)
-		}
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	for err := range errors {
-		t.Fatal(err)
+	var tests = map[string]struct {
+		initDiskPersistenceFn func(t *testing.T) (RWHandle, string)
+		expectedFilePath      string
+	}{
+		"basic disk persistence": {
+			initDiskPersistenceFn: func(t *testing.T) (RWHandle, string) { return initBasicDiskPersistence(t) },
+			expectedFilePath:      filepath.Join(maxAllowedName, maxAllowedName),
+		},
+		"protected disk persistence": {
+			initDiskPersistenceFn: func(t *testing.T) (RWHandle, string) { return initProtectedDiskPersistence(t) },
+			expectedFilePath:      filepath.Join(dirCurrent, maxAllowedName, maxAllowedName),
+		},
 	}
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			diskHandle, _ := test.initDiskPersistenceFn(t)
 
-	if len(descriptors) != 3 {
-		t.Fatalf(
-			"Number of descriptors does not match\nExpected: [%v]\nActual:   [%v]",
-			3,
-			len(descriptors),
-		)
+			expectedBytes := [][]byte{fileContent, fileContent, fileContent}
+
+			diskHandle.Save(fileContent, dirName1, fileName11)
+			diskHandle.Save(fileContent, dirName1, fileName12)
+			diskHandle.Save(fileContent, dirName2, fileName21)
+
+			dataChannel, errChannel := diskHandle.ReadAll()
+
+			var descriptors []DataDescriptor
+			var errors []error
+
+			var wg sync.WaitGroup
+			wg.Add(2)
+
+			go func() {
+				for e := range errChannel {
+					errors = append(errors, e)
+				}
+				wg.Done()
+			}()
+
+			go func() {
+				for d := range dataChannel {
+					descriptors = append(descriptors, d)
+				}
+				wg.Done()
+			}()
+
+			wg.Wait()
+
+			for err := range errors {
+				t.Fatal(err)
+			}
+
+			if len(descriptors) != 3 {
+				t.Fatalf(
+					"Number of descriptors does not match\nExpected: [%v]\nActual:   [%v]",
+					3,
+					len(descriptors),
+				)
+			}
+
+			for i := 0; i < 3; i++ {
+				fileContent, err := descriptors[i].Content()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if !bytes.Equal(expectedBytes[i], fileContent) {
+					t.Errorf(
+						"unexpected file content [%d]\nexpected: [%v]\nactual:   [%v]\n",
+						i,
+						expectedBytes[i],
+						fileContent,
+					)
+				}
+			}
+		})
 	}
-
-	for i := 0; i < 3; i++ {
-		fileContent, err := descriptors[i].Content()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if !bytes.Equal(expectedBytes[i], fileContent) {
-			t.Errorf(
-				"unexpected file content [%d]\nexpected: [%v]\nactual:   [%v]\n",
-				i,
-				expectedBytes[i],
-				fileContent,
-			)
-		}
-	}
-
-	cleanup()
 }
 
-func TestDiskPersistence_Archive(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
+func TestProtectedDiskPersistence_Archive(t *testing.T) {
+	diskHandle, dataDir := initProtectedDiskPersistence(t)
 
-	pathMoveFrom := filepath.Join(pathToCurrent, dirName1)
-	pathMoveTo := filepath.Join(pathToArchive, dirName1)
+	pathMoveFrom := filepath.Join(dirCurrent, dirName1)
+	pathMoveTo := filepath.Join(dirArchive, dirName1)
 
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+	diskHandle.Save(fileContent, dirName1, fileName11)
 
-	diskPersistence.Save(bytesToTest, dirName1, fileName11)
+	assertExist(t, dataDir, pathMoveFrom, "check path from before archive")
+	assertNotExist(t, dataDir, pathMoveTo, "check path to before archive")
 
-	assertExist(t, pathMoveFrom, "check path from before archive")
-	assertNotExist(t, pathMoveTo, "check path to before archive")
+	diskHandle.Archive(dirName1)
 
-	diskPersistence.Archive(dirName1)
+	assertNotExist(t, dataDir, pathMoveFrom, "check path from after archive")
+	assertExist(t, dataDir, pathMoveTo, "check path to after archive")
 
-	assertNotExist(t, pathMoveFrom, "check path from after archive")
-	assertExist(t, pathMoveTo, "check path to after archive")
-
-	cleanup()
 }
 
-func TestDiskPersistence_ArchiveMaxAllowed(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
+func TestProtectedDiskPersistence_ArchiveMaxAllowed(t *testing.T) {
+	diskHandle, dataDir := initProtectedDiskPersistence(t)
 
-	pathMoveFrom := filepath.Join(pathToCurrent, maxAllowedName)
-	pathMoveTo := filepath.Join(pathToArchive, maxAllowedName)
+	pathMoveFrom := filepath.Join(dirCurrent, maxAllowedName)
+	pathMoveTo := filepath.Join(dirArchive, maxAllowedName)
 
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+	diskHandle.Save(fileContent, maxAllowedName, maxAllowedName)
 
-	diskPersistence.Save(bytesToTest, maxAllowedName, maxAllowedName)
+	assertExist(t, dataDir, pathMoveFrom, "check path from before archive")
+	assertNotExist(t, dataDir, pathMoveTo, "check path to before archive")
 
-	assertExist(t, pathMoveFrom, "check path from before archive")
-	assertNotExist(t, pathMoveTo, "check path to before archive")
-
-	err := diskPersistence.Archive(maxAllowedName)
+	err := diskHandle.Archive(maxAllowedName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assertNotExist(t, pathMoveFrom, "check path from after archive")
-	assertExist(t, pathMoveTo, "check path to after archive")
+	assertNotExist(t, dataDir, pathMoveFrom, "check path from after archive")
+	assertExist(t, dataDir, pathMoveTo, "check path to after archive")
 
-	cleanup()
 }
 
-func TestDiskPersistence_RefuseArchive(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
+func TestProtectedDiskPersistence_RefuseArchive(t *testing.T) {
+	diskHandle, _ := initProtectedDiskPersistence(t)
 
-	err := diskPersistence.Archive(notAllowedName)
+	err := diskHandle.Archive(notAllowedName)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -414,84 +433,94 @@ func TestDiskPersistence_RefuseArchive(t *testing.T) {
 			err.Error(),
 		)
 	}
-
-	cleanup()
 }
 
-func TestDiskPersistence_AppendToArchive(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
+func TestProtectedDiskPersistence_AppendToArchive(t *testing.T) {
+	diskHandle, dataDir := initProtectedDiskPersistence(t)
 
-	pathMoveFrom := filepath.Join(pathToCurrent, dirName1)
-	pathMoveTo := filepath.Join(pathToArchive, dirName1)
+	pathMoveFrom := filepath.Join(dataDir, dirCurrent, dirName1)
+	pathMoveTo := filepath.Join(dataDir, dirArchive, dirName1)
 
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+	diskHandle.Save(fileContent, dirName1, fileName11)
+	diskHandle.Save(fileContent, dirName1, fileName12)
+	diskHandle.Archive(dirName1)
 
-	diskPersistence.Save(bytesToTest, dirName1, fileName11)
-	diskPersistence.Save(bytesToTest, dirName1, fileName12)
-	diskPersistence.Archive(dirName1)
+	diskHandle.Save(fileContent, dirName1, "/file13")
+	diskHandle.Save(fileContent, dirName1, "/file14")
+	diskHandle.Archive(dirName1)
 
-	diskPersistence.Save(bytesToTest, dirName1, "/file13")
-	diskPersistence.Save(bytesToTest, dirName1, "/file14")
-	diskPersistence.Archive(dirName1)
-
-	assertNotExist(t, pathMoveFrom, "check path from after archive")
+	assertNotExist(t, dataDir, pathMoveFrom, "check path from after archive")
 
 	files, _ := ioutil.ReadDir(pathMoveTo)
 	if len(files) != 4 {
-		t.Fatalf("Number of all files was supposed to be [%+v]", 4)
+		t.Fatalf(
+			"unexpected number of files\nexpected: [%v]\nactual:   [%v]",
+			4,
+			len(files),
+		)
 	}
-
-	cleanup()
 }
 
-func TestDiskPersistence_Delete(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
-	pathToDir := filepath.Join(pathToCurrent, dirName1)
+func TestBasicDiskPersistence_Delete(t *testing.T) {
+	diskHandle, dataDir := initBasicDiskPersistence(t)
+
+	pathToDir := filepath.Join(dirName1)
 	pathToFile := filepath.Join(pathToDir, fileName11)
 
-	bytesToTest := []byte{115, 111, 109, 101, 10}
+	diskHandle.Save(fileContent, dirName1, fileName11)
 
-	diskPersistence.Save(bytesToTest, dirName1, fileName11)
+	assertExist(t, dataDir, pathToDir, "check directory before delete")
+	assertExist(t, dataDir, pathToFile, "check file before delete")
 
-	assertExist(t, pathToDir, "check directory before delete")
-	assertExist(t, pathToFile, "check file before delete")
-
-	if err := diskPersistence.Delete(dirName1, fileName11); err != nil {
+	if err := diskHandle.Delete(dirName1, fileName11); err != nil {
 		t.Fatalf("unexpected error for Delete call: %v", err)
 	}
 
-	assertExist(t, pathToDir, "check directory after delete")
-	assertNotExist(t, pathToFile, "check file after delete")
+	assertExist(t, dataDir, pathToDir, "check directory after delete")
+	assertNotExist(t, dataDir, pathToFile, "check file after delete")
 
-	cleanup()
 }
 
-func TestDiskPersistence_RefuseDelete(t *testing.T) {
-	diskPersistence, _ := NewDiskHandle(dataDir)
+func TestBasicDiskPersistence_RefuseDelete(t *testing.T) {
+	diskHandle, dataDir := initBasicDiskPersistence(t)
+
 	expectedError := fmt.Errorf(
-		"remove %s/%s/%s: no such file or directory",
-		dirCurrent,
-		dirName1,
-		fileName11,
+		"remove %s: no such file or directory",
+		filepath.Join(dataDir, dirName1, fileName11),
 	)
 
-	err := diskPersistence.Delete(dirName1, fileName11)
+	err := diskHandle.Delete(dirName1, fileName11)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
 	if expectedError.Error() != err.Error() {
 		t.Fatalf(
 			"unexpected error returned\nexpected: [%v]\nactual:   [%v]",
-			errDirectoryNameLength.Error(),
+			expectedError.Error(),
 			err.Error(),
 		)
 	}
-
-	cleanup()
 }
 
-func assertExist(t *testing.T, path string, message string) {
-	_, err := os.Stat(path)
+func initBasicDiskPersistence(t *testing.T) (*basicDiskPersistence, string) {
+	dataDir := t.TempDir()
+	handle, err := NewBasicDiskHandle(dataDir)
+	if err != nil {
+		t.Fatalf("failed to initialize disk handle: %v", err)
+	}
+	return handle.(*basicDiskPersistence), dataDir
+}
+func initProtectedDiskPersistence(t *testing.T) (*protectedDiskPersistence, string) {
+	dataDir := t.TempDir()
+	handle, err := NewProtectedDiskHandle(dataDir)
+	if err != nil {
+		t.Fatalf("failed to initialize disk handle: %v", err)
+	}
+	return handle.(*protectedDiskPersistence), dataDir
+}
+
+func assertExist(t *testing.T, dataDir, path, message string) {
+	_, err := os.Stat(filepath.Join(dataDir, path))
 	if err != nil {
 		if os.IsNotExist(err) {
 			t.Fatalf("%s: path [%s] does not exist, but is expected to exist", message, path)
@@ -500,8 +529,8 @@ func assertExist(t *testing.T, path string, message string) {
 	}
 }
 
-func assertNotExist(t *testing.T, path string, message string) {
-	_, err := os.Stat(path)
+func assertNotExist(t *testing.T, dataDir, path, message string) {
+	_, err := os.Stat(filepath.Join(dataDir, path))
 	if err == nil {
 		t.Fatalf("%s: path [%s] exist, but is expected to does not exist", message, path)
 	}

@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"bytes"
-	"fmt"
 	"sync"
 	"testing"
 
@@ -14,74 +13,92 @@ import (
 const accountPassword = "grzeski"
 
 var (
-	delegateMock   = &delegatePersistenceMock{}
 	dataToEncrypt1 = []byte{'b', 'o', 'l', 'e', 'k'}
 	dataToEncrypt2 = []byte{'l', 'o', 'l', 'e', 'k'}
 	dataToEncrypt  = [][]byte{dataToEncrypt1, dataToEncrypt2}
 )
 
 func TestSaveReadAndDecryptData(t *testing.T) {
-	encryptedPersistence := NewEncryptedPersistence(delegateMock, accountPassword)
-
-	err := encryptedPersistence.Save(dataToEncrypt1, "dir1", "name1")
-	if err != nil {
-		t.Fatalf("Error occured while saving data [%v]", err)
+	var tests = map[string]struct {
+		initEncryptedPersistenceFn func() RWHandle
+		expectedFilePath           string
+	}{
+		"basic encrypted persistence": {
+			initEncryptedPersistenceFn: func() RWHandle {
+				return NewEncryptedBasicPersistence(&delegatePersistenceMock{}, accountPassword)
+			},
+		},
+		"protected encrypted persistence": {
+			initEncryptedPersistenceFn: func() RWHandle {
+				return NewEncryptedProtectedPersistence(&delegatePersistenceMock{}, accountPassword)
+			},
+		},
 	}
-	encryptedPersistence.Save(dataToEncrypt2, "dir2", "name2")
-	if err != nil {
-		t.Fatalf("Error occured while saving data [%v]", err)
-	}
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			encryptedPersistence := test.initEncryptedPersistenceFn()
 
-	decryptedChan, errChan := encryptedPersistence.ReadAll()
-
-	var decrypted [][]byte
-	var errors []error
-
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go func() {
-		for err := range errChan {
-			errors = append(errors, err)
-		}
-		wg.Done()
-	}()
-
-	go func() {
-		for d := range decryptedChan {
-			content, err := d.Content()
+			err := encryptedPersistence.Save(dataToEncrypt1, "dir1", "name1")
 			if err != nil {
-				errors = append(errors, err)
+				t.Fatalf("Error occurred while saving data [%v]", err)
+			}
+			encryptedPersistence.Save(dataToEncrypt2, "dir2", "name2")
+			if err != nil {
+				t.Fatalf("Error occurred while saving data [%v]", err)
 			}
 
-			decrypted = append(decrypted, content)
-		}
-		wg.Done()
-	}()
+			decryptedChan, errChan := encryptedPersistence.ReadAll()
 
-	wg.Wait()
+			var decrypted [][]byte
+			var errors []error
 
-	for err := range errors {
-		t.Fatal(err)
-	}
+			var wg sync.WaitGroup
+			wg.Add(2)
 
-	if len(decrypted) != len(dataToEncrypt) {
-		t.Fatalf(
-			"Unexpected number of decrypted items\nExpected: [%v]\nActual:   [%v]",
-			len(dataToEncrypt),
-			len(decrypted),
-		)
-	}
+			go func() {
+				for err := range errChan {
+					errors = append(errors, err)
+				}
+				wg.Done()
+			}()
 
-	for i := 0; i < len(dataToEncrypt); i++ {
-		if !bytes.Equal(dataToEncrypt[i], decrypted[i]) {
-			t.Errorf(
-				"unexpected decrypted item [%d]\nexpected: [%v]\nactual:   [%v]\n",
-				i,
-				dataToEncrypt[i],
-				decrypted[i],
-			)
-		}
+			go func() {
+				for d := range decryptedChan {
+					content, err := d.Content()
+					if err != nil {
+						errors = append(errors, err)
+					}
+
+					decrypted = append(decrypted, content)
+				}
+				wg.Done()
+			}()
+
+			wg.Wait()
+
+			for err := range errors {
+				t.Fatal(err)
+			}
+
+			if len(decrypted) != len(dataToEncrypt) {
+				t.Fatalf(
+					"Unexpected number of decrypted items\nExpected: [%v]\nActual:   [%v]",
+					len(dataToEncrypt),
+					len(decrypted),
+				)
+			}
+
+			for i := 0; i < len(dataToEncrypt); i++ {
+				if !bytes.Equal(dataToEncrypt[i], decrypted[i]) {
+					t.Errorf(
+						"unexpected decrypted item [%d]\nexpected: [%v]\nactual:   [%v]\n",
+						i,
+						dataToEncrypt[i],
+						decrypted[i],
+					)
+				}
+			}
+		})
 	}
 }
 
@@ -145,9 +162,12 @@ func encryptData() [][]byte {
 	box := encryption.NewBox(sha256.Sum256(passwordBytes))
 
 	encryptedData1, err := box.Encrypt(dataToEncrypt1)
+	if err != nil {
+		panic("Error occurred while encrypting data")
+	}
 	encryptedData2, err := box.Encrypt(dataToEncrypt2)
 	if err != nil {
-		fmt.Println("Error occured while encrypting data.")
+		panic("Error occurred while encrypting data")
 	}
 
 	return [][]byte{encryptedData1, encryptedData2}

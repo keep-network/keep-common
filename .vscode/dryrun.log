@@ -1,0 +1,6 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/jakub/go/src/github.com/keep-network/keep-common'
+make: Leaving directory `/Users/jakub/go/src/github.com/keep-network/keep-common'
+ 
+make: *** No targets specified and no makefile found.  Stop.
+

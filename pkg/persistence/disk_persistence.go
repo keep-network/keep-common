@@ -17,25 +17,41 @@ const (
 	maxFileNameLength = 128
 )
 
-// NewDiskHandle creates on-disk data persistence handle
-func NewDiskHandle(path string) (Handle, error) {
-	err := CheckStoragePermission(path)
-	if err != nil {
+type basicDiskPersistence struct {
+	dataDir string
+}
+
+type protectedDiskPersistence struct {
+	dataDir string
+
+	snapshotMutex           sync.Mutex
+	snapshotSuffixGenerator func() string
+}
+
+// NewBasicDiskHandle creates on-disk data persistence handle
+func NewBasicDiskHandle(path string) (BasicHandle, error) {
+	if err := CheckStoragePermission(path); err != nil {
 		return nil, err
 	}
 
-	err = EnsureDirectoryExists(path, currentDir)
-	if err != nil {
+	return &basicDiskPersistence{path}, nil
+}
+
+// NewProtectedDiskHandle creates on-disk data persistence handle
+func NewProtectedDiskHandle(path string) (ProtectedHandle, error) {
+	if err := CheckStoragePermission(path); err != nil {
 		return nil, err
 	}
 
-	err = EnsureDirectoryExists(path, archiveDir)
-	if err != nil {
+	if err := EnsureDirectoryExists(path, currentDir); err != nil {
 		return nil, err
 	}
 
-	err = EnsureDirectoryExists(path, snapshotDir)
-	if err != nil {
+	if err := EnsureDirectoryExists(path, archiveDir); err != nil {
+		return nil, err
+	}
+
+	if err := EnsureDirectoryExists(path, snapshotDir); err != nil {
 		return nil, err
 	}
 
@@ -44,20 +60,30 @@ func NewDiskHandle(path string) (Handle, error) {
 		return fmt.Sprintf(".%d", timestamp)
 	}
 
-	return &diskPersistence{
-		dataDir:                 path,
-		snapshotSuffixGenerator: snapshotSuffixGenerator,
+	return &protectedDiskPersistence{
+		path,
+		sync.Mutex{},
+		snapshotSuffixGenerator,
 	}, nil
 }
 
-type diskPersistence struct {
-	dataDir string
-
-	snapshotMutex           sync.Mutex
-	snapshotSuffixGenerator func() string
+func (ds *basicDiskPersistence) currentDirPath() string {
+	return filepath.Clean(ds.dataDir)
 }
 
-func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
+func (ds *protectedDiskPersistence) currentDirPath() string {
+	return filepath.Join(ds.dataDir, currentDir)
+}
+
+func (ds *basicDiskPersistence) Save(data []byte, dirName, fileName string) error {
+	return save(ds.currentDirPath(), data, dirName, fileName)
+}
+
+func (ds *protectedDiskPersistence) Save(data []byte, dirName, fileName string) error {
+	return save(ds.currentDirPath(), data, dirName, fileName)
+}
+
+func save(directoryPath string, data []byte, dirName, fileName string) error {
 	if len(dirName) > maxFileNameLength {
 		return fmt.Errorf(
 			"the maximum directory name length of [%v] exceeded for [%v]",
@@ -74,16 +100,30 @@ func (ds *diskPersistence) Save(data []byte, dirName, fileName string) error {
 		)
 	}
 
-	dirPath := ds.getStorageCurrentDirPath()
-	err := EnsureDirectoryExists(dirPath, dirName)
+	err := EnsureDirectoryExists(directoryPath, dirName)
 	if err != nil {
 		return err
 	}
 
-	return Write(filepath.Join(dirPath, dirName, fileName), data)
+	return Write(filepath.Join(directoryPath, dirName, fileName), data)
 }
 
-func (ds *diskPersistence) Snapshot(data []byte, dirName, fileName string) error {
+func (ds *basicDiskPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
+	return readAll(ds.currentDirPath())
+}
+
+func (ds *protectedDiskPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
+	return readAll(ds.currentDirPath())
+}
+
+func (ds *basicDiskPersistence) Delete(dirName string, fileName string) error {
+	dirPath := ds.currentDirPath()
+	filePath := filepath.Join(dirPath, dirName, fileName)
+
+	return remove(filePath)
+}
+
+func (ds *protectedDiskPersistence) Snapshot(data []byte, dirName, fileName string) error {
 	if len(dirName) > maxFileNameLength {
 		return fmt.Errorf(
 			"the maximum directory name length of [%v] exceeded for [%v]",
@@ -130,11 +170,7 @@ func isNonExistingFile(filePath string) bool {
 	return os.IsNotExist(err)
 }
 
-func (ds *diskPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
-	return readAll(ds.getStorageCurrentDirPath())
-}
-
-func (ds *diskPersistence) Archive(directory string) error {
+func (ds *protectedDiskPersistence) Archive(directory string) error {
 	if len(directory) > maxFileNameLength {
 		return fmt.Errorf(
 			"the maximum directory name length of [%v] exceeded for [%v]",
@@ -147,17 +183,6 @@ func (ds *diskPersistence) Archive(directory string) error {
 	to := filepath.Join(ds.dataDir, archiveDir, directory)
 
 	return moveAll(from, to)
-}
-
-func (ds *diskPersistence) Delete(dirName string, fileName string) error {
-	dirPath := ds.getStorageCurrentDirPath()
-	filePath := filepath.Join(dirPath, dirName, fileName)
-
-	return remove(filePath)
-}
-
-func (ds *diskPersistence) getStorageCurrentDirPath() string {
-	return filepath.Join(ds.dataDir, currentDir)
 }
 
 // CheckStoragePermission returns an error if we don't have both read and write access to a directory.

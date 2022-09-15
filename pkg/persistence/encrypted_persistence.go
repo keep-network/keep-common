@@ -53,15 +53,6 @@ func (ep *encryptedPersistance[H]) Save(data []byte, directory string, name stri
 	return ep.delegate.Save(encrypted, directory, name)
 }
 
-func (ep *encryptedProtectedPersistence) Snapshot(data []byte, directory string, name string) error {
-	encrypted, err := ep.box.Encrypt(data)
-	if err != nil {
-		return err
-	}
-
-	return ep.delegate.Snapshot(encrypted, directory, name)
-}
-
 func (ep *encryptedPersistance[H]) ReadAll() (<-chan DataDescriptor, <-chan error) {
 	outputData := make(chan DataDescriptor)
 	outputErrors := make(chan error)
@@ -102,10 +93,19 @@ func (ep *encryptedPersistance[H]) ReadAll() (<-chan DataDescriptor, <-chan erro
 	return outputData, outputErrors
 }
 
+func (ep *encryptedBasicPersistence) Delete(directory string, name string) error {
+	return ep.delegate.Delete(directory, name)
+}
+
 func (ep *encryptedProtectedPersistence) Archive(directory string) error {
 	return ep.delegate.Archive(directory)
 }
 
-func (ep *encryptedBasicPersistence) Delete(directory string, name string) error {
-	return ep.delegate.Delete(directory, name)
+func (ep *encryptedProtectedPersistence) Snapshot(data []byte, directory string, name string) error {
+	encrypted, err := ep.box.Encrypt(data)
+	if err != nil {
+		return err
+	}
+
+	return ep.delegate.Snapshot(encrypted, directory, name)
 }

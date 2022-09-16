@@ -9,23 +9,42 @@ import (
 // KeyLength represents the byte size of the key.
 const KeyLength = encryption.KeyLength
 
-type encryptedPersistence struct {
-	delegate Handle
+type encryptedPersistance[H RWHandle] struct {
 	box      encryption.Box
+	delegate H
 }
 
-// NewEncryptedPersistence creates an adapter for the disk persistence to store data
-// in an encrypted format
-func NewEncryptedPersistence(handle Handle, password string) Handle {
-	passwordBytes := []byte(password)
+type encryptedBasicPersistence struct {
+	encryptedPersistance[BasicHandle]
+}
 
-	return &encryptedPersistence{
-		delegate: handle,
-		box:      encryption.NewBox(sha256.Sum256(passwordBytes)),
+type encryptedProtectedPersistence struct {
+	encryptedPersistance[ProtectedHandle]
+}
+
+// NewEncryptedBasicPersistence creates an adapter for the disk persistence to store data
+// in an encrypted format.
+func NewEncryptedBasicPersistence(handle BasicHandle, password string) BasicHandle {
+	return &encryptedBasicPersistence{
+		encryptedPersistance: encryptedPersistance[BasicHandle]{
+			box:      encryption.NewBox(sha256.Sum256([]byte(password))),
+			delegate: handle,
+		},
 	}
 }
 
-func (ep *encryptedPersistence) Save(data []byte, directory string, name string) error {
+// NewEncryptedProtectedPersistence creates an adapter for the disk persistence to store data
+// in an encrypted format.
+func NewEncryptedProtectedPersistence(handle ProtectedHandle, password string) ProtectedHandle {
+	return &encryptedProtectedPersistence{
+		encryptedPersistance[ProtectedHandle]{
+			box:      encryption.NewBox(sha256.Sum256([]byte(password))),
+			delegate: handle,
+		},
+	}
+}
+
+func (ep *encryptedPersistance[H]) Save(data []byte, directory string, name string) error {
 	encrypted, err := ep.box.Encrypt(data)
 	if err != nil {
 		return err
@@ -34,16 +53,7 @@ func (ep *encryptedPersistence) Save(data []byte, directory string, name string)
 	return ep.delegate.Save(encrypted, directory, name)
 }
 
-func (ep *encryptedPersistence) Snapshot(data []byte, directory string, name string) error {
-	encrypted, err := ep.box.Encrypt(data)
-	if err != nil {
-		return err
-	}
-
-	return ep.delegate.Snapshot(encrypted, directory, name)
-}
-
-func (ep *encryptedPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) {
+func (ep *encryptedPersistance[H]) ReadAll() (<-chan DataDescriptor, <-chan error) {
 	outputData := make(chan DataDescriptor)
 	outputErrors := make(chan error)
 
@@ -83,10 +93,19 @@ func (ep *encryptedPersistence) ReadAll() (<-chan DataDescriptor, <-chan error) 
 	return outputData, outputErrors
 }
 
-func (ep *encryptedPersistence) Archive(directory string) error {
+func (ep *encryptedBasicPersistence) Delete(directory string, name string) error {
+	return ep.delegate.Delete(directory, name)
+}
+
+func (ep *encryptedProtectedPersistence) Archive(directory string) error {
 	return ep.delegate.Archive(directory)
 }
 
-func (ep *encryptedPersistence) Delete(directory string, name string) error {
-	return ep.delegate.Delete(directory, name)
+func (ep *encryptedProtectedPersistence) Snapshot(data []byte, directory string, name string) error {
+	encrypted, err := ep.box.Encrypt(data)
+	if err != nil {
+		return err
+	}
+
+	return ep.delegate.Snapshot(encrypted, directory, name)
 }

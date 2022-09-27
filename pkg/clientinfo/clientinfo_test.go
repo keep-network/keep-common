@@ -3,110 +3,77 @@ package clientinfo
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"reflect"
+	"strings"
 	"testing"
-
-	dto "github.com/prometheus/client_model/go"
-	"github.com/prometheus/common/expfmt"
 )
 
+var registry *Registry
+
+const port = 9799
+
+func TestMain(m *testing.M) {
+	registry = NewRegistry()
+	registry.EnableServer(port)
+
+	os.Exit(m.Run())
+}
+
 func TestClientInfoServerMetrics(t *testing.T) {
-	registry := NewRegistry()
-	expectedMetricsFamily := map[string]*dto.MetricFamily{}
-
-	// Register Gauge Metric
-	metricGaugeName := "test_gauge"
-	metricGaugeValue := float64(12)
-	metricGaugeTimestamp := int64(51241)
-	metricGaugeLabelName := "gaugeLabelName"
-	metricGaugeLabelValue := "gauge-label-value"
-
-	gauge, err := registry.NewMetricGauge(metricGaugeName, NewLabel(metricGaugeLabelName, metricGaugeLabelValue))
+	// Register gauge metric
+	gauge, err := registry.NewMetricGauge(
+		"test_gauge",
+		NewLabel("gaugeLabelName", "gauge-label-value"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	gauge.value = metricGaugeValue
-	gauge.timestamp = metricGaugeTimestamp
+	gauge.value = float64(12)
+	gauge.timestamp = int64(51241)
 
-	expectedMetricsFamily[metricGaugeName] = &dto.MetricFamily{
-		Name: &metricGaugeName,
-		Type: dto.MetricType_GAUGE.Enum(),
-		Metric: []*dto.Metric{
-			{
-				Label: []*dto.LabelPair{
-					{
-						Name:  &metricGaugeLabelName,
-						Value: &metricGaugeLabelValue,
-					},
-				},
-				Gauge: &dto.Gauge{
-					Value: &metricGaugeValue,
-				},
-				TimestampMs: &metricGaugeTimestamp,
-			},
-		},
-	}
-
-	// Register Info Metric
-	metricInfoName := "test_info"
-	metricInfoValue := float64(1) // Default value resolved by metric parser for Info metrics.
-	metricInfoLabelName := "infoLabelName"
-	metricInfoLabelValue := "info-label-value"
-
+	// Register info metric
 	if _, err := registry.NewMetricInfo(
-		metricInfoName,
+		"test_info",
 		[]Label{
-			NewLabel(metricInfoLabelName, metricInfoLabelValue),
+			NewLabel("infoLabelName", "info-label-value"),
 		},
 	); err != nil {
 		t.Fatal(err)
 	}
 
-	expectedMetricsFamily[metricInfoName] = &dto.MetricFamily{
-		Name: &metricInfoName,
-		Type: dto.MetricType_UNTYPED.Enum(),
-		Metric: []*dto.Metric{
-			{
-				Label: []*dto.LabelPair{
-					{
-						Name:  &metricInfoLabelName,
-						Value: &metricInfoLabelValue,
-					},
-				},
-				Untyped: &dto.Untyped{Value: &metricInfoValue},
-			},
-		},
-	}
+	// Assemble the expected endpoint response
+	expected := new(strings.Builder)
+	expected.WriteString("# TYPE test_gauge gauge\n")
+	expected.WriteString("test_gauge{gaugeLabelName=\"gauge-label-value\"} 12 51241\n\n")
+	expected.WriteString("test_info{infoLabelName=\"info-label-value\"} 1\n")
 
 	// Execute Test
-	port := 9799
-	registry.EnableServer(port)
-
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/metrics", port))
 	if err != nil {
 		t.Fatalf("failed to get metrics: %v", err)
 	}
 
-	var parser expfmt.TextParser
-	metrics, err := parser.TextToMetricFamilies(resp.Body)
+	actual := new(strings.Builder)
+	_, err = io.Copy(actual, resp.Body)
 	if err != nil {
-		t.Fatalf("failed to parse metrics: %v", err)
+		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(expectedMetricsFamily, metrics) {
-		t.Errorf(
-			"incorrect metrics family\n"+
-				"expected: %+v\n"+
-				"actual:   %+v",
-			expectedMetricsFamily,
-			metrics,
+	if actual.String() != expected.String() {
+		t.Fatalf(
+			"unexpected server response\n"+
+				"expected:\n[%s]\n"+
+				"actual:\n[%v]\n",
+			expected.String(),
+			actual.String(),
 		)
 	}
 }
 
 func TestClientInfoServerDiagnostics(t *testing.T) {
-	registry := NewRegistry()
 
 	// Register Diagnostics Sources
 	nodeChainAddress := "0x1234567890"
@@ -137,10 +104,6 @@ func TestClientInfoServerDiagnostics(t *testing.T) {
 	})
 
 	expectedDiagnostics := &testDiagnosticsInfo{nodeChainAddress, peers}
-
-	// Execute Test
-	port := 9899
-	registry.EnableServer(port)
 
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/diagnostics", port))
 	if err != nil {

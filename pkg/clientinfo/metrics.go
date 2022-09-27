@@ -30,7 +30,7 @@ func (r *Registry) exposeMetrics() string {
 		metrics = append(metrics, metric.expose())
 	}
 
-	return strings.Join(metrics, "\n\n")
+	return fmt.Sprintf("%s\n", strings.Join(metrics, "\n\n"))
 }
 
 // NewMetricGauge creates and registers a new gauge metric which will be exposed

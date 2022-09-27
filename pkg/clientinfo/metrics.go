@@ -26,8 +26,8 @@ func (r *Registry) exposeMetrics() string {
 	defer r.metricsMutex.RUnlock()
 
 	metrics := make([]string, 0)
-	for _, metric := range r.metrics {
-		metrics = append(metrics, metric.expose())
+	for _, metric := range sortedKeys(r.metrics) {
+		metrics = append(metrics, r.metrics[metric].expose())
 	}
 
 	return fmt.Sprintf("%s\n", strings.Join(metrics, "\n\n"))

@@ -22,8 +22,8 @@ func (r *Registry) exposeDiagnostics() string {
 	defer r.diagnosticsMutex.RUnlock()
 
 	diagnostics := make(map[string]interface{})
-	for sourceName, sourceGetter := range r.diagnosticsSources {
-		var jsonString = sourceGetter()
+	for _, sourceName := range sortedKeys(r.diagnosticsSources) {
+		var jsonString = r.diagnosticsSources[sourceName]()
 		var jsonObject interface{}
 		err := json.Unmarshal([]byte(jsonString), &jsonObject)
 		if err == nil {

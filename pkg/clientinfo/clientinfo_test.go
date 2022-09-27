@@ -139,7 +139,7 @@ func TestClientInfoServerDiagnostics(t *testing.T) {
 	expectedDiagnostics := &testDiagnosticsInfo{nodeChainAddress, peers}
 
 	// Execute Test
-	port := 9799
+	port := 9899
 	registry.EnableServer(port)
 
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/diagnostics", port))

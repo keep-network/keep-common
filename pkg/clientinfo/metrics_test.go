@@ -1,18 +1,18 @@
-package metrics
+package clientinfo
 
 import (
 	"testing"
 )
 
-func TestRegistryNewGauge(t *testing.T) {
+func TestRegistryNewMetricGauge(t *testing.T) {
 	registry := NewRegistry()
 
-	gauge, err := registry.NewGauge("test-gauge")
+	gauge, err := registry.NewMetricGauge("test-gauge")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err = registry.NewGauge("test-gauge"); err == nil {
+	if _, err = registry.NewMetricGauge("test-gauge"); err == nil {
 		t.Fatalf("should fail when creating gauge with the same name")
 	}
 
@@ -21,19 +21,19 @@ func TestRegistryNewGauge(t *testing.T) {
 	}
 }
 
-func TestRegistryNewGaugeObserver(t *testing.T) {
+func TestRegistryNewMetricGaugeObserver(t *testing.T) {
 	registry := NewRegistry()
 
 	input := func() float64 {
 		return 1
 	}
 
-	_, err := registry.NewGaugeObserver("test-gauge", input)
+	_, err := registry.NewMetricGaugeObserver("test-gauge", input)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err = registry.NewGaugeObserver("test-gauge", input); err == nil {
+	if _, err = registry.NewMetricGaugeObserver("test-gauge", input); err == nil {
 		t.Fatalf("should fail when creating gauge with the same name")
 	}
 
@@ -42,20 +42,20 @@ func TestRegistryNewGaugeObserver(t *testing.T) {
 	}
 }
 
-func TestRegistryNewInfo(t *testing.T) {
+func TestRegistryNewMetricInfo(t *testing.T) {
 	registry := NewRegistry()
 
-	if _, err := registry.NewInfo("test-info", []Label{}); err == nil {
+	if _, err := registry.NewMetricInfo("test-info", []Label{}); err == nil {
 		t.Fatalf("should fail when creating info without labels")
 	}
 
 	label := NewLabel("label", "value")
-	info, err := registry.NewInfo("test-info", []Label{label})
+	info, err := registry.NewMetricInfo("test-info", []Label{label})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err = registry.NewInfo("test-info", []Label{label}); err == nil {
+	if _, err = registry.NewMetricInfo("test-info", []Label{label}); err == nil {
 		t.Fatalf("should fail when creating info with the same name")
 	}
 

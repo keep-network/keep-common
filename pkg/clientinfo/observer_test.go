@@ -1,4 +1,4 @@
-package metrics
+package clientinfo
 
 import (
 	"context"
@@ -13,7 +13,7 @@ func TestObserve(t *testing.T) {
 	gauge := &Gauge{}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Millisecond)
 
-	observer := &Observer{input, gauge}
+	observer := &MetricObserver{input, gauge}
 
 	observer.Observe(ctx, 1*time.Millisecond)
 

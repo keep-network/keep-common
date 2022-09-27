@@ -5,22 +5,22 @@ import (
 	"time"
 )
 
-// ObserverInput defines a source of metric data.
-type ObserverInput func() float64
+// MetricObserverInput defines a source of metric data.
+type MetricObserverInput func() float64
 
-// ObserverOutput defines a destination of collected metric data.
-type ObserverOutput interface {
+// MetricObserverOutput defines a destination of collected metric data.
+type MetricObserverOutput interface {
 	Set(value float64)
 }
 
-// Observer represent a definition of a cyclic metric observation process.
-type Observer struct {
-	input  ObserverInput
-	output ObserverOutput
+// MetricObserver represent a definition of a cyclic metric observation process.
+type MetricObserver struct {
+	input  MetricObserverInput
+	output MetricObserverOutput
 }
 
 // Observe triggers a cyclic metric observation process.
-func (o *Observer) Observe(
+func (o *MetricObserver) Observe(
 	ctx context.Context,
 	tick time.Duration,
 ) {

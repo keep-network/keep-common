@@ -61,15 +61,15 @@ func (r *Registry) NewMetricGauge(
 // allows to easily create self-refreshing metrics.
 func (r *Registry) NewMetricGaugeObserver(
 	name string,
-	input ObserverInput,
+	input MetricObserverInput,
 	labels ...Label,
-) (*Observer, error) {
+) (*MetricObserver, error) {
 	gauge, err := r.NewMetricGauge(name, labels...)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Observer{
+	return &MetricObserver{
 		input:  input,
 		output: gauge,
 	}, nil

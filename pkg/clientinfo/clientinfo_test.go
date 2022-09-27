@@ -1,6 +1,7 @@
 package clientinfo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -102,4 +103,72 @@ func TestClientInfoServerMetrics(t *testing.T) {
 			metrics,
 		)
 	}
+}
+
+func TestClientInfoServerDiagnostics(t *testing.T) {
+	registry := NewRegistry()
+
+	// Register Diagnostics Sources
+	nodeChainAddress := "0x1234567890"
+	registry.RegisterDiagnosticSource("chain_address", func() string {
+		result, err := json.Marshal(nodeChainAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(result)
+	})
+
+	peers := []testDiagnosticsPeerInfo{
+		{
+			ChainAddress:          "0xABCdef",
+			NetworkMultiAddresses: []string{"/dns4/address1/3919/ipfs/AaBbCc"},
+		},
+		{
+			ChainAddress:          "0x98765A",
+			NetworkMultiAddresses: []string{"/ip4/127.0.0.1/3919/ipfs/963"},
+		},
+	}
+	registry.RegisterDiagnosticSource("connected_peers", func() string {
+		result, err := json.Marshal(peers)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(result)
+	})
+
+	expectedDiagnostics := &testDiagnosticsInfo{nodeChainAddress, peers}
+
+	// Execute Test
+	port := 9799
+	registry.EnableServer(port)
+
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/diagnostics", port))
+	if err != nil {
+		t.Fatalf("failed to get diagnostics: %v", err)
+	}
+
+	actualDiagnostics := &testDiagnosticsInfo{}
+	if err = json.NewDecoder(resp.Body).Decode(actualDiagnostics); err != nil {
+		t.Fatalf("failed to decode diagnostics: %v", err)
+	}
+
+	if !reflect.DeepEqual(expectedDiagnostics, actualDiagnostics) {
+		t.Errorf(
+			"incorrect diagnostics\n"+
+				"expected: %+v\n"+
+				"actual:   %+v",
+			expectedDiagnostics,
+			actualDiagnostics,
+		)
+	}
+}
+
+type testDiagnosticsInfo struct {
+	ChainAddress   string                    `json:"chain_address"`
+	ConnectedPeers []testDiagnosticsPeerInfo `json:"connected_peers"`
+}
+
+type testDiagnosticsPeerInfo struct {
+	ChainAddress          string   `json:"chain_address"`
+	NetworkMultiAddresses []string `json:"multiaddrs"`
 }

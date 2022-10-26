@@ -31,7 +31,7 @@ func (r *Registry) exposeDiagnostics() string {
 		}
 	}
 
-	bytes, err := json.Marshal(diagnostics)
+	bytes, err := json.MarshalIndent(diagnostics, "", "  ")
 	if err != nil {
 		logger.Errorf("diagnostics JSON serialization error: [%v]", err)
 		return ""

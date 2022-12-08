@@ -480,25 +480,25 @@ func isMethodConstant(method abi.Method) bool {
 
 // Converts solidity type to a Go type.
 func bindType(kind abi.Type, structs map[string]struct{}) string {
-	goType := bindStructTypeGo(kind, structs)
-
-	// Bindings for structs are expected to be generated into the `abi` package
-	// by the abigen command.
-	if kind.T == abi.TupleTy {
-		goType = "abi." + goType
-	}
-
-	return goType
+	return resolveGoType(kind, bindStructTypeGo(kind, structs))
 }
 
 // Converts solidity topic type to a Go type.
 func bindTopicType(kind abi.Type, structs map[string]struct{}) string {
-	goType := bindTopicTypeGo(kind, structs)
+	return resolveGoType(kind, bindTopicTypeGo(kind, structs))
+}
 
-	// Bindings for structs are expected to be generated into the `abi` package
-	// by the abigen command.
-	if kind.T == abi.TupleTy {
+func resolveGoType(kind abi.Type, goType string) string {
+	switch kind.T {
+	case abi.TupleTy:
+		// Bindings for structs are expected to be generated into the `abi` package
+		// by the abigen command.
 		goType = "abi." + goType
+	case abi.SliceTy:
+		// Look for a struct nested in a slice.
+		if kind.Elem.T == abi.TupleTy {
+			goType = strings.Replace(goType, "[]", "[]abi.", 1)
+		}
 	}
 
 	return goType

@@ -219,8 +219,12 @@ func {{$contract.ShortVar}}{{$method.CapsName}}(c *cobra.Command, args []string)
 		{{- else -}}
 		cmd.PrintOutput("success")
 		{{- end }}
-	}
 
+		cmd.PrintOutput(
+			"the transaction was not submitted to the chain; " +
+			"please add the ` + "`" + `--submit` + "`" + ` flag",
+		)
+	}
 
 	return nil
 }

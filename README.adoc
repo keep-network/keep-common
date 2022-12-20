@@ -1,6 +1,6 @@
 = `keep-common`
 
-https://github.com/keep-network/keep-common/actions/workflows/client.yml[image:https://img.shields.io/github/workflow/status/keep-network/keep-common/Go/main?event=push&label=Go build[Go build status]]
+https://github.com/keep-network/keep-common/actions/workflows/client.yml[image:https://img.shields.io/github/actions/workflow/status/keep-network/keep-common/client.yml?branch=main&event=push&label=Go build[Go build status]]
 
 Common libraries and tools used across Keep repositories.
 

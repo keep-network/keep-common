@@ -64,7 +64,7 @@ func (bm *BalanceMonitor) Observe(
 		defer ticker.Stop()
 
 		checkBalance := func() {
-			err := wrappers.DoWithDefaultRetry(retryTimeout, check)
+			err := wrappers.DoWithDefaultRetry(ctx, retryTimeout, check)
 			if err != nil {
 				logger.Errorf("balance monitor error: [%v]", err)
 			}

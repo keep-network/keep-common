@@ -24,7 +24,7 @@ func TestDoWithRetry(t *testing.T) {
 		return nil
 	}
 
-	err := DoWithRetry(backoffTime, backoffMax, timeout, doFn)
+	err := DoWithRetry(context.Background(), backoffTime, backoffMax, timeout, doFn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestDoWithRetryExceedTimeout(t *testing.T) {
 		return nil
 	}
 
-	err := DoWithRetry(backoffTime, backoffMax, timeout, doFn)
+	err := DoWithRetry(context.Background(), backoffTime, backoffMax, timeout, doFn)
 	if err == nil {
 		t.Fatal("expected a timeout error")
 	}
@@ -107,7 +107,7 @@ func TestConfirmWithTimeout(t *testing.T) {
 		return true, nil
 	}
 
-	ok, err := ConfirmWithTimeout(backoffTime, backoffMax, timeout, confirmFn)
+	ok, err := ConfirmWithTimeout(context.Background(), backoffTime, backoffMax, timeout, confirmFn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestConfirmWithTimeoutExceedTimeout(t *testing.T) {
 		return true, nil
 	}
 
-	ok, err := ConfirmWithTimeout(backoffTime, backoffMax, timeout, confirmFn)
+	ok, err := ConfirmWithTimeout(context.Background(), backoffTime, backoffMax, timeout, confirmFn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +173,7 @@ func TestConfirmWithTimeoutFailure(t *testing.T) {
 		return false, fmt.Errorf("untada")
 	}
 
-	ok, err := ConfirmWithTimeout(backoffTime, backoffMax, timeout, confirmFn)
+	ok, err := ConfirmWithTimeout(context.Background(), backoffTime, backoffMax, timeout, confirmFn)
 	if err == nil {
 		t.Fatal("expected an error")
 	}

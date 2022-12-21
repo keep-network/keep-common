@@ -12,12 +12,13 @@ import (
 // before nth retry of doFn. In case the calculated backoff is longer than
 // backoffMax, the backoffMax wait is applied.
 func DoWithRetry(
+	parentCtx context.Context,
 	backoffTime time.Duration,
 	backoffMax time.Duration,
 	timeout time.Duration,
 	doFn func(ctx context.Context) error,
 ) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(parentCtx, timeout)
 	defer cancel()
 
 	var err error
@@ -68,10 +69,12 @@ const (
 // backoff is longer than DefaultMaxBackoffTime, the DefaultMaxBackoffTime is
 // applied.
 func DoWithDefaultRetry(
+	parentCtx context.Context,
 	timeout time.Duration,
 	doFn func(ctx context.Context) error,
 ) error {
 	return DoWithRetry(
+		parentCtx,
 		DefaultDoBackoffTime,
 		DefaultDoMaxBackoffTime,
 		timeout,
@@ -89,12 +92,13 @@ func DoWithDefaultRetry(
 // used to confirm a chain state and not to try to enforce a successful
 // execution of some function.
 func ConfirmWithTimeout(
+	parentCtx context.Context,
 	backoffTime time.Duration,
 	backoffMax time.Duration,
 	timeout time.Duration,
 	confirmFn func(ctx context.Context) (bool, error),
 ) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(parentCtx, timeout)
 	defer cancel()
 
 	for {
@@ -144,10 +148,12 @@ const (
 // ConfirmWithTimeoutDefaultBackoff is intended to be used to confirm a chain
 // state and not to try to enforce a successful execution of some function.
 func ConfirmWithTimeoutDefaultBackoff(
+	parentCtx context.Context,
 	timeout time.Duration,
 	confirmFn func(ctx context.Context) (bool, error),
 ) (bool, error) {
 	return ConfirmWithTimeout(
+		parentCtx,
 		DefaultConfirmBackoffTime,
 		DefaultConfirmMaxBackoffTime,
 		timeout,

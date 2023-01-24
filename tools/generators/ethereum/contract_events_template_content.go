@@ -136,7 +136,7 @@ func ({{$contract.ShortVar}} *{{$contract.Class}}) watch{{$event.CapsName}}(
 	}
 
 	thresholdViolatedFn := func(elapsed time.Duration) {
-		{{$logger}}.Errorf(
+		{{$logger}}.Warnf(
 			"subscription to event {{$event.CapsName}} had to be "+
 				"retried [%s] since the last attempt; please inspect "+
 				"host chain connectivity",

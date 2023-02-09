@@ -17,7 +17,6 @@ steps] in the README.
 4. Enable
 https://help.github.com/en/articles/about-commit-signature-verification[commit
 signing].
-4. Setup the <<Development Tooling>>.
 5. Open a PR against the `main` branch and describe the change you are intending
 to undertake in the PR description.
 

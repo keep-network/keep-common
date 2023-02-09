@@ -1,6 +1,8 @@
 = `keep-common`
 
 https://github.com/keep-network/keep-common/actions/workflows/client.yml[image:https://img.shields.io/github/actions/workflow/status/keep-network/keep-common/client.yml?branch=main&event=push&label=Go build[Go build status]]
+https://docs.threshold.network[image:https://img.shields.io/badge/docs-website-green.svg[Docs]]
+https://discord.gg/threshold[image:https://img.shields.io/badge/chat-Discord-5865f2.svg[Chat with us on Discord]]
 
 Common libraries and tools used across Keep repositories.
 

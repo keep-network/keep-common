@@ -231,6 +231,10 @@ func buildMethodInfo(
 				switch goType {
 				case "[]byte":
 					cmdParsingFn = "hexutil.Decode(%s)"
+				case "[20]byte":
+					cmdParsingFn = "decode.ParseBytes20(%s)"
+				case "[32]byte":
+					cmdParsingFn = "decode.ParseBytes32(%s)"
 				case "common.Address":
 					cmdParsingFn = "chainutil.AddressFromHex(%s)"
 				case "*big.Int":

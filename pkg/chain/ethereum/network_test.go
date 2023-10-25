@@ -21,6 +21,10 @@ func TestNetworkString(t *testing.T) {
 			network:        Goerli,
 			expectedString: "goerli",
 		},
+		"Sepolia": {
+			network:        Sepolia,
+			expectedString: "sepolia",
+		},
 		"Developer": {
 			network:        Developer,
 			expectedString: "developer",

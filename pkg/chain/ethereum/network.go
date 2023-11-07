@@ -8,11 +8,12 @@ const (
 	Unknown Network = iota
 	Mainnet
 	Goerli
+	Sepolia
 	Developer
 )
 
 func (n Network) String() string {
-	return []string{"unknown", "mainnet", "goerli", "developer"}[n]
+	return []string{"unknown", "mainnet", "goerli", "sepolia", "developer"}[n]
 }
 
 // ChainID returns chain id associated with the network.
@@ -22,6 +23,8 @@ func (n Network) ChainID() int64 {
 		return 1
 	case Goerli:
 		return 5
+	case Sepolia:
+		return 11155111
 	}
 	return 0
 }
